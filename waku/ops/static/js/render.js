@@ -1,6 +1,6 @@
-// waku dashboard — formatters + chat card renderers + chatlog + streaming + send.
-// Split out of app.js: classic <script>, shared global scope (no build
-// step, no modules). Load order + rules: static/README.md.
+// Waku 仪表盘——格式化器、对话卡片渲染、聊天记录、流式输出和发送功能。
+// 从 app.js 拆分而来：经典 <script> 标签，共享全局作用域（无构建步骤、无模块）。
+// 加载顺序和约定见 static/README.md。
 
 const money = n => "$" + (n < 0.01 ? n.toFixed(4) : n.toFixed(2));
 const secs = ms => ms==null ? "—" : (ms/1000).toFixed(1)+"s";
@@ -8,8 +8,8 @@ const secs = ms => ms==null ? "—" : (ms/1000).toFixed(1)+"s";
 const gateBadge = g => !g ? "" :
   `<span class="badge ${g.decision==="retrieve"?"retrieve":""}">gate · ${esc(g.decision)}</span><span class="meta" style="margin:0">${esc(g.reason||"")}</span>`;
 
-// A tool call renders as a status row (dot + one-line summary); the raw output
-// hides behind a disclosure so an ugly osascript error never floods the page.
+// 工具调用渲染为状态行（圆点加单行摘要）；原始输出放在可展开区域中，避免难看的
+// osascript 错误淹没整个页面。
 const toolRow = x => `<div class="tool ${x.status||"ok"}">
   <div class="tool-head"><span class="dot ${x.status||"ok"}"></span><code>${esc(x.tool)}</code>
     ${x.summary?`<span style="color:var(--ink2)">${esc(x.summary)}</span>`:""}</div>
@@ -18,10 +18,9 @@ const toolRow = x => `<div class="tool ${x.status||"ok"}">
   </details>`:""}
 </div>`;
 
-// A stored history row -> a CHAT item. Assistant rows with saved telemetry
-// (meta: gate/latency/iterations/tools) render as the FULL turn card, so a
-// reopened thread looks just like when it was live. Rows without meta (from
-// before this was saved, or another gateway) fall back to a plain card.
+// 将存储的历史行转换为 CHAT 项目。带已保存遥测信息（meta：闸门/延迟/迭代次数/工具）的
+// 助手行渲染为完整任务卡片，因此重新打开的会话与实时显示时一致。缺少 meta 的行
+// （保存此信息之前的记录或其他渠道的记录）回退为普通卡片。
 function histItem(m){
   if (m.role === "user") return {role:"user", text:m.content};
   if (m.meta) return {role:"waku", reply:m.content, gate:m.meta.gate,
@@ -49,8 +48,8 @@ const gateSplit = s => {
       <div class="meta" style="margin-top:6px">暂无任务轮次——发送一条消息后，检索闸门便会开始决策</div>`;
   const tot = s.gate_skips + s.gate_retrieves;
   const skipPct = Math.round(s.gate_skips/tot*100), retPct = 100-skipPct;
-  // only label a segment when it's wide enough to fit the text — otherwise a
-  // 0%/tiny segment spills its label past the bar (the "0 retri" bug).
+  // 仅当区段足够宽以容纳文字时才显示标签；否则 0% 或极窄区段会让标签溢出进度条
+  // （即“0 retri”问题）。
   const seg = (cls, n, label, pct) =>
     `<div class="${cls}" style="width:${pct}%">${pct>=14?`${n} ${label}`:""}</div>`;
   return `<div class="splitbar">
@@ -59,19 +58,17 @@ const gateSplit = s => {
   </div><div class="meta" style="margin-top:6px">检索闸门在 ${skipPct}% 的轮次中跳过了记忆，从而节省了延迟并减少偏差</div>`;
 };
 
-// --- Chat gateway: type here, watch the harness run (turns kept in memory)
+// --- 对话渠道：在此输入并观察框架运行（轮次保存在内存中）。
 const CHAT = [];
-// The gate → tools → reply stage strip, shared by the live card and the
-// completed/replayed card so the markup can't drift. `live` lights stages up
-// (gate flips to done once decided, reply "on" once text streams); otherwise
-// every stage is done and the strip carries the .tele class (hidden by the
-// stats toggle). (.stages is flexbox, so inter-span whitespace is irrelevant.)
+// “闸门 → 工具 → 回复”阶段条由实时卡片与完成/回放卡片共用，确保标记结构不会漂移。
+// `live` 会点亮阶段（闸门决策后变为 done，文本流出后回复变为 on）；否则所有阶段均完成，
+// 阶段条携带 .tele 类（由统计开关隐藏）。（.stages 使用 flexbox，span 之间的空白不影响布局。）
 function stagesRow(t, live){
   const gateCls = live ? (t.gate ? "done" : "on") : "done";
   const replyCls = live ? (t.stream ? "on" : "") : "done";
   const tools = (t.tools||[]).map(x => toolChip(x.tool)).join("");
-  // graph chip first — the front door. A quick graph turn has NO gate stage
-  // (memory retrieval never ran), so the gate chip is honest and disappears.
+  // 图工作流标记位于最前，代表入口。快速图工作流轮次没有闸门阶段（从未运行记忆检索），
+  // 因此闸门标记会如实隐藏。
   const graph = (t.graph && t.graph.route)
     ? `<span class="stage done">graph · ${esc(t.graph.route)}</span>` : "";
   const gate = (t.graph && t.graph.route === "quick") ? ""
@@ -79,7 +76,7 @@ function stagesRow(t, live){
   return `<div class="stages${live?"":" tele"}">`
     + graph + gate + tools + `<span class="stage ${replyCls}">回复</span></div>`;
 }
-// The per-turn telemetry footer: seconds · iterations · model · consolidation.
+// 每轮遥测信息页脚：秒数 · 迭代次数 · 模型 · 巩固情况。
 const teleFooter = t => `<div class="meta tele">${secs(t.latency_ms)} · ${t.iterations??"?"} 次迭代${
   t.model?` · ${esc(t.model)}`:""}${t.consolidation?` · 已巩固 ${t.consolidation.new_facts} 条事实`:""}</div>`;
 
@@ -93,10 +90,9 @@ const chatTurnCard = t => `<div class="card">
   ${teleFooter(t)}
 </div>`;
 
-// While a turn runs we stream it live: stages light up as the harness reaches
-// them, and the reply text appears token by token (with a blinking caret).
-// Graph nodes as chips: lit while running, with their measured time once done.
-// Several lit at once IS the fan-out, which no amount of "thinking…" conveys.
+// 任务轮次运行时进行实时流式显示：框架到达各阶段时点亮对应标记，回复文本按 token 出现
+// （带闪烁光标）。图节点以标签形式显示：运行时点亮，完成后显示实测耗时。多个标签同时
+// 点亮即代表扇出并发，这是“正在思考…”无法表达的信息。
 const nodesRow = m => {
   const names = Object.keys(m.nodes || {});
   if (!names.length) return "";

@@ -1,19 +1,16 @@
-// waku dashboard — render/refresh loop, resizers/chrome, voice, bootstrap (LOADS LAST).
-// Split out of app.js: classic <script>, shared global scope (no build
-// step, no modules). Load order + rules: static/README.md.
+// Waku 仪表盘——渲染/刷新循环、尺寸调整、界面控制、语音和启动入口（最后加载）。
+// 从 app.js 拆分而来：经典 <script> 标签，共享全局作用域（无构建步骤、无模块）。
+// 加载顺序和约定见 static/README.md。
 
 let activeView = null, activeSub = null;
-// The hash keys stay as they are — #settings is linked from graph.js, views.js,
-// the README and DEMO-CHECKLIST, and from anyone's bookmark. Only the LABEL
-// moved: after the Connections registry took keys, providers and integrations
-// out of that page, what remained was two switches that change how a turn runs,
-// which is a behaviour, not a setting.
+// 哈希键保持不变：graph.js、views.js、README、DEMO-CHECKLIST 及用户书签均会链接到
+// #settings。仅调整显示标签：连接注册表将密钥、供应商和集成移出此页后，剩余内容是
+// 两个影响任务轮次运行方式的开关，因此应称为“行为”而非“设置”。
 const TITLES = {chat:"对话与监看", ops:"LLM 运维",
                 graph:"图工作流——为循环赋予结构",
-                // Keyed by view AND sub for the Arena, now that the sidebar
-                // names the two races separately. A single title covering both
-                // was right while they hid behind sub-tabs; with two nav rows
-                // it reads as a page that does not know which one you clicked.
+                // 竞技场标题同时按视图和子标签区分，因为侧边栏现在单独列出两种竞速。
+                // 当两者藏在子标签下时，共用标题是合理的；现在有两行导航，共用标题会让
+                // 页面看起来像是不知道用户点击了哪一项。
                 compare:"竞技场——在同一循环中竞速模型与记忆",
                 "compare/models":"模型竞速——十个大脑，一个框架",
                 "compare/memory":"记忆竞速——一个大脑，五种事实存放位置",
@@ -25,24 +22,22 @@ function render(){
   const sub = subRaw || null;
   const view = VIEWS[v] ? v : "overview";
   const subChanged = sub !== activeSub || view !== activeView;
-  // Two nav rows can share a view, so a row that names a sub only lights up
-  // for that sub. Without the fallback, landing on bare #compare would light
-  // NEITHER race and the sidebar would show no current page at all.
+  // 两行导航可共用同一视图，因此指定子标签的行仅在对应子标签激活时高亮。
+  // 若没有回退逻辑，直接访问 #compare 时两种竞速均不会高亮，侧边栏将没有当前页面。
   const effSub = sub || (view === "compare" ? "models" : null);
   document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",
     a.dataset.v === view && (!a.dataset.sub || a.dataset.sub === effSub)));
   document.getElementById("title").textContent =
     TITLES[`${view}/${effSub}`] || TITLES[view] || view[0].toUpperCase()+view.slice(1);
   if (view === "overview" || view === "graph"){
-    // don't rebuild mid-animation or the glowing SVG gets wiped
+    // 动画进行中不重建，否则会清除发光的 SVG。
     if (activeView !== view || !animating){ document.getElementById("view").innerHTML = VIEWS[view](D); }
   } else if ((view === "memory" || view === "settings" || view === "database" || view === "compare" || view === "models" || view === "connections") && editing && !subChanged){
-    // don't wipe an in-progress edit on the 5s refresh — but DO switch sub-tabs
+    // 不在 5 秒刷新时清除正在进行的编辑；但仍允许切换子标签。
   } else {
     editing = false;
-    // Rebuilding #view innerHTML resets the scroll. On a same-view refresh (the
-    // 5s poll, a sort click) keep the reader where they were — only jump to top
-    // on an actual navigation (subChanged), where top is correct.
+    // 重建 #view 的 innerHTML 会重置滚动位置。同一视图刷新时（5 秒轮询或排序点击）
+    // 保留阅读位置；只有真正导航（subChanged）时才回到顶部。
     const main = document.querySelector("main");
     const keepScroll = !subChanged && main;
     const y = keepScroll ? main.scrollTop : 0;
@@ -61,7 +56,7 @@ function render(){
   document.getElementById("n-ops").textContent = D.stats.tool_errors || (D.eval_report ? "" : "!");
 }
 let lastFetch = Date.now();
-let lastCompareLoad = 0;   // throttle the Compare scoreboard self-heal to ~5s
+let lastCompareLoad = 0;   // 将竞技场记分板的自我修复节流到约 5 秒一次。
 function tickLive(){
   if (!D) return;
   const ago = Math.round((Date.now()-lastFetch)/1000);
@@ -70,8 +65,7 @@ function tickLive(){
 }
 let dockRestored = false;
 async function restoreDock(){
-  // On page load the dock is empty even though the current thread has messages
-  // — restore them so a refresh never looks like it lost the chat.
+  // 页面加载时，对话停靠栏虽为空但当前会话可能已有消息；恢复这些消息，避免刷新后看似丢失对话。
   dockRestored = true;
   const sid = D && D.current_session;
   if (!sid || CHAT.length) return;
@@ -81,24 +75,22 @@ async function refresh(){
   try {
     D = await (await fetch("/api/data")).json(); lastFetch = Date.now();
     render(); tickLive();
-    syncModelChip();  // keep the dock's model pill in sync with the active brain
-    applyTele();      // reflect the stats on/off choice (default on)
-    syncLiveView();   // live-update an opened conversation (e.g. new phone messages)
+    syncModelChip();  // 保持停靠栏模型标签与当前模型一致。
+    applyTele();      // 应用统计信息的开关状态（默认开启）。
+    syncLiveView();   // 实时更新已打开的会话（例如新手机消息）。
     if (!dockRestored) restoreDock();
-    // Self-heal the Compare scoreboard: it otherwise only loads on tab-open and
-    // after a race, so a slow/interrupted race (or a server blip) can leave it
-    // showing a partial set. Re-pull the server totals while viewing the tab —
-    // but never mid-race (that's the live fold's job) or mid-edit, and at most
-    // every ~5s so we don't hammer the endpoint on the faster render ticks.
+    // 自我修复竞技场记分板：它原本只在打开标签页或竞速结束后加载，缓慢/中断的竞速
+    // （或短暂的服务端故障）可能留下不完整结果。查看标签页期间重新拉取服务端总计，
+    // 但不在竞速或编辑过程中拉取，并限制为约每 5 秒一次，避免在更快的渲染周期中频繁请求接口。
     if (activeView === "compare" && !compareState.running && !editing
         && Date.now() - lastCompareLoad > 5000){
       lastCompareLoad = Date.now();
       loadCompareHistory();
     }
-  } catch(e){ /* server restarting — keep showing last data */ }
+  } catch(e){ /* 服务端正在重启——继续显示上一次的数据。 */ }
 }
-// --- resizable columns: drag the thin handle between nav|main and main|dock.
-// Width lives in a CSS var + localStorage, so it survives refreshes.
+// --- 可调整尺寸的列：拖动 nav|main 及 main|dock 之间的细手柄。
+// 宽度保存在 CSS 变量和 localStorage 中，因此刷新后仍可保留。
 function wireResizer(id, cssVar, key, fromRight, min, max){
   const el = document.getElementById(id);
   if (!el) return;
@@ -118,12 +110,12 @@ function wireResizer(id, cssVar, key, fromRight, min, max){
   };
 }
 function wireChrome(){
-  // restore saved widths
+  // 恢复已保存的宽度。
   const nw = localStorage.getItem("navW"); if (nw) document.documentElement.style.setProperty("--nav-w", nw+"px");
   const dw = localStorage.getItem("dockW"); if (dw) document.documentElement.style.setProperty("--dock-w", dw+"px");
   wireResizer("nav-resizer", "--nav-w", "navW", false, 150, 380);
   wireResizer("dock-resizer", "--dock-w", "dockW", true, 260, 680);
-  // hide / show the sidebar
+  // 显示/隐藏侧边栏。
   const setNav = v => { document.body.classList.toggle("nav-hidden", v); localStorage.setItem("navHidden", v?"1":"0"); };
   const nt = document.getElementById("nav-toggle"), nr = document.getElementById("nav-reopen");
   if (nt) nt.onclick = () => setNav(true);
@@ -131,12 +123,10 @@ function wireChrome(){
   setNav(localStorage.getItem("navHidden") === "1");
 }
 
-// --- voice on the dashboard: record in the browser, transcribe on the server
-// with the SAME local Whisper `make voice` uses. Text lands in the input for
-// you to review, then Send — nothing leaves the machine.
-// Voice capture records WAV (uncompressed PCM) via the Web Audio API — NOT
-// MediaRecorder's WebM/Opus, which faster-whisper/PyAV often can't decode
-// ("transcription failed [Errno …]"). WAV is trivially decodable server-side.
+// --- 仪表盘语音：在浏览器录音，由服务端使用与 `make voice` 相同的本地 Whisper 转写。
+// 文本会先写入输入框供用户检查，再手动发送；数据不会离开本机。
+// 语音采集通过 Web Audio API 录制 WAV（未压缩 PCM），而非 faster-whisper/PyAV 常难以
+// 解码的 MediaRecorder WebM/Opus（会产生“transcription failed [Errno …]”）；服务端可直接解码 WAV。
 let micCtx = null, micStream = null, micNode = null, micBuf = [], micOn = false;
 const micHint = (msg) => { const i = document.getElementById("dmsg");
   if (i){ i.placeholder = msg; setTimeout(()=>{ i.placeholder = "向 Waku 发送消息…"; }, 8000); } };
@@ -181,7 +171,7 @@ async function stopMic(){
   if (r.text){ input.value = r.text; input.focus(); }
 }
 
-// float32 chunks → 16-bit PCM mono WAV blob
+// 将 float32 分片转换为 16 位 PCM 单声道 WAV Blob。
 function encodeWAV(chunks, rate){
   let n = 0; chunks.forEach(c => n += c.length);
   const pcm = new Float32Array(n); let off = 0; chunks.forEach(c => { pcm.set(c, off); off += c.length; });
@@ -197,7 +187,7 @@ function encodeWAV(chunks, rate){
 function wireMic(){ const b = document.getElementById("mic"); if (b) b.onclick = toggleMic; }
 
 window.addEventListener("hashchange", render);
-window.__hold = (v)=>{ animating = v; };   // test hook: freeze the diagram
+window.__hold = (v)=>{ animating = v; };   // 测试钩子：冻结示意图动画。
 wireDock(); wireChrome(); wireMic();
 refresh(); setInterval(refresh, 5000); setInterval(tickLive, 1000);
-pollEvents(); setInterval(pollEvents, 450);   // live harness animation
+pollEvents(); setInterval(pollEvents, 450);   // 实时框架动画。

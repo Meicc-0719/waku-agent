@@ -1,18 +1,17 @@
-// waku dashboard — subtab/db helpers, SQL console, Memory/Tools sub-views, VIEWS.
-// Split out of app.js: classic <script>, shared global scope (no build
-// step, no modules). Load order + rules: static/README.md.
+// Waku 仪表盘——子标签/数据库辅助函数、SQL 控制台、记忆/工具子视图及 VIEWS。
+// 从 app.js 拆分而来：经典 <script> 标签，共享全局作用域（无构建步骤、无模块）。
+// 加载顺序和约定见 static/README.md。
 
-// --- sub-tabs: keep long pages short by splitting them into hash-routed tabs
-// (#memory/semantic, #database/facts). Each tab is a plain link, so it's
-// bookmarkable and the architecture cards can deep-link straight to one.
+// --- 子标签：通过哈希路由子标签（#memory/semantic、#database/facts）拆分长页面，
+// 保持页面简洁。每个标签都是普通链接，因此可收藏，架构卡片也能直接深链到对应标签。
 function subtabBar(view, tabs, active){
   return `<div class="subtabs">${tabs.map(([key,label,n]) =>
     `<a class="subtab ${key===active?"on":""}" href="#${view}/${key}">${esc(label)}${
       n!=null?`<span class="n">${n}</span>`:""}</a>`).join("")}</div>`;
 }
 
-// A raw SQLite table, scrollable, with the column names AS the (indigo) sticky
-// headers so the schema lines up over its data instead of floating above it.
+// 可滚动的原始 SQLite 表。列名作为靛蓝色粘性表头，使架构信息与数据列对齐，
+// 而非悬浮在数据上方。
 function dbTable(t){
   if (!t.sample.length) return `<div class="card empty">暂无数据</div>`;
   const head = t.columns.map(c => `<th class="dbcol">${esc(c)}${
@@ -43,7 +42,7 @@ function dbQueryView(){
     <div id="qout"></div>`;
 }
 
-// --- read-only SQL console (item: "a simple query editor like Supabase")
+// --- 只读 SQL 控制台（“类似 Supabase 的简易查询编辑器”）。
 function qFill(sql){ const b=document.getElementById("sqlbox"); if(b){ b.value=sql; runQuery(); } }
 async function runQuery(){
   editing = true;   // keep the 5s refresh from wiping the query + results
@@ -59,8 +58,8 @@ async function runQuery(){
     }</tbody></table></div><div class="meta" style="margin-top:6px">${r.rows.length} 行</div>`;
 }
 
-// --- Memory sub-tabs. Memory is the friendly, per-pillar view of what persists;
-// the Data tab shows the SAME rows as raw SQLite tables (see the explainer).
+// --- 记忆子标签。记忆以友好的、按支柱划分的视图展示持久化内容；数据标签页则以原始
+// SQLite 表展示完全相同的行（详见说明）。
 function memOverview(d){
   const s = d.stats;
   const pillars = [
@@ -159,8 +158,7 @@ function memConsolidation(d){
   return h;
 }
 
-// Tools ▸ Results: the artifacts tool calls produced (kept distinct from the
-// tools themselves — the old tab conflated capability with output).
+// 工具 ▸ 结果：工具调用产生的工件（与工具本身区分；旧标签页曾混淆能力和输出）。
 function toolsResults(d){
   let h = `<div class="meta" style="margin-bottom:10px">工具调用实际写入的内容。这些是结果，而不是工具本身。</div>`;
   h += `<h2>日历事件 <span class="meta" style="font-weight:400">· 来自 create_event</span></h2>`;
@@ -172,8 +170,8 @@ function toolsResults(d){
                        : `<div class="card empty">暂无已起草消息</div>`;
   return h;
 }
-// Tools ▸ MCP: external connectors. Shows live status + a copy-paste config so
-// anyone can plug in their own server (scalable, not a one-off).
+// 工具 ▸ MCP：外部连接器。显示实时状态和可复制粘贴的配置，让任何人均可接入自己的服务器
+// （可扩展，而非一次性方案）。
 function toolsMCP(t){
   const m = t.mcp;
   let h = `<div class="card ${m.configured?"":""}" style="border-color:${m.live?"var(--good)":"var(--line2)"}">
@@ -259,8 +257,8 @@ async function saveProvider(provider){
   const field = info && info.fields[0] && document.getElementById(`provider-${provider}-${info.fields[0].name}`);
   const payload = {provider};
   if (field && field.value) payload.key = field.value;
-  // Models are global fields for the *current* provider. Switching cards must
-  // omit them so apply_provider selects the new provider's own default.
+  // 模型是*当前*供应商的全局字段。切换卡片时必须省略这些字段，以便 apply_provider
+  // 选择新供应商自己的默认值。
   if (provider === stProvider()) {
     const model = document.getElementById("provider-model"), small = document.getElementById("provider-small-model"), base = document.getElementById("provider-base-url"), custom = document.getElementById("provider-custom-key");
     if (model) payload.model = model.value;
@@ -275,12 +273,10 @@ async function saveProvider(provider){
 function stProvider(){ return (D.settings || {}).provider || "anthropic"; }
 
 const CONNECTION_GROUPS = ["Channels", "Productivity", "Memory", "Tools"];
-// "Memory", not "Storage". The registry already calls this group "Memory &
-// Storage"; the display map was dropping the half that says what these
-// actually are. Notion is the episodic store, Supabase the semantic one, and
-// every hosted memory service that joins them is semantic too — none of it is
-// generic storage, and Memory is one of the four pillars the rest of the
-// dashboard is organised around.
+// 使用“记忆”而不是“存储”。注册表已将此组称为“Memory & Storage”，而显示映射曾丢失
+// 描述其实际作用的部分。Notion 是情景记忆存储，Supabase 是语义记忆存储，加入此组的
+// 每项托管记忆服务也是语义记忆服务——没有任何一项是泛化存储，而记忆正是仪表盘其余部分
+// 所围绕的四大支柱之一。
 const CONNECTION_GROUP_MAP = {
   "Channels": "Channels",
   "Calendar & Productivity": "Productivity",
@@ -297,11 +293,9 @@ function connectionStatusDisplay(status){
   const state = (status && status.state) || "not_configured";
   if (state === "connected") return {label:"connected", className:"connected"};
   if (state === "error") return {label:"error", className:"error"};
-  // "configured" means every required field is filled and the extra is
-  // installed — it just hasn't been probed. That is not a warning, so it must
-  // not wear the amber "needs setup" pill: this state covers most of a working
-  // setup on first visit, and colouring it like a problem told every new user
-  // their Telegram, Notion and Tavily needed fixing when they were fine.
+  // “已配置”表示所有必填字段均已填写且附加包已安装，只是尚未探测。这并不是警告，
+  // 因此不能显示琥珀色的“需要设置”标签：首次访问时多数可用配置均处于此状态，若将其
+  // 着色为问题，会误导每位新用户以为本来正常的 Telegram、Notion 和 Tavily 需要修复。
   if (state === "configured") return {label:"configured · not tested", className:"configured"};
   if (state === "installed_but_unconfigured") return {label:"needs setup", className:"needs-setup"};
   return {label:"not configured", className:"not-configured"};
@@ -310,11 +304,9 @@ function connectionStatusDisplay(status){
 function connectionCard(item){
   const display = connectionStatusDisplay(item.status);
   const action = item.status && item.status.state !== "not_configured" ? "Edit" : "Configure";
-  // Say WHY on the card. "needs setup" covers two unrelated fixes — a missing
-  // value ("missing NOTION_TOKEN") and a missing package ("missing notion
-  // extra", which wants a pip install, not a key) — and the reason used to be
-  // hidden until you opened the modal. The message repeats the label for
-  // connected/configured, so only show it where it adds something.
+  // 在卡片上说明原因。“需要设置”涵盖两种无关问题：缺少值（“缺少 NOTION_TOKEN”）和
+  // 缺少软件包（“缺少 notion extra”，需要 pip install 而不是密钥）。此前必须打开弹窗
+  // 才能看到原因。对已连接/已配置状态，此消息只是重复标签，因此只在能提供额外信息时显示。
   const why = (item.status && item.status.message
     && (item.status.state === "installed_but_unconfigured" || item.status.state === "error"))
     ? `<div class="connwhy">${esc(item.status.message)}</div>` : "";
@@ -394,20 +386,18 @@ function connectionModalKeydown(event){
 
 const VIEWS = {
   models(d){
-    // Provider card grid (logo / status dot / edit / enable-disable). Editing
-    // happens in a modal opened from a card; both live in js/models.js.
+    // 供应商卡片网格（徽标/状态点/编辑/启用-禁用）。编辑操作在从卡片打开的弹窗中进行；
+    // 二者均位于 js/models.js。
     return modelsGrid(d);
   },
   connections(d){
     const items = d.connections || [];
     return items.length ? connectionsGrid(items) : `<div class="card empty">No integrations registered.</div>`;
   },
-  // Gateway: ONE unified conversation across every channel (dashboard, telegram,
-  // voice, cli) — the same loop + memory answer all of them. Each message is
-  // tagged with where it came in, Hermes-style. You type in the dock on the right.
-  // Gateway = an INBOX of conversations (like Slack/Intercom): one row per
-  // conversation, tagged with its channel(s). Click one to open it in the chat
-  // dock (the active thread). No longer a flat stream that duplicates the dock.
+  // 渠道：跨所有渠道（仪表盘、Telegram、语音、CLI）的一条统一对话，由同一循环和记忆
+  // 回答。每条消息均以 Hermes 风格标注其接入来源，用户在右侧停靠栏输入消息。
+  // 渠道即会话收件箱（类似 Slack/Intercom）：每个会话一行，附带来源渠道标签。点击即可在
+  // 对话停靠栏（活动会话）打开，不再显示与停靠栏重复的扁平消息流。
   gateway(d){
     const sessions = d.sessions || [];
     let h = `<div class="meta" style="margin-bottom:14px">Every conversation across every channel —
@@ -445,10 +435,9 @@ const VIEWS = {
   loop(d){
     return d.turns.length ? d.turns.map(turnCard).join("") : `<div class="card empty">no turns yet</div>`;
   },
-  // Graph workflows: the loop's sibling. The chart is rendered from the
-  // engine's own describe() (served in d.graph.workflows) so it can never
-  // show a shape the engine doesn't run. Nothing here is a mode switch —
-  // the harness routes every message itself; this tab just tells the story.
+  // 图工作流：循环的同级能力。图表从引擎自身的 describe()（通过 d.graph.workflows
+  // 提供）渲染，因此绝不会展示引擎没有运行的结构。这里没有模式切换——框架会自行路由每条
+  // 消息，此标签页仅负责说明过程。
   graph(d){
     const g = d.graph || {enabled:false, workflows:[], stats:{quick:0, full:0}};
     let h = `<div class="meta" style="margin-bottom:14px">The loop is one agent turn: the model picks tools until
@@ -463,9 +452,8 @@ const VIEWS = {
         <a class="reveal" onclick="location.hash='settings'">Behaviour</a>, or set
         <code>WAKU_GRAPH_WORKFLOWS=1</code> in <code>.env</code>. Any failure anywhere fails open to the
         plain loop — this can never lose a reply, only save time and tokens.</div></div>`;
-    // The two workflows are two different JOBS with different triggers, which is
-    // the thing the page has to make obvious — otherwise two stacked charts read
-    // like two options you pick between.
+    // 两个工作流对应触发条件不同的两类任务；页面必须清楚地表达这一点，否则上下堆叠的
+    // 两张图会看似两个供用户选择的选项。
     const NOTE = {
       triage: `<b>Runs itself, on every message.</b> Gated by the graph-workflows flag.
         Solid arrows = always, dashed = the router's choice. <code>full_agent</code> is the
@@ -545,7 +533,7 @@ const VIEWS = {
     let h = subtabBar("tools", tabs, sub);
     if (sub === "results") return h + toolsResults(d);
     if (sub === "mcp") return h + toolsMCP(t);
-    // Available: what the agent CAN do (grouped by origin), not just what it did.
+    // 可用：代理本轮*能够*执行的能力（按来源分组），而非仅显示已经执行过的能力。
     h += `<div class="meta" style="margin-bottom:12px">The capabilities the agent can call this turn.
       A tool is a name + description the model reads, a JSON schema, and a Python function — that's it.
       ${t.apple_on?"":"Apple tools are off (set <code>WAKU_APPLE_TOOLS=1</code>). "}Connect more via
@@ -561,7 +549,7 @@ const VIEWS = {
         <div class="tn">${esc(c.name)}<span class="srcpill ${key==="mcp"?"mcp":key==="apple"?"apple":""}">${esc(key)}</span></div>
         <div class="td">${esc(c.description)}</div></div>`).join("");
     });
-    // Roadmap: whiteboard boxes not wired in yet — set expectations, don't over-promise.
+    // 路线图：白板中的方块尚未接入实现——设置合理预期，不作过度承诺。
     if ((t.planned||[]).length){
       h += `<h2>Coming soon <span class="meta" style="font-weight:400">· on the architecture chart, not wired in yet (opt in with <code>WAKU_EXPERIMENTAL=1</code>)</span></h2>`;
       h += t.planned.map(p => `<div class="toolcard" style="opacity:.7">
@@ -571,9 +559,8 @@ const VIEWS = {
     return h;
   },
   database(d, sub){
-    // The persistence layer itself — one SQLite file, real tables, FTS5 index.
-    // "Data" in the nav (plainer than "state.db"), but we keep saying state.db
-    // because that's literally the filename you can open.
+    // 持久化层本身：一个 SQLite 文件、真实数据表和 FTS5 索引。导航中使用“数据”（比
+    // “state.db”更直观），但仍保留 state.db 名称，因为那正是用户可以直接打开的文件名。
     const db = d.db || {tables:[], all_tables:[], fts:[], size:0, path:""};
     const tables = db.tables || [];
     sub = sub || "overview";
