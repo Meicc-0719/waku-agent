@@ -117,9 +117,8 @@ const streamingCard = m => `<div class="card">
          : ""}</div>`}
 </div>`;
 
-// Messages loaded from history (a switched/opened conversation) have no live
-// latency/iteration data, and their stored form carries an internal
-// "[tools used: ...]" annotation — strip both so the thread reads cleanly.
+// 从历史记录加载的消息（切换或打开的会话）没有实时延迟/迭代数据，其存储形式还带有内部
+// “［已用工具：…］”标注；移除两者以保持会话阅读整洁。
 const stripTools = t => (t || "").replace(/\s*\[tools used:[\s\S]*\]\s*$/, "").trim();
 const historicalCard = m => `<div class="card">
   <button class="msg-copy" onclick="copyMsg(this)" data-text="${esc(stripTools(m.reply))}" title="复制回复">复制</button>
@@ -137,25 +136,23 @@ function renderChatLog(){
 }
 
 function syncChatLogs(){
-  // one conversation, two surfaces: the Chat & watch tab and the side dock
+  // 一个会话、两个界面：对话与监看标签页以及侧边停靠栏。
   document.querySelectorAll(".chatlog").forEach(el => {
     el.innerHTML = renderChatLog();
-    el.scrollTop = el.scrollHeight;      // dock scrolls its own container
+    el.scrollTop = el.scrollHeight;      // 停靠栏滚动其自身容器。
   });
 }
 
-// One streamed harness event updates the live card in place.
+// 单个流式框架事件会原地更新实时卡片。
 function applyStreamEvent(pending, ev){
-  // Graph events arrive here too when a workflow is called from the chat box.
-  // The trace poller animates the chart either way, but it runs every 450ms
-  // and stages play on a 620ms stagger — going straight to graphLive() means
-  // the Overview panel swaps to the running workflow the moment you hit send.
+  // 从对话框调用工作流时，图事件也会到达此处。追踪轮询器无论如何都会为图表制作动画，
+  // 但它每 450 毫秒运行一次且阶段动画间隔为 620 毫秒；直接调用 graphLive() 可让概览面板
+  // 在点击发送后立即切换为正在运行的工作流。
   if (ev.kind === "graph_start" && typeof graphLive === "function") graphLive(ev.workflow);
   else if (ev.kind === "graph_end" && typeof graphLive === "function") graphLive(null);
-  // Graph nodes are not ToolRegistry tools, so none of them ever reached the
-  // tool chips — a /gather ran for thirteen seconds showing nothing but
-  // "thinking…". Track them separately and render them the same way, because
-  // "which four things are happening right now" is the entire point of a wave.
+  // 图节点不是 ToolRegistry 工具，因此不会进入工具标签；一次 /gather 运行十三秒时只会
+  // 显示“正在思考…”。单独追踪并以相同方式渲染它们，因为“此刻哪四件事正在进行”正是
+  // 并发波次的核心信息。
   if (ev.kind === "node_start"){
     (pending.nodes = pending.nodes || {})[ev.node] = {status: "running"};
   } else if (ev.kind === "node_end"){
@@ -173,11 +170,11 @@ function applyStreamEvent(pending, ev){
       tool: ev.tool, args: ev.args, output: ev.output,
       status: (ev.output||"").toLowerCase().startsWith("error") ? "error" : "ok",
       summary: (ev.output || "").split(". ")[0].slice(0,120)});
-    pending.stream = "";   // a new assistant turn begins after the tool result
+    pending.stream = "";   // 工具结果返回后，开始新一轮助手输出。
   } else if (ev.kind === "done"){
     pending.pending = false; pending.stream = "";
     if (ev.error) pending.reply = "Error: " + ev.error;
-    else Object.assign(pending, ev);   // reply, tools, gate, iterations, latency_ms, consolidation
+    else Object.assign(pending, ev);   // 回复、工具、闸门、迭代次数、延迟和巩固信息。
   }
 }
 
@@ -190,7 +187,7 @@ async function sendChat(fromInput){
   const pending = {role:"waku", pending:true, stream:"", started: Date.now()};
   CHAT.push(pending);
   syncChatLogs();
-  // tick the elapsed counter while we wait for the first token
+  // 等待首个 token 时刷新已用时间计数器。
   const ticker = setInterval(() => { if (pending.pending && !pending.stream) syncChatLogs(); }, 1000);
   try {
     const res = await fetch("/api/chat/stream", {method:"POST",
@@ -211,7 +208,7 @@ async function sendChat(fromInput){
     }
   } catch(e){ Object.assign(pending, {pending:false, reply:"Error: "+e}); }
   clearInterval(ticker);
-  if (pending.pending) pending.pending = false;   // stream ended without a 'done'
+  if (pending.pending) pending.pending = false;   // 流在未收到 'done' 事件时结束。
   syncChatLogs();
   input.focus();
 }
