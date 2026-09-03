@@ -14,19 +14,19 @@ function subtabBar(view, tabs, active){
 // A raw SQLite table, scrollable, with the column names AS the (indigo) sticky
 // headers so the schema lines up over its data instead of floating above it.
 function dbTable(t){
-  if (!t.sample.length) return `<div class="card empty">empty — no rows yet</div>`;
+  if (!t.sample.length) return `<div class="card empty">暂无数据</div>`;
   const head = t.columns.map(c => `<th class="dbcol">${esc(c)}${
     t.types&&t.types[c]?`<small>${esc(t.types[c].toLowerCase())}</small>`:""}</th>`).join("");
   const body = t.sample.map(r => `<tr>${t.columns.map(c =>
     `<td class="dbcell">${esc(String(r[c]??"").slice(0,120))}</td>`).join("")}</tr>`).join("");
   return `<div class="scrolly"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
-    <div class="meta" style="margin-top:6px">showing ${t.sample.length} of ${t.count} row${t.count===1?"":"s"} (newest first)</div>`;
+    <div class="meta" style="margin-top:6px">显示 ${t.count} 行中的 ${t.sample.length} 行（最新在前）</div>`;
 }
 const DB_DESC = {
-  calendar_events: "events the create_event tool wrote (the flagship task)",
-  facts: "semantic memory — durable facts (Memory ▸ Semantic)",
-  episodes: "episodic memory — dated summaries (Memory ▸ Episodic)",
-  chat_log: "every message, tagged by session_id — consolidation reads from here",
+  calendar_events: "create_event 工具写入的事件（核心任务）",
+  facts: "语义记忆——持久事实（记忆 ▸ 语义）",
+  episodes: "情景记忆——带日期的摘要（记忆 ▸ 情景）",
+  chat_log: "每条消息均带有 session_id 标签；巩固流程从此读取",
 };
 const QUERY_EXAMPLES = [
   "SELECT role, content FROM chat_log ORDER BY id DESC LIMIT 10",
@@ -34,12 +34,12 @@ const QUERY_EXAMPLES = [
   "SELECT session_id, COUNT(*) FROM chat_log GROUP BY session_id",
 ];
 function dbQueryView(){
-  return `<div class="meta" style="margin-bottom:10px">A read-only SQL console over <code>state.db</code>
-      (the Supabase-editor idea, scoped down). Only <code>SELECT</code> runs — the file is opened read-only,
-      so nothing here can change your data.</div>
+  return `<div class="meta" style="margin-bottom:10px"><code>state.db</code> 的只读 SQL 控制台。
+      它借鉴了 Supabase 编辑器的理念，但范围更小。仅允许执行 <code>SELECT</code>；文件以只读方式打开，
+      因此这里的操作不会更改你的数据。</div>
     <textarea class="sqlbox" id="sqlbox" spellcheck="false" onfocus="markEditing()" oninput="markEditing()">${esc(QUERY_EXAMPLES[0])}</textarea>
-    <div style="margin:8px 0"><button class="save" onclick="runQuery()">Run</button>
-      <span class="meta" style="margin-left:12px">try: ${QUERY_EXAMPLES.map(q=>`<span class="qexample" onclick="qFill(this.textContent)">${esc(q)}</span>`).join(" &nbsp; ")}</span></div>
+    <div style="margin:8px 0"><button class="save" onclick="runQuery()">执行</button>
+      <span class="meta" style="margin-left:12px">示例：${QUERY_EXAMPLES.map(q=>`<span class="qexample" onclick="qFill(this.textContent)">${esc(q)}</span>`).join(" &nbsp; ")}</span></div>
     <div id="qout"></div>`;
 }
 
@@ -49,14 +49,14 @@ async function runQuery(){
   editing = true;   // keep the 5s refresh from wiping the query + results
   const sql = (document.getElementById("sqlbox")||{}).value || "";
   const out = document.getElementById("qout");
-  out.innerHTML = `<div class="meta">running…</div>`;
+  out.innerHTML = `<div class="meta">正在执行…</div>`;
   const r = await postJSON("/api/query", {sql});
   if (r.error){ out.innerHTML = `<div class="card empty" style="color:var(--bad)">${esc(r.error)}</div>`; return; }
-  if (!r.rows.length){ out.innerHTML = `<div class="card empty">0 rows</div>`; return; }
+  if (!r.rows.length){ out.innerHTML = `<div class="card empty">0 行</div>`; return; }
   out.innerHTML = `<div class="scrolly"><table><thead><tr>${
     r.columns.map(c=>`<th class="dbcol">${esc(c)}</th>`).join("")}</tr></thead><tbody>${
     r.rows.map(row=>`<tr>${row.map(v=>`<td class="dbcell">${esc(String(v).slice(0,120))}</td>`).join("")}</tr>`).join("")
-    }</tbody></table></div><div class="meta" style="margin-top:6px">${r.rows.length} row(s)</div>`;
+    }</tbody></table></div><div class="meta" style="margin-top:6px">${r.rows.length} 行</div>`;
 }
 
 // --- Memory sub-tabs. Memory is the friendly, per-pillar view of what persists;
@@ -64,59 +64,56 @@ async function runQuery(){
 function memOverview(d){
   const s = d.stats;
   const pillars = [
-    ["Semantic","semantic",d.facts.length+" facts","durable, distilled facts about you and your people"],
-    ["Episodic","episodic",d.episodes.length+" episodes","one dated summary per consolidation — stays small on purpose"],
-    ["Procedural","skills",d.skills.length+" skills","SKILL.md files loaded only when relevant — how to act"],
+    ["语义","semantic",d.facts.length+" 条事实","关于你和相关人员的精炼持久事实"],
+    ["情景","episodic",d.episodes.length+" 条情景记录","每次巩固生成一条带日期的摘要，刻意保持精简"],
+    ["程序性","skills",d.skills.length+" 项技能","仅在相关时加载的 SKILL.md 文件，定义如何行动"],
   ].map(([t,sub,n,desc]) => `<div class="box" style="min-width:0" onclick="location.hash='memory/${sub}'">
       <b>${t} <span class="meta" style="font-weight:400">· ${n}</span></b><span>${desc}</span></div>`).join("");
   return `<div class="card" style="border-color:var(--accent);background:var(--accent-soft)">
-      <b>Memory vs Database — two views of one file.</b>
-      <div class="r">This tab is the curated, per-pillar view of what Waku remembers. The
-      <a class="reveal" onclick="location.hash='database'">Database tab</a> shows the exact same
-      thing as raw SQLite tables (plus the FTS5 keyword index). Same
-      <code>.waku/state.db</code> — different altitude.
-      <br><br>Some assistants (Hermes) keep memory as a single <code>MEMORY.md</code> file. Waku keeps
-      the queryable source in <code>state.db</code> (facts + episodes, FTS5-searchable) <b>and</b> writes a
-      human-readable ${reveal("MEMORY.md","MEMORY.md")} mirror after every turn — so you get both: a real file
-      you can open, backed by a sturdy database.</div></div>
-    <h2>The three pillars</h2>
+      <b>记忆与数据库：同一文件的两种视图。</b>
+      <div class="r">此标签页按支柱呈现 Waku 记住的内容；
+      <a class="reveal" onclick="location.hash='database'">数据库标签页</a>则以原始 SQLite 表（以及 FTS5 关键字索引）展示完全相同的数据。
+      同一个 <code>.waku/state.db</code>，不同的观察层级。
+      <br><br>部分助手（如 Hermes）将记忆保存在单个 <code>MEMORY.md</code> 文件中。Waku 将可查询的数据源保存在
+      <code>state.db</code> 中（事实和情景记录，支持 FTS5 搜索），并在每轮结束后写入一份供人阅读的
+      ${reveal("MEMORY.md","MEMORY.md")} 镜像文件。因此你同时拥有可直接打开的文件和可靠的数据库支撑。</div></div>
+    <h2>三类记忆支柱</h2>
     <div class="tiles" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">${pillars}</div>
-    <h2>Retrieval gate — does this turn even need memory?</h2>${gateSplit(s)}
-    <div class="meta" style="margin-top:8px">A cheap model decides <b>if</b> a turn needs memory at all, before any lookup —
-      this is memory <i>retrieval</i>, the hero decision. (The Ops tab charts the same skip/retrieve
-      numbers as an operational metric; the decision itself is memory's.)</div>
+    <h2>检索闸门——本轮是否真的需要记忆？</h2>${gateSplit(s)}
+    <div class="meta" style="margin-top:8px">在进行任何查找前，一个低成本模型先判断本轮是否需要记忆——
+      这是记忆<i>检索</i>的关键决策。（运维标签页会将相同的跳过/检索数据作为运行指标展示；决策本身属于记忆系统。）</div>
     <div class="meta" style="margin-top:14px">Files: ${reveal("state.db","state.db")} · ${reveal("MEMORY.md","MEMORY.md")} · ${reveal("SOUL.md","SOUL.md")} · ${reveal("skills","skills/")}</div>`;
 }
 function memSemantic(d){
-  let h = `<div class="meta" style="margin-bottom:12px">Durable facts distilled from what you tell Waku —
-    the smallest, most-reused store. Edit or forget any of them; changes are live next turn.</div>`;
-  h += `<div class="card" style="padding:4px 8px"><table><tr><th>subject</th><th>fact</th><th>source</th><th></th></tr>${
+  let h = `<div class="meta" style="margin-bottom:12px">从你告诉 Waku 的内容中提炼出的持久事实——
+    这是最精简、复用率最高的存储。你可以编辑或遗忘任意一项，改动会在下一轮生效。</div>`;
+  h += `<div class="card" style="padding:4px 8px"><table><tr><th>主题</th><th>事实</th><th>来源</th><th></th></tr>${
     d.facts.map(f => `<tr id="fact-${f.id}">
       <td><code>${esc(f.subject)}</code></td>
       <td class="fc">${esc(f.content)}</td>
       <td class="meta">${esc(f.source)}</td>
-      <td style="white-space:nowrap"><a class="reveal" onclick="editFact(${f.id})">edit</a> · <a class="reveal del" onclick="delMem('delete_fact',${f.id})">delete</a></td>
+      <td style="white-space:nowrap"><a class="reveal" onclick="editFact(${f.id})">编辑</a> · <a class="reveal del" onclick="delMem('delete_fact',${f.id})">删除</a></td>
     </tr>`).join("")}</table></div>`;
   return h;
 }
 function memEpisodic(d){
   const src = d.episodes_source || "sqlite";
-  let h = `<div class="meta" style="margin-bottom:8px">backend: <span class="srcpill">${esc(src)}</span></div>`;
-  if (d.episodes_error) h += `<div class="card empty">Could not read episodes from Notion: ${esc(d.episodes_error)}</div>`;
+  let h = `<div class="meta" style="margin-bottom:8px">后端：<span class="srcpill">${esc(src)}</span></div>`;
+  if (d.episodes_error) h += `<div class="card empty">无法从 Notion 读取情景记录：${esc(d.episodes_error)}</div>`;
   h += `<div class="card" style="background:var(--accent-soft);border-color:var(--line2)">
-    <b>Why is this small?</b> <span class="r">Episodic memory holds one <i>distilled</i> summary per
-    consolidation, not every message. The raw, blow-by-blow conversation lives in the
-    <a class="reveal" onclick="location.hash='database/chat_log'"><code>chat_log</code> table</a>
-    (the big one) on the Database tab — episodes are its highlights.</span></div>`;
-  h += `<div class="card" style="padding:4px 8px"><table><tr><th>date</th><th>episode</th><th></th></tr>${
+    <b>为什么它如此精简？</b> <span class="r">情景记忆每次巩固只保存一条<i>提炼后</i>的摘要，
+    而不是保存每一条消息。完整的原始对话位于数据库标签页的
+    <a class="reveal" onclick="location.hash='database/chat_log'"><code>chat_log</code> 表</a>
+    （更大的那一份）中；情景记录只是其中的要点。</span></div>`;
+  h += `<div class="card" style="padding:4px 8px"><table><tr><th>日期</th><th>情景记录</th><th></th></tr>${
     d.episodes.map(e => `<tr><td class="meta">${esc(e.happened_at)}</td><td>${esc(e.summary)}</td>
-      <td><a class="reveal del" onclick="delMem('delete_episode','${e.id}')">delete</a></td></tr>`).join("")}</table></div>`;
+      <td><a class="reveal del" onclick="delMem('delete_episode','${e.id}')">删除</a></td></tr>`).join("")}</table></div>`;
   return h;
 }
 function memSkills(d){
-  let h = `<div class="meta" style="margin-bottom:12px">Procedural memory — markdown instructions loaded
-    only when a message matches. Add your own three ways: teach Waku in chat (it calls
-    <code>create_skill</code>), edit a skill below, or drop a <code>SKILL.md</code> into ${reveal("skills","the skills folder")}.</div>`;
+  let h = `<div class="meta" style="margin-bottom:12px">程序性记忆——仅在消息匹配时加载的 Markdown 指令。
+    你可以通过三种方式添加自己的指令：在对话中教 Waku（它会调用 <code>create_skill</code>）、
+    编辑下方技能，或将 <code>SKILL.md</code> 放入 ${reveal("skills","技能文件夹")}。</div>`;
   h += d.skills.map((sk,i) => {
     const full = `---
 name: ${sk.name}
@@ -126,53 +123,53 @@ description: ${sk.description}
 ${sk.body}`;
     return `<div class="card">
       <div class="u"><code>${esc(sk.name)}</code> <span class="meta" style="font-weight:400">· ${esc(sk.description)}</span>
-        <span class="srcpill ${sk.editable?"":"apple"}" style="margin-left:6px">${sk.editable?"home":"built-in"}</span></div>
+        <span class="srcpill ${sk.editable?"":"apple"}" style="margin-left:6px">${sk.editable?"本地":"内置"}</span></div>
       <textarea class="editor" id="sk-${i}" style="min-height:150px;margin-top:8px" data-path="${esc(sk.path)}"
         oninput="dirty('sksave-${i}')" onfocus="markEditing()">${esc(full)}</textarea>
-      <div style="margin-top:8px"><button class="save" id="sksave-${i}" disabled onclick="saveSkill(${i})">Save SKILL.md</button>
+      <div style="margin-top:8px"><button class="save" id="sksave-${i}" disabled onclick="saveSkill(${i})">保存 SKILL.md</button>
         <span class="meta" id="skmsg-${i}" style="margin-left:10px">${esc(sk.rel)}</span></div></div>`;
-  }).join("") || `<div class="card empty">no skills loaded</div>`;
+  }).join("") || `<div class="card empty">未加载任何技能</div>`;
   return h;
 }
 function memSoul(d){
-  return `<div class="meta" style="margin-bottom:12px">SOUL.md is Waku's persona — the system prompt it
-    loads every turn. Editing it changes who your Waku is. Changes are live next turn.</div>
+  return `<div class="meta" style="margin-bottom:12px">SOUL.md 是 Waku 的人格设定——每轮都会加载的系统提示词。
+    编辑它会改变你的 Waku 是什么样的助手，改动会在下一轮生效。</div>
     <div class="card"><textarea id="soul" class="editor" style="min-height:260px"
       oninput="dirty('soul-save')" onfocus="markEditing()">${esc(d.soul||"")}</textarea>
-    <div style="margin-top:8px"><button class="save" id="soul-save" disabled onclick="saveSoul()">Save SOUL.md</button>
+    <div style="margin-top:8px"><button class="save" id="soul-save" disabled onclick="saveSoul()">保存 SOUL.md</button>
       <span class="meta" id="soul-msg" style="margin-left:10px"></span></div></div>
-    <div class="meta" style="margin-top:10px">${reveal("SOUL.md","open SOUL.md in your editor")}</div>`;
+    <div class="meta" style="margin-top:10px">${reveal("SOUL.md","在编辑器中打开 SOUL.md")}</div>`;
 }
 function memConsolidation(d){
   const distilled = d.facts.filter(f => f.source==="consolidation");
-  let h = `<div class="card"><b>How it works.</b> <span class="r">Every ${d.consolidate_every} exchanges,
-    a cheap model reads the unconsolidated ${"<code>chat_log</code>"} and distills it into durable
-    <b>facts</b> (semantic) plus one <b>episode</b> (episodic). Batching keeps it cheap and gives the
-    summarizer enough context to pick what's worth keeping.</span></div>`;
+  let h = `<div class="card"><b>工作原理。</b> <span class="r">每进行 ${d.consolidate_every} 轮交流，
+    一个低成本模型会读取尚未巩固的 ${"<code>chat_log</code>"}，并将其提炼为持久的
+    <b>事实</b>（语义记忆）和一条<b>情景记录</b>（情景记忆）。批处理既能控制成本，也能让
+    摘要器获得足够上下文来判断哪些内容值得保留。</span></div>`;
   h += `<div class="tiles" style="margin-top:12px">
-    <div class="tile"><b>${d.chat_pending}</b><span>messages queued</span></div>
-    <div class="tile"><b>${d.consolidate_every*2}</b><span>trigger threshold</span></div>
-    <div class="tile"><b>${distilled.length}</b><span>facts from consolidation</span></div>
-    <div class="tile"><b>${d.episodes.length}</b><span>episodes total</span></div></div>`;
-  h += `<h2>Facts it distilled</h2>`;
-  h += table(["subject","fact","when"], distilled.map(f =>
+    <div class="tile"><b>${d.chat_pending}</b><span>待处理消息</span></div>
+    <div class="tile"><b>${d.consolidate_every*2}</b><span>触发阈值</span></div>
+    <div class="tile"><b>${distilled.length}</b><span>巩固生成的事实</span></div>
+    <div class="tile"><b>${d.episodes.length}</b><span>情景记录总数</span></div></div>`;
+  h += `<h2>已提炼的事实</h2>`;
+  h += table(["主题","事实","时间"], distilled.map(f =>
     `<tr><td><code>${esc(f.subject)}</code></td><td>${esc(f.content)}</td><td class="meta">${esc((f.created_at||"").slice(0,10))}</td></tr>`));
-  h += `<div class="meta" style="margin-top:10px">This is a memory operation, shown here. Each run is also
-    <a class="reveal" onclick="location.hash='ops'">traced</a> (Ops) and can be scored by the judge evals.</div>`;
+  h += `<div class="meta" style="margin-top:10px">这是在此处展示的一项记忆操作。每次运行也会在
+    <a class="reveal" onclick="location.hash='ops'">运维</a>中留下追踪记录，并可由评审评测打分。</div>`;
   return h;
 }
 
 // Tools ▸ Results: the artifacts tool calls produced (kept distinct from the
 // tools themselves — the old tab conflated capability with output).
 function toolsResults(d){
-  let h = `<div class="meta" style="margin-bottom:10px">What tool calls actually wrote. These are results, not the tools.</div>`;
-  h += `<h2>Calendar events <span class="meta" style="font-weight:400">· from create_event</span></h2>`;
-  h += table(["event","start","end","with"], d.calendar.map(e =>
+  let h = `<div class="meta" style="margin-bottom:10px">工具调用实际写入的内容。这些是结果，而不是工具本身。</div>`;
+  h += `<h2>日历事件 <span class="meta" style="font-weight:400">· 来自 create_event</span></h2>`;
+  h += table(["事件","开始时间","结束时间","参与者"], d.calendar.map(e =>
     `<tr><td>${esc(e.title)}</td><td class="meta">${esc(e.start)}</td><td class="meta">${esc(e.end)}</td><td>${esc(e.attendees)}</td></tr>`));
-  h += `<div class="meta" style="margin-bottom:16px">also written to <code>calendar.ics</code> — ${reveal("calendar.ics","reveal calendar.ics in Finder")} (double-click to import into Calendar.app)</div>`;
-  h += `<h2>Outbox — drafted messages <span style="font-weight:400;text-transform:none;letter-spacing:0">· ${reveal("outbox","open the outbox folder")}</span></h2>`;
+  h += `<div class="meta" style="margin-bottom:16px">同时写入 <code>calendar.ics</code>——${reveal("calendar.ics","在 Finder 中显示 calendar.ics")}（双击即可导入 Calendar.app）</div>`;
+  h += `<h2>发件箱——已起草消息 <span style="font-weight:400;text-transform:none;letter-spacing:0">· ${reveal("outbox","打开 outbox 文件夹")}</span></h2>`;
   h += d.outbox.length ? d.outbox.map(o=>`<div class="card"><span class="u">${esc(o.name)}</span><div class="r">${esc(o.text)}</div></div>`).join("")
-                       : `<div class="card empty">no drafted messages</div>`;
+                       : `<div class="card empty">暂无已起草消息</div>`;
   return h;
 }
 // Tools ▸ MCP: external connectors. Shows live status + a copy-paste config so

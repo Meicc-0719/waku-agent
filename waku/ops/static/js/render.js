@@ -13,7 +13,7 @@ const gateBadge = g => !g ? "" :
 const toolRow = x => `<div class="tool ${x.status||"ok"}">
   <div class="tool-head"><span class="dot ${x.status||"ok"}"></span><code>${esc(x.tool)}</code>
     ${x.summary?`<span style="color:var(--ink2)">${esc(x.summary)}</span>`:""}</div>
-  ${x.output!==undefined?`<details><summary>args &amp; raw output</summary>
+  ${x.output!==undefined?`<details><summary>参数与原始输出</summary>
     <pre>${esc(x.tool)}(${esc(JSON.stringify(x.args,null,1))})\n\n${esc(x.output)}</pre>
   </details>`:""}
 </div>`;
@@ -36,17 +36,17 @@ const turnCard = t => `<div class="card">
   <div class="meta" style="margin-top:4px">${gateBadge(t.gate)}</div>
   ${(t.tools||[]).map(toolRow).join("")}
   <div class="r">${renderMarkdown(t.reply)}</div>
-  <div class="meta">${esc((t.ts||"").replace("T"," ").slice(0,19))} · ${secs(t.latency_ms)} · ${t.iterations??"?"} iter · ${money(t.cost||0)}${t.consolidation?` · consolidated ${t.consolidation.new_facts} fact(s)`:""}</div>
+  <div class="meta">${esc((t.ts||"").replace("T"," ").slice(0,19))} · ${secs(t.latency_ms)} · ${t.iterations??"?"} 次迭代 · ${money(t.cost||0)}${t.consolidation?` · 已巩固 ${t.consolidation.new_facts} 条事实`:""}</div>
 </div>`;
 
 const table = (heads, rows) => rows.length
   ? `<div class="card" style="padding:4px 8px"><table><tr>${heads.map(h=>`<th>${h}</th>`).join("")}</tr>${rows.join("")}</table></div>`
-  : `<div class="card empty">nothing here yet</div>`;
+  : `<div class="card empty">这里暂时没有内容</div>`;
 
 const gateSplit = s => {
   if (!(s.gate_skips + s.gate_retrieves))
     return `<div class="splitbar"><div class="seg-skip" style="width:100%;opacity:.35"></div></div>
-      <div class="meta" style="margin-top:6px">no turns yet — send a message and the gate starts deciding</div>`;
+      <div class="meta" style="margin-top:6px">暂无任务轮次——发送一条消息后，检索闸门便会开始决策</div>`;
   const tot = s.gate_skips + s.gate_retrieves;
   const skipPct = Math.round(s.gate_skips/tot*100), retPct = 100-skipPct;
   // only label a segment when it's wide enough to fit the text — otherwise a
@@ -56,7 +56,7 @@ const gateSplit = s => {
   return `<div class="splitbar">
     ${seg("seg-skip", s.gate_skips, "skipped", skipPct)}
     ${seg("seg-ret", s.gate_retrieves, "retrieved", retPct)}
-  </div><div class="meta" style="margin-top:6px">the retrieval gate skipped memory on ${skipPct}% of turns — that's latency and bias saved</div>`;
+  </div><div class="meta" style="margin-top:6px">检索闸门在 ${skipPct}% 的轮次中跳过了记忆，从而节省了延迟并减少偏差</div>`;
 };
 
 // --- Chat gateway: type here, watch the harness run (turns kept in memory)
@@ -77,14 +77,14 @@ function stagesRow(t, live){
   const gate = (t.graph && t.graph.route === "quick") ? ""
     : `<span class="stage ${gateCls}">gate${t.gate?` · ${esc(t.gate.decision)}`:""}</span>`;
   return `<div class="stages${live?"":" tele"}">`
-    + graph + gate + tools + `<span class="stage ${replyCls}">reply</span></div>`;
+    + graph + gate + tools + `<span class="stage ${replyCls}">回复</span></div>`;
 }
 // The per-turn telemetry footer: seconds · iterations · model · consolidation.
-const teleFooter = t => `<div class="meta tele">${secs(t.latency_ms)} · ${t.iterations??"?"} iter${
-  t.model?` · ${esc(t.model)}`:""}${t.consolidation?` · consolidated ${t.consolidation.new_facts} fact(s)`:""}</div>`;
+const teleFooter = t => `<div class="meta tele">${secs(t.latency_ms)} · ${t.iterations??"?"} 次迭代${
+  t.model?` · ${esc(t.model)}`:""}${t.consolidation?` · 已巩固 ${t.consolidation.new_facts} 条事实`:""}</div>`;
 
 const chatTurnCard = t => `<div class="card">
-  <button class="msg-copy" onclick="copyMsg(this)" data-text="${esc(t.reply)}" title="Copy reply">Copy</button>
+  <button class="msg-copy" onclick="copyMsg(this)" data-text="${esc(t.reply)}" title="复制回复">复制</button>
   ${(t.gate||t.graph)?`${stagesRow(t, false)}
     <div class="meta tele" style="margin:0 0 6px">${esc((t.gate&&t.gate.reason)||(t.graph&&t.graph.reason)||"")}</div>`:""}
   ${nodesRow(t)}
@@ -115,9 +115,9 @@ const streamingCard = m => `<div class="card">
   ${(m.tools||[]).map(toolRow).join("")}
   ${m.stream
      ? `<div class="r" style="margin-top:8px">${renderMarkdown(m.stream)}<span class="caret"></span></div>`
-     : `<div class="meta" style="margin:0">thinking&hellip;${m.started?` ${Math.round((Date.now()-m.started)/1000)}s`:""}${
+     : `<div class="meta" style="margin:0">正在思考&hellip;${m.started?` ${Math.round((Date.now()-m.started)/1000)} 秒`:""}${
          m.started && Date.now()-m.started > 20000
-         ? `<br>still waiting: slow models (free tiers especially) can queue for a while; this errors out at the WAKU_LLM_TIMEOUT limit instead of hanging forever`
+         ? `<br>仍在等待：较慢的模型（尤其是免费层）可能会排队一段时间；到达 WAKU_LLM_TIMEOUT 限制后会报错，而不会永久卡住`
          : ""}</div>`}
 </div>`;
 
@@ -126,13 +126,13 @@ const streamingCard = m => `<div class="card">
 // "[tools used: ...]" annotation — strip both so the thread reads cleanly.
 const stripTools = t => (t || "").replace(/\s*\[tools used:[\s\S]*\]\s*$/, "").trim();
 const historicalCard = m => `<div class="card">
-  <button class="msg-copy" onclick="copyMsg(this)" data-text="${esc(stripTools(m.reply))}" title="Copy reply">Copy</button>
+  <button class="msg-copy" onclick="copyMsg(this)" data-text="${esc(stripTools(m.reply))}" title="复制回复">复制</button>
   <div class="r">${renderMarkdown(stripTools(m.reply))}</div>
 </div>`;
 
 function renderChatLog(){
   if (!CHAT.length)
-    return `<div class="empty" style="padding:6px 2px">Message Waku here from any tab. Open Overview to watch it flow through the harness, or the Gateway tab to see every channel's messages together.</div>`;
+    return `<div class="empty" style="padding:6px 2px">可在任何标签页中向 Waku 发送消息。打开“概览”可查看消息如何流经框架，打开“渠道”可汇总查看所有来源的消息。</div>`;
   return CHAT.map(m => m.role==="user"
       ? `<div class="bubble">${esc(m.text)}</div>`
       : m.pending ? streamingCard(m)

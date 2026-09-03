@@ -8,17 +8,17 @@ let activeView = null, activeSub = null;
 // moved: after the Connections registry took keys, providers and integrations
 // out of that page, what remained was two switches that change how a turn runs,
 // which is a behaviour, not a setting.
-const TITLES = {chat:"Chat & watch", ops:"LLM Ops",
-                graph:"Graph workflows — structure around the loop",
+const TITLES = {chat:"对话与监看", ops:"LLM 运维",
+                graph:"图工作流——为循环赋予结构",
                 // Keyed by view AND sub for the Arena, now that the sidebar
                 // names the two races separately. A single title covering both
                 // was right while they hid behind sub-tabs; with two nav rows
                 // it reads as a page that does not know which one you clicked.
-                compare:"Arena — race models and memory through the same loop",
-                "compare/models":"Model race — ten brains, one harness",
-                "compare/memory":"Memory race — one brain, five places to put facts",
-                settings:"Behaviour — how a turn runs",
-                database:"Database — everything Waku stores (state.db)"};
+                compare:"竞技场——在同一循环中竞速模型与记忆",
+                "compare/models":"模型竞速——十个大脑，一个框架",
+                "compare/memory":"记忆竞速——一个大脑，五种事实存放位置",
+                settings:"行为——一轮任务如何运行",
+                database:"数据库——Waku 存储的全部内容（state.db）"};
 function render(){
   if (!D) return;
   const [v, subRaw] = (location.hash||"#overview").slice(1).split("/");
@@ -66,7 +66,7 @@ function tickLive(){
   if (!D) return;
   const ago = Math.round((Date.now()-lastFetch)/1000);
   document.getElementById("sub").innerHTML =
-    `<span class="live"><span class="dot"></span>live</span> · updated ${ago}s ago · ${esc(D.home)}`;
+    `<span class="live"><span class="dot"></span>实时</span> · ${ago} 秒前更新 · ${esc(D.home)}`;
 }
 let dockRestored = false;
 async function restoreDock(){
@@ -139,13 +139,13 @@ function wireChrome(){
 // ("transcription failed [Errno …]"). WAV is trivially decodable server-side.
 let micCtx = null, micStream = null, micNode = null, micBuf = [], micOn = false;
 const micHint = (msg) => { const i = document.getElementById("dmsg");
-  if (i){ i.placeholder = msg; setTimeout(()=>{ i.placeholder = "Message Waku…"; }, 8000); } };
+  if (i){ i.placeholder = msg; setTimeout(()=>{ i.placeholder = "向 Waku 发送消息…"; }, 8000); } };
 
 async function toggleMic(){
   const btn = document.getElementById("mic");
   if (micOn){ await stopMic(); return; }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    micHint("voice needs a normal browser tab at localhost:7777 — not the IDE preview pane");
+    micHint("语音功能需要在 localhost:7777 的普通浏览器标签页中使用，不能使用 IDE 预览窗格");
     return;
   }
   try {
@@ -160,8 +160,8 @@ async function toggleMic(){
   } catch(e){
     console.warn("mic error:", e);
     micHint(e && e.name === "NotAllowedError"
-      ? "mic blocked — click the lock icon in the address bar → allow Microphone → reload (macOS: also System Settings ▸ Privacy ▸ Microphone ▸ your browser)"
-      : "mic unavailable: " + (e && e.message || e));
+      ? "麦克风被阻止——点击地址栏中的锁图标，允许使用麦克风后重新加载（macOS：还需在“系统设置 ▸ 隐私与安全性 ▸ 麦克风”中允许浏览器访问）"
+      : "麦克风不可用：" + (e && e.message || e));
   }
 }
 
@@ -173,11 +173,11 @@ async function stopMic(){
   const rate = micCtx.sampleRate;
   micCtx.close();
   const wav = encodeWAV(micBuf, rate);
-  const hold = input.placeholder; input.placeholder = "transcribing…";
+  const hold = input.placeholder; input.placeholder = "正在转写…";
   let r; try { r = await (await fetch("/api/voice", {method:"POST", body:wav})).json(); }
   catch(e){ r = {error:String(e)}; }
   input.placeholder = hold;
-  if (r.error){ input.value = ""; micHint("voice: " + r.error); return; }
+  if (r.error){ input.value = ""; micHint("语音：" + r.error); return; }
   if (r.text){ input.value = r.text; input.focus(); }
 }
 

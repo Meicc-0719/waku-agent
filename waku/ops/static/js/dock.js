@@ -65,15 +65,15 @@ function toggleSessMenu(ev){
   // "All messages" shows the full cross-thread timeline (like the Loop tab, but
   // as chat) — so your whole history is one scroll, not split across threads.
   const allItem = `<div class="sessitem allitem ${liveView==='__all__'?'on':''}" onclick="viewAllHistory()">
-      <div><b>All messages</b> — full timeline</div>
-      <div class="sm">every thread together, newest last</div></div>`;
+      <div><b>全部消息</b>——完整时间线</div>
+      <div class="sm">所有会话合并显示，最新消息在后</div></div>`;
   menu.innerHTML = allItem + (sessions.length ? sessions.map(s => {
     const tags = gwTags(s);
     return `<div class="sessitem ${s.id===SESSION?"on":""}" onclick="openConversation('${esc(s.id)}')">
       <div>${esc(s.title||s.id)} ${tags}</div>
       <div class="sm">${sessionMeta(s)}</div>
     </div>`;
-  }).join("") : `<div class="sessitem">no past conversations yet</div>`);
+  }).join("") : `<div class="sessitem">暂无历史对话</div>`);
   const r = ev.currentTarget.getBoundingClientRect();
   menu.style.top = (r.bottom+6)+"px";
   menu.style.left = Math.max(8, r.right-300)+"px";
@@ -124,12 +124,12 @@ function toggleModelMenu(ev){
     `<div class="sessitem ${(p.provider===st.provider && p.model===st.model)?"on":""}"
           onclick="switchTo('${esc(p.provider)}','${esc(p.model)}')">
        <span class="mm-prov">${esc(p.provider)}</span> <span class="mm-id">${esc(p.model)}</span>${
-       p.default?'<span class="mm-def">default</span>':""}</div>`
-  ).join("") : `<div class="sessitem">No models pinned yet.</div>`;
+       p.default?'<span class="mm-def">默认</span>':""}</div>`
+  ).join("") : `<div class="sessitem">尚未固定模型。</div>`;
   const menu = document.createElement("div");
   menu.className = "sessmenu modelmenu"; menu.id = "modelmenu";
-  menu.innerHTML = `<div class="mm-h">Your models</div>${items}`
-    + `<div class="mm-f"><a href="#models" onclick="closeModelMenu()">+ add models in Models &rsaquo;</a></div>`;
+  menu.innerHTML = `<div class="mm-h">你的模型</div>${items}`
+    + `<div class="mm-f"><a href="#models" onclick="closeModelMenu()">+ 在“模型”中添加模型 &rsaquo;</a></div>`;
   const r = ev.currentTarget.getBoundingClientRect();
   menu.style.top = (r.bottom + 6) + "px";
   menu.style.left = Math.max(8, r.right - 250) + "px";
