@@ -29,7 +29,7 @@ def _tolerant_stdio() -> None:
         try:
             stream.reconfigure(errors="replace")
         except (AttributeError, ValueError):
-            pass  # not a real console stream (tests, pipes) — leave it alone
+            pass  # 不是真正的控制台流（测试、管道）——别管它
 
 
 def main() -> None:

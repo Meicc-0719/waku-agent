@@ -37,7 +37,7 @@ def test_rebuild_keeps_the_conversation(isolated):
     session = first.session.session_id
     assert session != "default", "a dashboard run must never chat into 'default'"
 
-    assert browser_agent.rebuild() is None          # None == success
+    assert browser_agent.rebuild() is None          # 无==成功
     after = browser_agent.current()
 
     assert after is not first, "rebuild must actually build a new agent"
@@ -61,7 +61,7 @@ def test_a_failed_rebuild_keeps_the_working_agent(isolated, monkeypatch):
     first = browser_agent.get_agent()
 
     def explode(*a, **k):
-        raise SystemExit("no API key found")     # what get_client actually raises
+        raise SystemExit("no API key found")     # get_client 实际引发了什么
 
     monkeypatch.setattr("waku.app.Waku", explode)
 

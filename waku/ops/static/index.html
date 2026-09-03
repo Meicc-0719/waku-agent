@@ -15,14 +15,14 @@
   <a href="#tools" data-v="tools">工具 <span class="n" id="n-tools"></span></a>
   <a href="#database" data-v="database">数据库 <span class="n" id="n-db"></span></a>
   <a href="#ops" data-v="ops">运维 <span class="n" id="n-ops"></span></a>
-  <!-- Arena gets its own section. It was one row under System with the two
-       races behind sub-tabs, on the reasoning that "Models" must not appear
-       twice in the nav. It appears twice now, on purpose, because the two
-       things are not the same word: SETUP > Models picks the model your agent
-       USES, and ARENA > Model race puts ten of them through the loop and
-       scores them. "race" carries that difference in one syllable, and hiding
-       a whole half of the page behind a sub-tab cost more than the repetition
-       ever did. -->
+  <!--竞技场有自己的部分。这是系统下的一排，有两个
+       子选项卡后面的竞赛，理由是“模型”不得出现
+       两次在导航中。现在它故意出现两次，因为这两个
+       事情不是同一个词：设置>模型选择你的代理的模型
+       使用和竞技场 > 模型竞赛将其中的十个进行循环并
+       为他们评分。 “种族”一词用一个音节表达了这种差异，而隐藏
+       子选项卡后面的整个页面的一半比重复花费更多
+       曾经做过。-->
   <div class="grp">竞技场</div>
   <a href="#compare/models" data-v="compare" data-sub="models">模型竞速</a>
   <a href="#compare/memory" data-v="compare" data-sub="memory">记忆竞速</a>
@@ -61,9 +61,9 @@
 </aside>
 <button id="nav-reopen" title="显示侧边栏">&#9776;</button>
 <button id="dock-reopen" title="打开对话">&lsaquo; 对话</button>
-<!-- Frontend is split into focused classic scripts sharing one global scope
-     (no build step, no modules). Order matters only in that main.js runs the
-     bootstrap and must load LAST. See static/README.md for the file map. -->
+<!--前端被分为共享一个全局范围的集中经典脚本
+     （没有构建步骤，没有模块）。顺序仅在 main.js 运行时才重要
+     引导程序并且必须加载最后。有关文件映射，请参阅 static/README.md。-->
 <script src="/static/js/util.js"></script>
 <script src="/static/js/memory.js"></script>
 <script src="/static/js/models.js"></script>

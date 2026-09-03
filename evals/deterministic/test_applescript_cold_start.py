@@ -42,7 +42,7 @@ def spy(monkeypatch):
         if argv[:2] == ["pgrep", "-x"]:
             return Result(0 if started["yes"] else 1)
         if argv[0] == "open":
-            started["yes"] = True          # the shell launch is what works
+            started["yes"] = True          # shell 启动是有效的
             return Result(0)
         return Result(0)
 
@@ -86,13 +86,13 @@ def test_an_already_running_app_is_left_alone(monkeypatch):
 def test_no_module_still_asks_applescript_to_launch():
     """The idiom that does not work must not come back."""
     for path in TOOLS.glob("*.py"):
-        # Only real string literals count — the explanation of why this idiom
-        # fails necessarily contains the idiom.
+        # 只有真正的字符串文字才算数——解释为什么这个习惯用法
+        # 失败必然包含这个习语。
         for node in ast.walk(ast.parse(path.read_text())):
             if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
                 continue
             if node.value.strip().startswith(("AppleScript cannot", "Start `app`")):
-                continue  # the docstrings that explain this very rule
+                continue  # 解释这条规则的文档字符串
             for bad in ('launch application "', ' to launch'):
                 if bad in node.value:
                     pytest.fail(f"{path.name}:{node.lineno} AppleScript cannot launch an app")

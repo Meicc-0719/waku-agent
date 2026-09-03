@@ -192,7 +192,7 @@ def test_settle_is_safe_to_call_on_an_empty_store(store):
     assert store.settle(timeout=5.0) is True
 
 
-# --- the suite keeps itself honest -------------------------------------------
+# --- 套件保持诚实 ------------------------------------------------------
 
 def _protocol_methods() -> list[str]:
     """The contract's own method names, read off the class.
@@ -216,7 +216,7 @@ def test_every_method_on_the_contract_is_actually_exercised_here():
     assert untested == [], f"FactStore methods with no test in this file: {untested}"
 
 
-# --- the blank-optional-field trap -------------------------------------------
+# --- 空白可选字段陷阱 ------------------------------------------------------
 
 def test_a_blank_optional_field_falls_back_to_its_default(monkeypatch):
     """The Connections form writes EVERY optional field it shows, so leaving one

@@ -11,18 +11,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # The lockfile check below diffs against the base branch, which is
-          # not fetched by the default shallow clone.
+          # 下方锁文件检查需与基准分支比较；默认浅克隆不会获取该分支。
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      # A lockfile refresh is 3,880 lines nobody reads, so it hides inside any
-      # PR it rides along with — and an unreviewed lockfile is how a dependency
-      # arrives that nobody chose. If the dependencies really changed,
-      # pyproject.toml says so; if they did not, the lock does not belong here.
-      # A deliberate refresh is welcome as its own PR, where it is the diff
-      # rather than the noise around it.
+      # 锁文件刷新会产生数千行难以审阅的差异，容易隐藏在随附的 PR 中；未经审阅的
+      # 锁文件可能引入无人选择的依赖。若依赖确有变更，pyproject.toml 应能体现；
+      # 若没有变更，锁文件就不应出现在这里。刻意刷新锁文件应单独提交 PR，
+      # 让锁文件本身成为可审阅的差异而非周边噪声。
       - name: uv.lock changes only alongside pyproject.toml
         if: github.event_name == 'pull_request'
         run: |
@@ -41,10 +38,9 @@ jobs:
         run: python -m ruff check waku evals scripts
       - name: Validate skills (community PRs land here)
         run: python scripts/validate_skills.py
-      # .env.example's Connections block is GENERATED from waku/integrations.py.
-      # Without this step the generator is advisory: add an integration, forget
-      # `--write`, and the file every new user reads goes quietly stale — which
-      # is the exact failure generating it was meant to make impossible.
+      # .env.example 的 Connections 区块由 waku/integrations.py 自动生成。
+      # 没有此步骤，生成器只是建议：新增集成后若忘记传入 `--write`，每位新用户都会
+      # 读取的文件将悄然过期，这正是自动生成本应杜绝的问题。
       - name: .env.example matches the integrations registry
         run: python scripts/generate_env_example.py --check
       - name: Deterministic evals (offline tier — no API key in CI)

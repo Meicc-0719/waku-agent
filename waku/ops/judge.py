@@ -28,10 +28,10 @@ from waku.loop.models import get_client
 JUDGE_PROVIDER = os.getenv("WAKU_JUDGE_PROVIDER", "openai")
 JUDGE_MODEL = os.getenv("WAKU_JUDGE_MODEL", "gpt-5.6-sol")
 
-# A race grades every column at once — 8 judge calls hitting one endpoint
-# simultaneously gets some 429'd, and those columns show "—". Cap how many judge
-# calls run concurrently (shared across the race's threads) so the referee isn't
-# stampeded; the rest queue and still get graded.
+# 一场比赛会同时对每一栏进行评分——8 个评委呼叫到达一个终点
+# 同时得到一些 429'd，这些列显示“—”。法官人数上限
+# 调用同时运行（在比赛的线程之间共享），因此裁判不会
+# 踩踏；其余的排队并仍然获得评分。
 _JUDGE_SEM = threading.Semaphore(int(os.getenv("WAKU_JUDGE_CONCURRENCY", "2")))
 
 _RUBRIC = """You are a strict, fair judge scoring an AI assistant's reply.
@@ -89,14 +89,14 @@ def judge_reply(task: str, reply: str, provider: str | None = None,
     prompt = _RUBRIC.format(task=task[:2000], reply=reply[:4000], actions=actions)
     settings = Settings(provider=provider, model=model, small_model="",
                         home=load_settings().home, apple_calendar=False)
-    # A race judges every column at once, so the endpoint sees a burst and may
-    # 429. Retry ONLY the API call (with growing backoff); the semaphore caps how
-    # many run concurrently. A response that arrives but won't parse isn't
-    # transient — don't waste retries on it.
+    # 比赛会同时判断每一列，因此终点会出现爆发，并且可能会
+    # 429. 仅重试 API 调用（回退越来越大）；信号量上限如何
+    # 许多同时运行。到达但无法解析的响应不是
+    # 瞬态——不要浪费重试的机会。
     resp = None
     for attempt in range(4):
         try:
-            client = get_client(settings)   # fills the provider default id
+            client = get_client(settings)   # 填写提供者默认id
             with _JUDGE_SEM:
                 resp = client.messages.create(
                     model=settings.model, max_tokens=300,
@@ -104,7 +104,7 @@ def judge_reply(task: str, reply: str, provider: str | None = None,
             break
         except Exception:
             if attempt < 3:
-                time.sleep(1.2 * (attempt + 1))   # 1.2s, 2.4s, 3.6s — let a 429 clear
+                time.sleep(1.2 * (attempt + 1))   # 1.2s、2.4s、3.6s — 让 429 清除
     if resp is None:
         return None
     try:
@@ -113,4 +113,4 @@ def judge_reply(task: str, reply: str, provider: str | None = None,
         score = max(0, min(10, int(obj["score"])))
         return {"score": score, "reason": str(obj.get("reason", ""))[:200], "judge": settings.model}
     except Exception:
-        return None   # got a response, just not valid JSON — retrying won't help
+        return None   # 收到响应，只是 JSON 无效 - 重试无济于事

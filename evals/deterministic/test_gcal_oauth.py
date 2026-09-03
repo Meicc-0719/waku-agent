@@ -16,7 +16,7 @@ def _install_fake_oauth_modules(monkeypatch, *, execute_error: Exception | None 
 
     google = ModuleType("google")
 
-    # google.auth
+    # 谷歌验证
     google_auth = ModuleType("google.auth")
     google_auth_requests = ModuleType("google.auth.transport.requests")
 
@@ -85,7 +85,7 @@ def _install_fake_oauth_modules(monkeypatch, *, execute_error: Exception | None 
     google_auth_oauthlib_flow.InstalledAppFlow = FakeInstalledAppFlow
     google_auth_oauthlib.flow = google_auth_oauthlib_flow
 
-    # httplib2 & google_auth_httplib2
+    # httplib2 和 google_auth_httplib2
     httplib2 = ModuleType("httplib2")
 
     def http(*, timeout):
@@ -103,7 +103,7 @@ def _install_fake_oauth_modules(monkeypatch, *, execute_error: Exception | None 
 
     google_auth_httplib2.AuthorizedHttp = authorized_http
 
-    # googleapiclient.discovery & googleapiclient.errors
+    # googleapiclient.discovery 和 googleapiclient.errors
     class FakeHttpError(Exception):
         def __init__(self, status, reason, message):
             self.resp = SimpleNamespace(status=status)

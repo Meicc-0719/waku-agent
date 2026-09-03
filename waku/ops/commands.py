@@ -54,7 +54,7 @@ def discover() -> dict[str, str]:
         try:
             module = importlib.import_module(binder)
         except Exception:  # noqa: S112 — one broken optional workflow must not
-            continue       # empty the command list, and with it the chat box
+            continue       # 清空命令列表以及聊天框
         if callable(getattr(module, f"run_{name}", None)):
             found[name] = f"{binder}:run_{name}"
     return found
@@ -116,9 +116,9 @@ def run(name: str, emit, arg: str = "") -> dict | None:
         return fn(observer=emit, message=arg)
     state = fn(observer=emit)
     if arg and isinstance(state, dict):
-        # Silently swallowing input is worse than not accepting it: `/gather
-        # what's up with the repo` looked like it had been understood, and the
-        # digest that came back was the same one it always produces.
+        # 默默地吞下输入比不接受它更糟糕：`/gather
+        # 回购协议怎么样了`看起来已经被理解了，并且
+        # 返回的摘要与它始终生成的摘要相同。
         state["ignored_argument"] = arg
     return state
 

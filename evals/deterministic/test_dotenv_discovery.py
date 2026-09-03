@@ -55,10 +55,10 @@ def test_a_subdirectory_still_finds_the_project_env(tmp_path):
     root = tmp_path / "proj"
     (root / "deep" / "nested").mkdir(parents=True)
     (root / ".env").write_text("ANTHROPIC_API_KEY=from-project-root\n", encoding="utf-8")
-    # A clean environment on purpose. load_dotenv does NOT override a variable
-    # that is already exported — correct behaviour (a real exported key should
-    # beat a file) but it means this suite, which runs with ANTHROPIC_API_KEY
-    # blanked, would otherwise measure the blank instead of the .env.
+    # 有意创造一个干净的环境。 load_dotenv 不会覆盖变量
+    # 已经导出 - 正确的行为（真正导出的密钥应该
+    # 打败一个文件）但这意味着这个套件，它与 ANTHROPIC_API_KEY 一起运行
+    # 空白，否则将测量空白而不是 .env。
     import os
 
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}

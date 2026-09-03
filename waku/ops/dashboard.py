@@ -55,9 +55,9 @@ from waku.ops.settings_api import apply_settings, pin_action, settings_info
 from waku.ops.tracing import TraceEncodingError, iter_trace_lines
 
 PORT = 7777
-# The frontend lives in its own files (static/index.html + style.css + app.js),
-# served as-is by this stdlib server — no build step, no framework. Edit those
-# to change the UI; edit this file to change the server/API.
+# 前端位于自己的文件中（static/index.html + style.css + app.js），
+# 此 stdlib 服务器按原样提供服务 — 没有构建步骤，没有框架。编辑那些
+# to change the UI;编辑此文件以更改服务器/API。
 STATIC = Path(__file__).resolve().parent / "static"
 
 
@@ -126,14 +126,14 @@ def chat_stream(message: str, emit) -> None:
         "consolidation": {"new_facts": cons["new_facts"]} if cons else None,
         "iterations": result.iterations,
         "latency_ms": latency_ms,
-        # which brain answered — shown per card; a quick graph turn was the small model
+        # 哪个大脑回答了——每张卡片显示；快速图形转向是小模型
         "model": agent.settings.small_model if quick else agent.settings.model,
     })
 
 
-# A NAME -> runner table, never a dynamic import of whatever the browser sent.
-# "run the workflow the client named" is one careless refactor away from "import
-# and call whatever string arrives", so the indirection is a dict on purpose.
+# 名称 -> 跑步者表，永远不会动态导入浏览器发送的任何内容。
+# “运行客户端命名的工作流程”是对“导入”的一次粗心重构
+# 并调用到达的任何字符串”，因此间接寻址是有意的字典。
 def WORKFLOW_RUNNERS() -> dict[str, str]:  # noqa: N802 — reads as a table
     """Discovered, not hand-listed. A hardcoded table and a slash-command list
     are two registries of the same fact, and they drift."""
@@ -167,8 +167,8 @@ def graph_stream(payload: dict, emit) -> None:
             "errors": state.get("errors") or {},
         })
     except Exception as exc:
-        # Includes GraphStateCollision, which run_graph raises OUT (unlike node
-        # errors) — better shown in the card than dropped on the floor.
+        # 包括 GraphStateCollision，其中 run_graph 会引发 OUT（与节点不同）
+        # 错误）——更好地显示在卡片上而不是掉在地板上。
         emit("done", {"error": f"{type(exc).__name__}: {exc}"})
 
 
@@ -230,14 +230,14 @@ def _tool_status(output: str) -> str:
     return "ok"
 
 
-# Notion-backed episodes live across the network, so the client AND the result
-# are cached with a short TTL — collect() runs on every dashboard auto-refresh
-# and must not round-trip to Notion every few seconds (rate limits + latency).
-# The sqlite path is a local query and doesn't need this.
-_NOTION_EPISODES_TTL = 30.0   # seconds; the page polls ~every 5s
+# 概念支持的剧集通过网络直播，因此客户端和结果
+# 使用短 TTL 进行缓存 —collect() 在每个仪表板自动刷新时运行
+# 并且不得每隔几秒往返一次 Notion（速率限制 + 延迟）。
+# sqlite 路径是本地查询，不需要这个。
+_NOTION_EPISODES_TTL = 30.0   # 秒；页面轮询〜每 5 秒一次
 _notion_lock = threading.Lock()
-_notion_store = None                       # built once (its constructor calls Notion)
-_notion_episodes: tuple[float, list] | None = None   # (fetched_at, items)
+_notion_store = None                       # 构建一次（其构造函数调用 Notion）
+_notion_episodes: tuple[float, list] | None = None   # （fetch_at，项目）
 
 
 def invalidate_notion_cache() -> None:
@@ -292,14 +292,14 @@ def collect() -> dict:
                 _notion_episodes = (time.time(), items)
                 return {"source": "notion", "error": "", "items": items}
         except Exception as exc:
-            # Degrade gracefully: never take the payload down, and serve the
-            # last good fetch if we have one (an outage shouldn't blank the tab).
+            # 优雅地降级：永远不要降低有效负载，并服务于
+            # 如果我们有的话，最后一次良好的获取（中断不应使选项卡空白）。
             stale = _notion_episodes[1] if _notion_episodes else []
             return {"source": "notion", "error": str(exc), "items": stale}
 
     episodes_data = episodes_payload()
 
-    # --- traces → turns (group events between turn_start and turn_end)
+    # --- 轨迹 → 转弯（turn_start 和turn_end 之间的组事件）
     events = []
     trace_errors = []
     trace_files = sorted((home / "traces").glob("*.jsonl"))
@@ -342,14 +342,14 @@ def collect() -> dict:
                 current["iterations"] = ev.get("iterations")
                 turns.append(current)
                 current = None
-    if current is not None:  # a turn that never ended = the smoking gun for hangs
+    if current is not None:  # 一个永无止境的转弯 = 悬吊的确凿证据
         current["reply"] = "TURN NEVER FINISHED — check for a hang after this point"
         current["unfinished"] = True
         turns.append(current)
 
-    # --- derive per-turn latency + dollar cost (the ops numbers humans feel)
+    # --- 导出每轮延迟 + 美元成本（人类感受到的操作数）
     if settings.base_url or settings.provider == "openrouter":
-        list_models()  # warm the per-model price cache (5-min cached fetch)
+        list_models()  # 预热每个模型的价格缓存（5 分钟缓存获取）
     price_in, price_out = price_for(settings.provider, settings.model or "")
     for t in turns:
         start, end = _parse_ts(t["ts"]), None
@@ -374,7 +374,7 @@ def collect() -> dict:
 
     skills = [{"name": s.name, "description": s.description, "body": s.body,
                "path": str(s.path),
-               # relative path (for reveal) + whether it lives in the editable home dir
+               # 相对路径（用于显示）+它是否位于可编辑的主目录中
                "rel": _rel_to_home(s.path, home),
                "editable": str((home / "skills").resolve()) in str(s.path.resolve())}
               for s in SkillLoader([*bundled_skill_dirs(), home / "skills"]).skills]
@@ -397,15 +397,15 @@ def collect() -> dict:
     outbox = [{"name": p.name, "text": p.read_text(encoding="utf-8")[:400]}
               for p in sorted((home / "outbox").glob("*.txt"), reverse=True)[:20]]
 
-    # --- state.db introspection: the actual SQLite tables, so the persistence
-    # layer is visible (not just its contents). Table names are hard-coded, so
-    # the f-string SQL is safe.
+    # --- state.db自省：实际的SQLite表，因此持久化
+    # 图层是可见的（不仅仅是其内容）。表名是硬编码的，所以
+    # f 字符串 SQL 是安全的。
     def table_info(name):
         info = conn.execute(f"PRAGMA table_info({name})").fetchall()
         cols = [r["name"] for r in info]
         types = {r["name"]: r["type"] for r in info}
         count = conn.execute(f"SELECT COUNT(*) FROM {name}").fetchone()[0]
-        # up to 200 newest rows so each table has its own scrollable tab
+        # 最多 200 行最新行，因此每个表都有自己的可滚动选项卡
         sample = [dict(r) for r in conn.execute(f"SELECT * FROM {name} ORDER BY rowid DESC LIMIT 200").fetchall()]
         return {"name": name, "columns": cols, "types": types, "count": count, "sample": sample}
 
@@ -420,20 +420,20 @@ def collect() -> dict:
         "all_tables": all_tables,
     }
 
-    # Peek at the shared agent WITHOUT building one — a page load should never
-    # pay for an agent nobody has chatted with yet.
+    # 在不构建共享代理的情况下查看共享代理 - 页面加载永远不应该
+    # 为尚未与任何人交谈过的代理付费。
     live = browser_agent.current()
 
-    # --- graph workflows: topology straight from the engine (never hand-drawn,
-    # so the picture can't drift) + quick/full split from the trace events
+    # --- 图形工作流程：直接来自引擎的拓扑（从不手绘，
+    # 所以图片不会漂移）+从跟踪事件中快速/完全分离
     from waku.graph.workflows.gather import gather_topology
     from waku.graph.workflows.triage import triage_topology
     graph_routes = [e.get("target") for e in events if e.get("type") == "route"]
-    # The last few completed runs, newest first. Overview needs this because the
-    # two workflows are two different JOBS with different triggers — triage runs
-    # itself on every message, gather runs when you ask — so "which chart is
-    # relevant right now" is a question only the trace can answer. Rendering a
-    # fixed workflow there showed triage forever, seconds after a gather ran.
+    # 最后几次完成的运行，最新的在前。概述需要这个，因为
+    # 两个工作流程是具有不同触发器的两个不同作业 - 分类运行
+    # 当您询问时，收集会在每条消息上运行 - 所以“哪个图表是
+    # 现在相关”是一个只有痕迹才能回答的问题。
+    # 固定的工作流程在收集运行后几秒钟内永远显示分类。
     graph_runs = [{"workflow": e.get("workflow"), "ms": e.get("ms"),
                    "at": e.get("ts"), "steps": e.get("steps"),
                    "path": e.get("path") or [], "error": e.get("error")}
@@ -459,7 +459,7 @@ def collect() -> dict:
         },
         "turns": turns[::-1][:50],
         "wake_scans": wake_scans[::-1][:25],
-        # last raw trace lines, so Ops shows traces inline (no folder needed)
+        # 最后的原始跟踪行，因此 Ops 显示内联跟踪（不需要文件夹）
         "trace_tail": [{"type": e.get("type"), "ts": e.get("ts"),
                         "detail": (e.get("user_message") or e.get("decision") or e.get("tool")
                                    or e.get("reply") or "")}
@@ -482,9 +482,9 @@ def collect() -> dict:
         "eval_report": eval_report,
         "eval_history": eval_history,
         "graph": {
-            # NOTE: `enabled` gates TRIAGE ONLY — the per-message front door.
-            # `waku gather` is a routine you run yourself and ignores this flag
-            # entirely, so the UI must not say "off = no graphs run".
+            # 注意：“启用”门仅用于分类 — 每个消息的前门。
+            # `waku Gather` 是您自己运行的例程，并忽略此标志
+            # 完全如此，因此 UI 不得显示“关闭 = 不运行图表”。
             "enabled": settings.graph_workflows,
             "workflows": [triage_topology(), gather_topology()],
             "runs": graph_runs,
@@ -541,7 +541,7 @@ def session_list(conn) -> list[dict]:
     return out
 
 
-# A tool's origin, for grouping in the Tools tab (name → category).
+# 工具的来源，用于在“工具”选项卡中分组（名称→类别）。
 _FLAGSHIP = {"create_event", "list_events", "save_note", "send_message"}
 _SELFMGMT = {"manage_memory", "update_soul", "create_skill"}
 _APPLE = {"read_apple_calendar", "read_apple_mail", "create_reminder", "create_note"}
@@ -584,24 +584,24 @@ def tools_info() -> dict:
         mcp["live"] = getattr(live, "mcp_bridge", None) is not None
         tools = list(live.tools._tools.values())
     else:
-        # Display-only: same tools minus MCP (building the real registry would
-        # start MCP servers, which we don't want on a 5-second poll).
+        # 仅显示：相同的工具减去 MCP（构建真实的注册表将
+        # 启动 MCP 服务器，我们不希望进行 5 秒轮询）。
         from waku.memory import Memory
         from waku.tools import calendar, memory_admin, messages, notes, search
 
         conn = connect(settings.home)
         try:
-            # Notion mode: reuse the dashboard's one cached client instead of
-            # letting Memory() build a fresh one per poll (issue #20).
+            # 概念模式：重用仪表板的一个缓存客户端而不是
+            # 让 Memory() 在每次民意调查中构建一个新的民意调查（第 20 期）。
             episode_store = None
             if settings.episodic_store == "notion":
                 with _notion_lock:
                     episode_store = _get_notion_store()
             mem = Memory(conn, settings, None, episode_store=episode_store)
         except Exception:
-            # A misconfigured optional backend (notion/supabase) must not take
-            # the dashboard down — drop the memory-admin tools from the
-            # display-only catalog instead.
+            # 配置错误的可选后端（概念/supabase）不得采用
+            # 仪表板向下 — 从仪表板中删除内存管理工具
+            # 改为仅显示目录。
             mem = None
         tools = [calendar.make_tool(
                      conn,
@@ -622,10 +622,10 @@ def tools_info() -> dict:
 
             tools += apple.make_tools()
         if settings.experimental:
-            # Mirror build_registry: without this the catalog LIES after you
-            # flip the experimental toggle — delegate_task is missing until the
-            # first chat turn builds the real agent, so it looks like the
-            # switch did nothing.
+            # 镜像 build_registry：如果没有这个，目录就会在你之后
+            # 翻转实验开关 - delegate_task 丢失，直到
+            # 第一个聊天回合构建了真正的代理，所以它看起来像
+            # 开关什么也没做。
             from waku.tools import experimental as experimental_tools
 
             tools += experimental_tools.make_tools(settings)
@@ -636,7 +636,7 @@ def tools_info() -> dict:
     from waku.tools.experimental import PLANNED
 
     return {"catalog": catalog, "mcp": mcp, "apple_on": settings.apple_tools,
-            "planned": PLANNED}   # whiteboard boxes not wired in yet (coming soon)
+            "planned": PLANNED}   # 白板盒尚未接线（即将推出）
 
 
 def run_query(payload: dict) -> dict:
@@ -690,8 +690,8 @@ def transcribe_audio(raw: bytes) -> dict:
     with _whisper_lock:
         if _whisper is None:
             _whisper = WhisperModel(os.getenv("WAKU_WHISPER_MODEL", "base"), compute_type="int8")
-    # the browser sends WAV (PCM) — Whisper/PyAV decode it reliably (WebM/Opus
-    # from MediaRecorder often fails to decode).
+    # 浏览器发送 WAV (PCM) — Whisper/PyAV 对其进行可靠解码 (WebM/Opus
+    # 来自 MediaRecorder 的解码经常失败）。
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         tmp.write(raw)
     try:
@@ -731,8 +731,8 @@ def session_action(payload: dict) -> dict:
     in chat_log."""
     action = payload.get("action")
     if action == "history":
-        # read-only view of a conversation — never touches the agent, so the
-        # dashboard can poll it live (e.g. to show new Telegram messages arrive).
+        # 对话的只读视图 - 永远不会触及代理，因此
+        # 仪表板可以实时轮询（例如显示新的 Telegram 消息到达）。
         settings = load_settings()
         settings.ensure_home()
         conn = connect(settings.home)
@@ -747,9 +747,9 @@ def session_action(payload: dict) -> dict:
         if action == "switch":
             sid = payload.get("id") or "default"
             agent.session.switch(sid)
-            # Same meta-rich rows as the read-only "history" action, so a
-            # switched thread renders its full turn cards (gate/stats/tools/
-            # model) — not just the text. (These two paths used to disagree.)
+            # 与只读“历史”操作相同的元丰富行，因此
+            # 切换线程渲染其完整回合卡（gate/stats/tools/
+            # 模型）——不仅仅是文本。 （这两条道路过去常常不一致。）
             return {"ok": True, "session_id": sid, "history": _thread_history(agent.conn, sid)}
     return {"error": f"unknown action {action}"}
 
@@ -783,7 +783,7 @@ def reveal_path(rel: str) -> dict:
         return {"error": f"not found: {target}"}
 
     editor = _editor_cmd()
-    if editor and target.is_file() and target.suffix != ".db":  # editors choke on sqlite
+    if editor and target.is_file() and target.suffix != ".db":  # 编辑们被 sqlite 噎住了
         subprocess.run([*editor, str(target)], check=False)
         return {"ok": True, "opened_in": editor[0], "path": str(target)}
     if sys.platform != "darwin":
@@ -812,9 +812,9 @@ def memory_action(payload: dict) -> dict:
         (settings.home / "SOUL.md").write_text(text + "\n")
         return {"ok": True}
     if action == "save_skill":
-        # Edit any loaded SKILL.md by hand (same file the agent's create_skill
-        # writes) — repo skills and home skills alike. Sandboxed to the two
-        # skills folders; validates the frontmatter before writing.
+        # 手动编辑任何加载的 SKILL.md（与代理的 create_skill 相同的文件
+        # 写道）——回购技能和家庭技能一样。沙盒到两个
+        # 技能文件夹；在写作之前验证 frontmatter。
         from pathlib import Path
 
         from waku.memory import bundled_skill_dirs
@@ -836,8 +836,8 @@ def memory_action(payload: dict) -> dict:
         global _notion_episodes
         with _notion_lock:
             ok = _get_notion_store().delete(str(payload.get("id", "")))
-            # bust the TTL cache so the next collect() refetches — otherwise a
-            # deleted episode would linger on the page for up to 30s
+            # 破坏 TTL 缓存，以便下一个collect()重新获取——否则
+            # 已删除的剧集将在页面上停留长达 30 秒
             _notion_episodes = None
         return {"ok": ok}
     try:
@@ -885,8 +885,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
-        # The frontend files (app.js/style.css) change as we develop; without
-        # this the browser serves a stale cached copy and edits look "missing".
+        # 前端文件（app.js/style.css）随着我们的开发而变化；没有
+        # 浏览器提供陈旧的缓存副本，并且编辑看起来“丢失”。
         if no_cache:
             self.send_header("Cache-Control", "no-cache, must-revalidate")
         self.end_headers()
@@ -899,25 +899,25 @@ class Handler(BaseHTTPRequestHandler):
             runs = compare_history.load_runs(load_settings().home)
             self._send(json.dumps(history_response(runs)).encode(), "application/json")
         elif self.path.startswith("/api/memory-arena/stores"):
-            # What each configured store holds right now. On demand only —
-            # every hosted backend here is a live round trip, and a dashboard
-            # that bills you for leaving a tab open is not one to ship.
+            # 每个配置的商店现在拥有什么。仅按需提供 —
+            # 这里的每个托管后端都是实时往返和仪表板
+            # 因打开标签页而向您收取费用的产品并不需要发货。
             from urllib.parse import parse_qs, urlparse
 
             from waku.ops import memory_arena
 
             try:
                 q = parse_qs(urlparse(self.path).query)
-                # "see all" asks for ONE store in full. It used to be a link to
-                # the Memory page, which only ever renders sqlite — so clicking
-                # it under mem0 showed you waku's local facts and said nothing.
+                # “查看全部”要求查看完整的一家商店。它曾经是一个链接
+                # 内存页面，它只渲染 sqlite - 所以点击
+                # mem0 下的它向您展示了 waku 的本地事实，但什么也没说。
                 only = (q.get("store", [""])[0] or "").strip()
                 limit = 500 if only else 8
-                # Track and model identify WHICH arena home to read for sqlite,
-                # so the cards compare the same seeding rather than putting the
-                # live agent's months of real use next to a benchmark run.
-                # Same path-safety rule as the race: only a probe set this
-                # server offered, never a browser-supplied path.
+                # 跟踪和模型识别哪个竞技场首页要读取 sqlite，
+                # 所以这些牌会比较相同的种子，而不是把
+                # 实时代理在基准运行旁边的实际使用数月。
+                # 与比赛相同的路径安全规则：只有探针设置此规则
+                # 服务器提供的路径，而不是浏览器提供的路径。
                 from pathlib import Path as _P
 
                 wanted = (q.get("probes", [""])[0] or "").strip()
@@ -932,11 +932,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(json.dumps([{"store": "?", "error": f"{type(exc).__name__}: {exc}"}]).encode(),
                            "application/json")
         elif self.path.startswith("/api/memory-arena?") or self.path == "/api/memory-arena":
-            # The bake-off fixture, so the Arena's Memory tab can show WHAT is
-            # being asked before any of it has been run. It lives in evals/,
-            # which a wheel does not ship — a pip-installed Waku answers with
-            # `available: false` instead of 500ing on a file that was never
-            # meant to be there.
+            # 烘焙赛装置，因此竞技场的“内存”选项卡可以显示内容
+            # 在运行之前被询问。它存在于 evals/ 中，
+            # 轮子不运送 — pip 安装的 Waku 回答为
+            # `available: false` 而不是对从未存在过的文件进行 500 处理
+            # 本来就应该在那里。
             from waku.ops import memory_arena
 
             try:
@@ -974,7 +974,7 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self._send((STATIC / "index.html").read_bytes(), "text/html; charset=utf-8")
 
-    def _serve_static(self, path: str) -> None:  # the frontend files
+    def _serve_static(self, path: str) -> None:  # 前端文件
         name = path.split("/static/", 1)[1].split("?")[0]
         target = (STATIC / name).resolve()
         if STATIC.resolve() not in target.parents or not target.is_file():
@@ -987,12 +987,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
-        # /api/voice takes a raw audio blob, not JSON — handle it first.
+        # /api/voice 采用原始音频 blob，而不是 JSON — 首先处理它。
         if self.path == "/api/voice":
             raw = self.rfile.read(length)
             self._send(json.dumps(transcribe_audio(raw)).encode(), "application/json")
             return
-        # /api/chat/stream streams harness events (SSE) as the turn runs.
+        # /api/chat/stream 在回合运行时流利用事件 (SSE)。
         if self.path == "/api/chat/stream":
             payload = json.loads(self.rfile.read(length) or "{}")
             message = (payload.get("message") or "").strip()
@@ -1006,17 +1006,17 @@ class Handler(BaseHTTPRequestHandler):
                     self.wfile.write(f"data: {json.dumps({'kind': kind, **ev}, default=str)}\n\n".encode())
                     self.wfile.flush()
                 except (BrokenPipeError, ConnectionResetError):
-                    pass  # the browser navigated away mid-stream — fine
+                    pass  # 浏览器中途导航离开——很好
 
             if not message:
                 emit("done", {"error": "empty message"})
                 return
             try:
                 chat_stream(message, emit)
-            except Exception as exc:  # surface as a terminal event, don't 500
+            except Exception as exc:  # 表面作为终端事件，不要 500
                 emit("done", {"error": f"{type(exc).__name__}: {exc}"})
             return
-        # /api/compare/stream races several models, emitting each result as it lands.
+        # /api/compare/stream 与多个模型进行竞赛，在每个结果落地时发出它。
         if self.path == "/api/compare/stream":
             payload = json.loads(self.rfile.read(length) or "{}")
             self.send_response(200)
@@ -1037,15 +1037,15 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as exc:
                 emit("done", {"error": f"{type(exc).__name__}: {exc}"})
             return
-        # /api/memory-arena/stream — same shape as the model race above, one dial
-        # over: every contestant is the same agent on the same model, and only
-        # the semantic store changes.
+        # /api/memory-arena/stream — 与上面的模型竞赛形状相同，一个表盘
+        # over：每个参赛者都是同一个模特的同一个经纪人，并且只是
+        # 语义存储发生变化。
         if self.path == "/api/memory-arena/clean":
-            # Deletes only what a race wrote: the .waku-arena homes for this
-            # seed and the waku-arena-<key> partition. It cannot reach the live
-            # store or the `waku` partition because it never asks for them by
-            # name. Same probe-set validation as the race — a browser-supplied
-            # path must never reach the filesystem.
+            # 仅删除比赛所写的内容：.waku-arena 的家园
+            # 种子和 waku-arena-<key> 分区。无法到达直播
+            # store 或 `waku` 分区，因为它从不要求它们
+            # 姓名。与比赛相同的探针组验证 - 浏览器提供
+            # 路径绝不能到达文件系统。
             from pathlib import Path as _P
 
             from waku.ops import memory_arena
@@ -1076,9 +1076,9 @@ class Handler(BaseHTTPRequestHandler):
                 except (BrokenPipeError, ConnectionResetError):
                     pass
             try:
-                # The chosen file must be one this server offered. Echoing a
-                # browser-supplied path straight into read_text() would turn a
-                # benchmark page into an arbitrary local file reader.
+                # 所选文件必须是该服务器提供的文件。回响着一个
+                # 浏览器提供的路径直接进入 read_text() 将变成
+                # 基准页面进入任意本地文件阅读器。
                 from pathlib import Path as _P
 
                 from waku.ops import memory_arena
@@ -1133,8 +1133,8 @@ class Handler(BaseHTTPRequestHandler):
             elif self.path == "/api/connections/test":
                 out = asdict(test_integration(payload.get("key", "")))
             elif self.path == "/api/providers":
-                # A payload that only toggles availability goes to the enable/
-                # disable path; everything else is the existing provider apply.
+                # 仅切换可用性的有效负载进入启用/
+                # 禁用路径；其他一切都是现有提供商适用的。
                 if "disabled" in payload and set(payload) <= {"provider", "disabled"}:
                     out = asdict(apply_provider_disabled(payload.get("provider", ""),
                                                          disabled=bool(payload["disabled"])))
@@ -1142,26 +1142,26 @@ class Handler(BaseHTTPRequestHandler):
                     out = asdict(apply_provider(**payload))
             else:
                 out = routes[self.path](payload)
-        except Exception as exc:  # surface, don't 500 — the browser shows it
+        except Exception as exc:  # 表面，不要 500 — 浏览器显示它
             out = {"error": f"{type(exc).__name__}: {exc}"}
         self._send(json.dumps(out, default=str).encode(), "application/json")
 
-    def log_message(self, *args):  # keep the terminal quiet
+    def log_message(self, *args):  # 保持终端安静
         pass
 
 
 def main() -> None:
-    # Port precedence: WAKU_DASHBOARD_PORT, then the conventional PORT (used by
-    # deploy platforms and IDE preview panes), then 7777. If it's taken, walk on.
+    # 端口优先级：WAKU_DASHBOARD_PORT，然后是常规 PORT（由
+    # 部署平台和 IDE 预览窗格），然后是 7777。如果被占用，请继续。
     base = int(os.getenv("WAKU_DASHBOARD_PORT") or os.getenv("PORT") or PORT)
-    for port in range(base, base + 10):  # walk past a busy port instead of crashing
+    for port in range(base, base + 10):  # 走过繁忙的港口而不是撞车
         try:
             server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
         except OSError:
             print(f"port {port} busy, trying {port + 1}…")
             continue
-        # One owner for gateway lifecycle: configuration saves can now stop and
-        # restart a bot in-process instead of requiring a dashboard restart.
+        # 网关生命周期的一个所有者：配置保存现在可以停止并
+        # 在进程中重新启动机器人，而不需要重新启动仪表板。
         from waku.gateway.discord import start_in_background as start_discord
         from waku.gateway.supervisor import GatewaySupervisor
         from waku.gateway.telegram import start_in_background as start_telegram

@@ -58,7 +58,7 @@ def test_markdown_report_math():
                 "cases": [{"tokens_in": 100, "tokens_out": 50, "passed": True}]}]
     table = shootout.markdown(results)
     assert "| kimi:kimi-k3 | 6/7 | $0.1234 | 9.5s | 100/50 |" in table
-    assert "re-run" in table  # the reproducibility line is part of the contract
+    assert "re-run" in table  # 再现性线是合同的一部分
 
 
 def test_dataset_has_the_demo_beats():

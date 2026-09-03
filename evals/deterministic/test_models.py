@@ -40,7 +40,7 @@ def test_openai_default_is_tool_capable(tmp_path):
 
 
 def test_no_default_model_is_a_moving_alias():
-    """The whole gpt-5.x-chat-latest line went 404 at once (issue #132), and
+    """The whole gpt-5.x-chat-latest line went 404 at once (issue #132），以及
     waku shipped a default pointing into it. An alias is what made that a silent
     break rather than a caught one: the id in the repo never changed, so nothing
     local could tell it had stopped resolving.
@@ -95,7 +95,7 @@ def test_gemini_thought_signature_round_trips():
     (_to_openai). Verified end-to-end without a network call."""
     from waku.loop.models import OpenAICompatClient
 
-    client = OpenAICompatClient.__new__(OpenAICompatClient)   # skip __init__ (no network)
+    client = OpenAICompatClient.__new__(OpenAICompatClient)   # 跳过 __init__ （无网络）
     sig = {"google": {"thought_signature": "ABC123"}}
     toolcall = SimpleNamespace(id="t1", extra_content=sig,
                                function=SimpleNamespace(name="create_event", arguments='{"title":"x"}'))
@@ -106,11 +106,11 @@ def test_gemini_thought_signature_round_trips():
 
     parsed = client._create(model="gemini-3.5-flash", messages=[{"role": "user", "content": "hi"}], max_tokens=10)
     block = next(b for b in parsed.content if b.type == "tool_use")
-    assert block.extra == sig                                  # captured on parse
+    assert block.extra == sig                                  # 解析时捕获
 
     kwargs = client._to_openai(model="gemini-3.5-flash", max_tokens=10,
                                messages=[{"role": "assistant", "content": parsed.content}])
-    assert kwargs["messages"][0]["tool_calls"][0]["extra_content"] == sig   # echoed back
+    assert kwargs["messages"][0]["tool_calls"][0]["extra_content"] == sig   # 回响
 
 
 def test_deepseek_provider_uses_expected_key_endpoint_and_models(monkeypatch, tmp_path):

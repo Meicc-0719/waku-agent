@@ -21,8 +21,8 @@ JS_FILES = sorted((STATIC / "js").glob("*.js"))
 JS_SRC = "\n".join(f.read_text(encoding="utf-8") for f in JS_FILES)
 CONNECTION_LOGOS = {f"{integration.key}.svg" for integration in INTEGRATIONS}
 
-# JS keywords / builtins / DOM globals an inline handler may call without a js/
-# definition. Kept small on purpose — anything else must be a real app function.
+# JS 关键字/内置函数/DOM 全局变量内联处理程序可以在没有 js/ 的情况下调用
+# 定义。故意保持小——其他任何东西都必须是真正的应用程序功能。
 ALLOWED = {
     "if", "for", "while", "switch", "return", "typeof", "new", "await", "function",
     "Math", "JSON", "Date", "Number", "String", "Boolean", "Object", "Array",
@@ -71,7 +71,7 @@ def test_every_registry_group_has_a_display_name():
     from waku import integrations
 
     mapped = set(re.findall(r'^\s*"([^"]+)":\s*"[^"]+",\s*$', JS_SRC, re.MULTILINE))
-    # AI Providers has its own page (Models), so it is deliberately not here.
+    # AI Providers 有自己的页面（模型），所以故意不在这里。
     groups = {i.group for i in integrations.registry()} - {"AI Providers"}
     missing = groups - mapped
     assert not missing, f"registry groups with no display name, they'd land in Tools: {missing}"
@@ -88,7 +88,7 @@ def _handler_calls(text: str) -> set[str]:
     """Function names called inside inline on*=... handlers (not method calls)."""
     called = set()
     for body in re.findall(r'\bon\w+="([^"]*)"', text) + re.findall(r"\bon\w+='([^']*)'", text):
-        # identifier immediately before '(' that isn't a property access (no leading .)
+        # 紧接在“(”之前的标识符不是属性访问（没有前导。）
         called |= set(re.findall(r'(?<![.\w$])([A-Za-z_$][\w$]*)\s*\(', body))
     return called
 

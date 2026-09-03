@@ -310,7 +310,7 @@ def test_telegram_handler_uses_runner_and_returns_safe_error(monkeypatch):
 
 
 def test_discord_handler_uses_runner_and_delivers_reply(monkeypatch):
-    # Isolate from developer .env so the allowlist/budget defaults under test are predictable.
+    # 与开发人员 .env 隔离，以便测试下的允许列表/预算默认值是可预测的。
     for key in (
         "DISCORD_ALLOWED_USER",
         "DISCORD_ALLOWED_CHANNEL",

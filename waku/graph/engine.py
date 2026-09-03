@@ -34,16 +34,16 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
-# Same observer protocol as the loop: notify(kind, event). Graph runs emit
-# graph_start / node_start / node_end / route / graph_end, and pass through
-# whatever a node emits (an agent_node's llm/tool events) tagged with node=.
+# 与循环相同的观察者协议：notify(kind, event)。图形运行发出
+# graph_start/node_start/node_end/route/graph_end，并通过
+# 无论节点发出什么（agent_node 的 llm/tool 事件），都用 node= 标记。
 Observer = Callable[[str, dict], None]
 
 START = "START"
 END = "END"
 
-NodeFn = Callable[[dict], dict]  # reads state, returns keys to merge
-RouteFn = Callable[[dict], str]  # reads state, returns a target label
+NodeFn = Callable[[dict], dict]  # 读取状态，返回要合并的键
+RouteFn = Callable[[dict], str]  # 读取状态，返回目标标签
 
 
 class GraphStateCollision(Exception):
@@ -54,9 +54,9 @@ class GraphStateCollision(Exception):
 class Node:
     name: str
     fn: NodeFn
-    kind: str = "fn"          # tool / llm / agent / router label for describe()
-    max_visits: int = 1       # >1 only on nodes inside an intended cycle
-    on_error: str | None = None  # node to jump to if fn raises (default: drain to END)
+    kind: str = "fn"          # 描述（）的工具/ llm /代理/路由器标签
+    max_visits: int = 1       # >1 仅在预期循环内的节点上
+    on_error: str | None = None  # 如果 fn 升高则跳转到的节点（默认：排出到 END）
 
 
 @dataclass
@@ -109,14 +109,14 @@ def run_graph(graph: Graph, state: dict, observer: Observer | None = None,
     raw = observer or (lambda kind, ev: None)
 
     def notify(kind: str, ev: dict) -> None:
-        with lock:  # pool threads share the tracer's file append — keep lines whole
+        with lock:  # 池线程共享跟踪器的文件追加 - 保持行完整
             raw(kind, ev)
 
-    deps: dict[str, set] = defaultdict(set)      # static in-edges per node
+    deps: dict[str, set] = defaultdict(set)      # 每个节点的静态入边
     for src, dst in graph.edges:
         if dst != END:
             deps[dst].add(src)
-    fired: dict[str, set] = defaultdict(set)     # which in-edges have fired
+    fired: dict[str, set] = defaultdict(set)     # 哪个边缘已触发
     runs: dict[str, int] = defaultdict(int)
     path: list[str] = []
     errors: dict[str, str] = state.setdefault("errors", {})
@@ -144,10 +144,10 @@ def run_graph(graph: Graph, state: dict, observer: Observer | None = None,
         try:
             out = node.fn(snapshot)
             return name, out or {}, None, int((time.perf_counter() - t) * 1000)
-        except Exception as exc:  # surface, don't crash — the run drains cleanly
+        except Exception as exc:  # 表面，不要崩溃——排水干净
             return name, None, repr(exc), int((time.perf_counter() - t) * 1000)
 
-    for src, dst in graph.edges:  # START fires its edges before the first wave
+    for src, dst in graph.edges:  # START 在第一波之前发射其边缘
         if src == START:
             fired[dst].add(START)
     wave = next_wave([])
@@ -159,7 +159,7 @@ def run_graph(graph: Graph, state: dict, observer: Observer | None = None,
         for name in wave:
             runs[name] += 1
             notify("node_start", {"workflow": graph.name, "node": name, "visit": runs[name]})
-        if len(wave) == 1:  # solo node runs on this thread: trace order stays exact
+        if len(wave) == 1:  # 单独节点在此线程上运行：跟踪顺序保持准确
             results = [run_one(wave[0])]
         else:
             with ThreadPoolExecutor(max_workers=len(wave)) as pool:
@@ -167,7 +167,7 @@ def run_graph(graph: Graph, state: dict, observer: Observer | None = None,
 
         jumps: list[str] = []
         wave_writes: dict[str, str] = {}
-        for name, out, error, ms in results:  # merge in wave order — deterministic
+        for name, out, error, ms in results:  # 按波序合并 — 确定性
             path.append(name)
             keys = [k for k in (out or {}) if not k.startswith("_")]
             for key in keys:
@@ -183,7 +183,7 @@ def run_graph(graph: Graph, state: dict, observer: Observer | None = None,
                 errors[name] = error
                 if graph.nodes[name].on_error:
                     jumps.append(graph.nodes[name].on_error)
-                continue  # no on_error → fire nothing; the run drains to END
+                continue  # 没有 on_error → 不触发任何内容；运行结束
             if name in graph.routers:
                 route, targets = graph.routers[name]
                 label = route(state)
@@ -193,7 +193,7 @@ def run_graph(graph: Graph, state: dict, observer: Observer | None = None,
                 if target is None:
                     errors[name] = f"router returned unknown label '{label}'"
                 elif target != END:
-                    jumps.append(target)  # a route is a jump, not a dependency
+                    jumps.append(target)  # 路线是跳转，而不是依赖
             else:
                 for src, dst in graph.edges:
                     if src == name and dst != END:

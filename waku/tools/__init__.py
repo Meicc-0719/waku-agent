@@ -22,52 +22,52 @@ def build_registry(conn: sqlite3.Connection, settings: Settings, memory=None) ->
             google_calendar_id=settings.google_calendar_id,
         )
     )
-    # Read side: "what's on my calendar?" — one tool across every connected
-    # source (Google when signed in, plus waku's own), so the model never has
-    # to guess which calendar the user meant.
+    # 读边：“我的日历上有什么？” — 一种工具可用于所有连接
+    # 来源（登录时的 Google，加上 waku 自己的），因此该模型从来没有
+    # 猜测用户指的是哪个日历。
     registry.register(calendar.make_list_tool(conn, settings.home))
     registry.register(notes.make_tool(conn))
     registry.register(messages.make_tool(settings.home))
-    # Web search — pairs with create_event for the multi-tool loop demo
-    # ("find the World Cup games left and add them to my calendar").
+    # 网络搜索 — 与 create_event 配对进行多工具循环演示
+    # （“找到剩下的世界杯比赛并将它们添加到我的日历中”）。
     registry.register(search.make_tool())
 
-    # Memory self-management — the agent can correct/forget memory, learn rules,
-    # and author its own skills (feels like a personal agent, not a black box).
+    # 记忆自我管理——智能体可以纠正/忘记记忆，学习规则，
+    # 并编写自己的技能（感觉就像个人代理，而不是黑匣子）。
     if memory is not None:
         registry.register(memory_admin.make_manage_memory_tool(memory))
         registry.register(memory_admin.make_update_soul_tool(settings))
         registry.register(memory_admin.make_create_skill_tool(settings, memory))
 
-    # Experimental tools — off by default; opt in with WAKU_EXPERIMENTAL=1.
-    # delegate_task (sub-agents via pi) is live; terminal/browser/cron are
-    # still skeletons that report "coming soon".
+    # 实验工具——默认关闭；选择使用 WAKU_EXPERIMENTAL=1。
+    # delegate_task（通过 pi 的子代理）已上线；终端/浏览器/cron 是
+    # 仍然有骷髅报告“即将推出”。
     #
-    # Trust settings.experimental ALONE. load_settings() already defaults it from
-    # WAKU_EXPERIMENTAL, so re-checking the env here would let the global switch
-    # override an explicit False — and the arena passes experimental=False for
-    # every non-coding race. Once the dashboard could write WAKU_EXPERIMENTAL=1,
-    # that OR silently forced delegate_task into races that never asked for it.
+    # 信任设置。单独实验。 load_settings() 已经默认它
+    # WAKU_EXPERIMENTAL，因此重新检查此处的环境将使全局切换
+    # 覆盖一个显式的 False — 并且竞技场通过experimental=False for
+    # 每场非编码竞赛。一旦仪表板可以写入 WAKU_EXPERIMENTAL=1，
+    # 或者默默地迫使 delegate_task 进入从未要求它的竞赛。
     if getattr(settings, "experimental", False):
         from waku.tools import experimental
 
         for t in experimental.make_tools(settings):
             registry.register(t)
 
-    # Apple ecosystem readers/writers (opt-in; first use triggers macOS prompts).
+    # Apple 生态系统读者/作者（选择加入；首次使用会触发 macOS 提示）。
     if settings.apple_tools:
         from waku.tools import apple
 
         for t in apple.make_tools():
             registry.register(t)
 
-    # Read-only GitHub via the gh CLI (opt-in; uses gh's own auth, no token here).
+    # 通过 gh CLI 的只读 GitHub（选择加入；使用 gh 自己的身份验证，此处没有令牌）。
     if getattr(settings, "gh_tool", False):
         from waku.tools import github
 
         registry.register(github.make_tool(default_repo=getattr(settings, "gh_repo", "")))
 
-    # MCP servers (opt-in via .waku/mcp.json).
+    # MCP 服务器（通过 .waku/mcp.json 选择加入）。
     mcp_config = settings.home / "mcp.json"
     if mcp_config.exists():
         try:
@@ -76,7 +76,7 @@ def build_registry(conn: sqlite3.Connection, settings: Settings, memory=None) ->
             bridge = MCPBridge(mcp_config)
             for t in bridge.start():
                 registry.register(t)
-            registry.mcp_bridge = bridge  # so Waku.close() can stop the servers
+            registry.mcp_bridge = bridge  # 所以 Waku.close() 可以停止服务器
         except ImportError:
             print("mcp.json found but the 'mcp' package is missing — pip install 'waku-agent[mcp]'")
 

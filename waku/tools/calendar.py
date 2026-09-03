@@ -59,8 +59,8 @@ def _applescript_date(var: str, iso: str) -> str:
     """Build an AppleScript date from ISO parts — immune to system locale
     (never feed AppleScript a formatted date string; parsing is locale-bound)."""
     d = datetime.fromisoformat(iso)
-    # set day to 1 BEFORE month/year: prevents the classic AppleScript overflow
-    # (if today is the 31st, setting month to a 30-day month rolls into next month)
+    # 在月/年之前将日期设置为 1：防止经典的 AppleScript 溢出
+    # （如果今天是 31 号，则将月份设置为 30 天的月份，并滚动到下个月）
     return (
         f"set {var} to current date\nset day of {var} to 1\n"
         f"set year of {var} to {d.year}\nset month of {var} to {d.month}\n"
@@ -117,7 +117,7 @@ def _record_apple_calendar_health(ok: bool, message: str) -> None:
         state = IntegrationState.CONNECTED if ok else IntegrationState.ERROR
         record_health("apple_calendar", IntegrationStatus(state, message))
     except Exception:
-        # A health-cache write must never change whether the user's event lands.
+        # 无论用户的事件是否落地，健康缓存写入都绝不能改变。
         pass
 
 
@@ -128,9 +128,9 @@ def sync_to_apple_calendar(title: str, start: str, end: str, notes: str = "") ->
         return "Apple Calendar sync skipped (not macOS)."
     safe_title = title.replace("\\", "").replace('"', "'")
     safe_notes = notes.replace("\\", "").replace('"', "'")
-    # Prefer a dedicated "Waku" calendar, but macOS can't create calendars in
-    # iCloud-only accounts via AppleScript — fall back to the first writable
-    # calendar and report which one was actually used.
+    # 更喜欢专用的“Waku”日历，但 macOS 无法在
+    # 通过 AppleScript 的仅限 iCloud 的帐户 — 回退到第一个可写的帐户
+    # 日历并报告实际使用的日历。
     ensure_running("Calendar")
     script = (
         _applescript_date("startDate", start)
@@ -414,19 +414,19 @@ def make_tool(
         attendees: str = "",
         notes: str = "",
     ) -> str:
-        # Defensive: models sometimes emit an empty/partial tool call. Return a
-        # helpful message the model can recover from, not a raw Python TypeError.
+        # 防御性：模型有时会发出空/部分工具调用。返回一个
+        # 模型可以从中恢复的有用消息，而不是原始的 Python TypeError。
         if not title or not start:
             return ("create_event needs at least a title and a start time "
                     "(ISO 8601, e.g. 2026-07-14T09:00). Please call it again with both.")
         if not end:
-            # default: one hour
+            # 默认：一小时
             from datetime import timedelta
             end = (datetime.fromisoformat(start) + timedelta(hours=1)).isoformat(timespec="minutes")
 
-        # idempotence guard: same title+start = same event. A confused model
-        # (or an impatient user) must not be able to triple-book a meeting.
-        start = start[:16]  # normalize 2026-07-11T17:00:00 → 2026-07-11T17:00
+        # 幂等性守卫：相同的标题+开始=相同的事件。一个混乱的模型
+        # （或不耐烦的用户）必须无法三次预订会议。
+        start = start[:16]  # 标准化 2026-07-11T17:00:00 → 2026-07-11T17:00
         end = end[:16]
         existing = conn.execute(
             "SELECT id FROM calendar_events WHERE title = ? AND start = ?", (title, start)
@@ -511,10 +511,10 @@ def make_list_tool(conn: sqlite3.Connection, home: Path | None = None) -> Tool:
         clauses, params = [], []
         if start:
             clauses.append("start >= ?")
-            params.append(start[:10])                 # inclusive from the start of that day
+            params.append(start[:10])                 # 从当天开始包含在内
         if end:
             clauses.append("start <= ?")
-            params.append(end[:10] + "T23:59")        # inclusive through the end of that day
+            params.append(end[:10] + "T23:59")        # 包括当天结束时
         if clauses:
             query += " WHERE " + " AND ".join(clauses)
         query += " ORDER BY start LIMIT ?"
@@ -538,7 +538,7 @@ def make_list_tool(conn: sqlite3.Connection, home: Path | None = None) -> Tool:
             if is_connected(home):
                 checked.append("Google Calendar")
                 g = list_google_events(home, start, end, limit)
-                # A "no events" sentence is not a section; only real rows are.
+                # “无事件”句子不是一个部分；只有真实的行才是。
                 if g and not g.startswith(("No Google", "Google Calendar unavailable")):
                     sections.append("From Google Calendar:\n" + g)
 
@@ -550,8 +550,8 @@ def make_list_tool(conn: sqlite3.Connection, home: Path | None = None) -> Tool:
         if sections:
             return "\n\n".join(sections)
         window = f" between {start} and {end}" if (start or end) else ""
-        # Name every source that was actually consulted. "Your calendar is clear"
-        # is only honest if the user knows WHICH calendars that covers.
+        # 列出实际查阅过的每个来源。 “你的日历很清晰”
+        # 仅当用户知道涵盖哪些日历时才是诚实的。
         return f"No events found{window}. Checked: {', '.join(checked)}."
 
     return Tool(

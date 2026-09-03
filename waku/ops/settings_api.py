@@ -26,7 +26,7 @@ def pin_action(payload: dict) -> dict:
     if action == "pin":
         specs.append(spec)
     elif action == "default":
-        # move to the front of its provider's group -> becomes that provider's default
+        # 移动到其提供者组的前面 -> 成为该提供者的默认值
         idx = next((i for i, s in enumerate(specs) if s.split(":", 1)[0] == provider), len(specs))
         specs.insert(idx, spec)
     elif action != "unpin":
@@ -40,29 +40,29 @@ def settings_info() -> dict:
     the full key. `pinned` is the user's curated model shortlist (the chat
     switcher shows exactly these, across providers)."""
     s = load_settings()
-    # the curated shortlist, in order; the first pinned model per provider is
-    # that provider's default (used when you switch providers).
+    # 按顺序策划的入围名单；每个提供商的第一个固定模型是
+    # 该提供商的默认值（在您切换提供商时使用）。
     pinned, seen = [], set()
     for spec in catalog.pinned_specs():
         p, _, m = spec.partition(":")
         if m:
             pinned.append({"provider": p, "model": m, "default": p not in seen})
             seen.add(p)
-    # Group by provider for display (so all of one lab's models sit together,
-    # e.g. a late-added claude-fable-5 joins the other anthropic rows). A STABLE
-    # sort by provider's first-appearance order keeps each provider's own order —
-    # so its default (first pinned) stays on top and the 'default' flags above
-    # still line up.
+    # 按提供者分组进行显示（因此一个实验室的所有模型都坐在一起，
+    # 例如后期添加的 claude-fable-5 加入了其他人择行）。稳定
+    # 按提供商的首次出现顺序排序保留每个提供商自己的顺序 —
+    # 所以它的默认值（第一个固定的）保留在顶部，并且上面的“默认”标志
+    # 还在排队。
     prov_order: dict = {}
     for row in pinned:
         prov_order.setdefault(row["provider"], len(prov_order))
     pinned.sort(key=lambda row: prov_order[row["provider"]])
-    # Resolve the model the same way the loop does. `waku/loop/models.py` fills a
-    # blank WAKU_MODEL from the provider's default at build time, so the agent is
-    # always running SOMETHING — but this dict is what the nav pill and the Models
-    # page render, and reporting "" made a fresh install display `anthropic ·`,
-    # a trailing separator with no model name. The display must not claim less
-    # than the agent actually has.
+    # 以与循环相同的方式求解模型。 `waku/loop/models.py` 填充
+    # 在构建时将提供程序的默认值设置为空白 WAKU_MODEL，因此代理是
+    # 总是在运行一些东西——但这就是导航丸和模型的意思
+    # 页面渲染，并报告“”进行了全新安装，显示“人性化·”，
+    # 没有型号名称的尾随分隔符。显示器不得声称少
+    # 比代理人实际拥有的多。
     prov = PROVIDERS.get(s.provider)
     return {
         "provider": s.provider,
@@ -70,19 +70,19 @@ def settings_info() -> dict:
         "small_model": s.small_model or (prov.small_model if prov else ""),
         "base_url": s.base_url or "",
         "custom_key_set": bool(s.api_key),
-        # Ids of providers the user disabled in the Models grid; the frontend
-        # derives each card's status (unconfigured / configured / enabled) and
-        # hides disabled providers from the chat switcher.
+        # 用户在模型网格中禁用的提供商的 ID；前端
+        # 获取每张卡的状态（未配置/配置/启用）并
+        # 从聊天切换器中隐藏禁用的提供商。
         "disabled_providers": sorted(s.disabled_providers),
         "pinned": pinned,
         "providers": [{"name": name} for name in PROVIDERS],
-        # experimental tools (delegate_task -> pi). The ARENA can switch this on
-        # per-race, but the chat agent reads it from the environment — so without
-        # a toggle here, the sidebar chat could never delegate. See settings_save.
+        # 实验工具（delegate_task -> pi）。 ARENA 可以打开此功能
+        # 每场比赛，但聊天代理从环境中读取它 - 所以没有
+        # 此处切换，侧边栏聊天永远无法委托。请参阅设置_保存。
         "experimental": s.experimental,
         "pi_installed": bool(shutil.which("pi")),
-        # graph workflows (triage-first turns) — same toggle contract as
-        # experimental: the UI renders it, apply_settings writes it.
+        # 图形工作流程（分类优先轮次）——与以下相同的切换合约
+        # 实验性的：UI 渲染它，apply_settings 写入它。
         "graph_workflows": s.graph_workflows,
     }
 
@@ -100,8 +100,8 @@ def apply_settings(payload: dict) -> dict:
     if "episodic_store" in payload:
         return {"error": "episodic_store is managed in Connections"}
     env_path = find_dotenv(usecwd=True) or ".env"
-    # NOT `if toggle:` — turning it OFF sends "", which is falsy. Absent (None)
-    # means "don't touch"; "" means "switch it off".
+    # 不是“iftoggle:”——将其关闭会发送“”，这是错误的。缺席（无）
+    # 意思是“不要碰”； “”的意思是“关掉它”。
     toggles = (("experimental", "WAKU_EXPERIMENTAL"), ("graph_workflows", "WAKU_GRAPH_WORKFLOWS"))
     for field, env_name in toggles:
         value = payload.get(field)

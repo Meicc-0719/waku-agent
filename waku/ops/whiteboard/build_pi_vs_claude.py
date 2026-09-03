@@ -17,7 +17,7 @@ from waku.ops.whiteboard import style as S
 
 OUT = Path(__file__).resolve().parents[3] / "docs" / "whiteboards" / "pi-vs-claude-code.excalidraw"
 
-# One row per harness decision; (category, claude code cell, pi cell, pi color).
+# 每个线束决策一排； （类别、克劳德代码单元格、pi 单元格、pi 颜色）。
 ROWS = [
     ("TOOLS",
      "15+ built-ins — Read / Write / Edit / Bash /\nGrep / Glob / Task / WebFetch / Todo ...",

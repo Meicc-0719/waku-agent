@@ -35,21 +35,21 @@ import subprocess
 from waku.tools.registry import Tool
 
 _TIMEOUT = 20
-# A PR diff is unbounded — waku-agent has had 400-line ones and the wider world
-# has 40,000-line ones. Truncating in the TOOL rather than at each call site
-# means no caller can forget to, and the model is told plainly that it happened
-# instead of silently reasoning about half a diff.
+# PR 差异是无限的——waku-agent 已经有 400 行和更广阔的世界
+# 有40,000行。在工具中而不是在每个调用点截断
+# 意味着调用者不会忘记，并且模型会被清楚地告知它发生了
+# 而不是默默地推理半个差异。
 _MAX_CHARS = 8000
-# owner/name. Both halves must START with an alphanumeric or underscore: a
-# value like `-x/y` matches the looser [\w.-]+ form, and an argv element
-# beginning with a hyphen is exactly the thing that gets read as a flag. GitHub
-# does not allow such names anyway, so nothing legitimate is lost.
+# 所有者/名称。两部分都必须以字母数字或下划线开头：a
+# 像 `-x/y` 这样的值匹配更宽松的 [\w.-]+ 形式，以及一个 argv 元素
+# 以连字符开头的正是被读作标志的东西。 GitHub
+# 无论如何都不允许这样的名称，因此合法的名称不会丢失。
 _REPO_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]*/[A-Za-z0-9_][A-Za-z0-9_.-]*$")
 
-# The whole allowlist. The VALUE is the fixed argv prefix; the key is the only
-# thing the model gets to choose. Read-only, exhaustively — no create, comment,
-# merge, close, edit, or `gh api` (which would be a write primitive wearing a
-# read-only name).
+# 整个白名单。 VALUE 是固定的 argv 前缀；关键是唯一
+# 模型可以选择的东西。只读、详尽——无创建、评论、
+# 合并、关闭、编辑或“gh api”（这将是一个带有
+# 只读名称）。
 _ALLOWED: dict[str, list[str]] = {
     "pr list": ["pr", "list"],
     "pr view": ["pr", "view"],

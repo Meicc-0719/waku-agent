@@ -43,7 +43,7 @@ def test_classifier_parses_routes_and_fails_open_on_garbage():
     assert classify('{"route": "quick", "reason": "just a greeting"}') == (
         "quick", "just a greeting")
     assert classify('{"route": "full", "reason": "needs calendar"}')[0] == "full"
-    # every malformed shape falls open to full — capability over latency
+    # 每个畸形的形状都会充分开放——能力超过延迟
     assert classify("no json here at all")[0] == "full"
     assert classify('{"route": "sideways"}')[0] == "full"
     assert classify_message(Boom(), "small-model", "hi")[0] == "full"
@@ -74,8 +74,8 @@ def test_flag_off_is_byte_for_byte_the_old_world(tmp_path):
 
 def test_quick_turn_answers_on_the_small_model_and_skips_the_gate(tmp_path):
     script = [
-        response([text_block('{"route": "quick", "reason": "just thanks"}')]),  # triage
-        response([text_block("You're welcome!")]),                              # quick reply
+        response([text_block('{"route": "quick", "reason": "just thanks"}')]),  # 分类
+        response([text_block("You're welcome!")]),                              # 快速回复
     ]
     app = make_waku(tmp_path / "home", client=ScriptedClient(script),
                     graph_workflows=True, small_model="small-model")
@@ -92,13 +92,13 @@ def test_quick_turn_answers_on_the_small_model_and_skips_the_gate(tmp_path):
     assert meta["graph"]["route"] == "quick"
     assert meta["graph"]["reason"] == "just thanks"
     assert meta["gate"] is None
-    assert meta["model"] == "small-model"          # honest per-path model
+    assert meta["model"] == "small-model"          # 诚实的每路径模型
 
 
 def test_full_turn_runs_the_real_loop_with_both_funnel_stages(tmp_path):
     script = [
-        response([text_block('{"route": "full", "reason": "wants an event"}')]),   # triage
-        response([text_block('{"retrieve": false, "query": "", "reason": "n"}')]),  # gate
+        response([text_block('{"route": "full", "reason": "wants an event"}')]),   # 分类
+        response([text_block('{"retrieve": false, "query": "", "reason": "n"}')]),  # 门
         response([tool_block("create_event", {"title": "Swim", "start": "2026-08-01 09:00",
                                               "end": "2026-08-01 10:00"})], "tool_use"),
         response([text_block("Booked!")]),
@@ -110,7 +110,7 @@ def test_full_turn_runs_the_real_loop_with_both_funnel_stages(tmp_path):
 
     assert result.reply == "Booked!"
     assert result.tool_calls and result.tool_calls[0]["tool"] == "create_event"
-    assert "route" in events and "gate" in events   # both funnel stages recorded
+    assert "route" in events and "gate" in events   # 记录了两个漏斗阶段
     meta = last_meta(app)
     assert meta["graph"]["route"] == "full"
     assert meta["gate"] is not None
@@ -120,9 +120,9 @@ def test_full_turn_runs_the_real_loop_with_both_funnel_stages(tmp_path):
 
 def test_broken_classifier_fails_open_to_the_full_loop(tmp_path):
     script = [
-        response([text_block("not json — classifier had a bad day")]),               # triage
-        response([text_block('{"retrieve": false, "query": "", "reason": "n"}')]),   # gate
-        response([text_block("Still here.")]),                                        # loop
+        response([text_block("not json — classifier had a bad day")]),               # 分类
+        response([text_block('{"retrieve": false, "query": "", "reason": "n"}')]),   # 门
+        response([text_block("Still here.")]),                                        # 环形
     ]
     app = make_waku(tmp_path / "home", client=ScriptedClient(script),
                     graph_workflows=True)
@@ -137,7 +137,7 @@ def test_broken_graph_engine_fails_open_to_the_plain_loop(tmp_path, monkeypatch)
         raise RuntimeError("graph machinery on fire")
     monkeypatch.setattr(triage, "build_triage_graph", explode)
     script = [
-        response([text_block('{"retrieve": false, "query": "", "reason": "n"}')]),   # gate
+        response([text_block('{"retrieve": false, "query": "", "reason": "n"}')]),   # 门
         response([text_block("Saved by the loop.")]),
     ]
     app = make_waku(tmp_path / "home", client=ScriptedClient(script),
@@ -145,6 +145,6 @@ def test_broken_graph_engine_fails_open_to_the_plain_loop(tmp_path, monkeypatch)
     events: list[str] = []
     result = app.respond("hello", observer=lambda k, ev: events.append(k))
     assert result.reply == "Saved by the loop."
-    assert "graph_end" in events                     # the failure is on tape
+    assert "graph_end" in events                     # 故障记录在磁带上
     meta = last_meta(app)
-    assert meta["graph"] is None                     # no route happened — honest meta
+    assert meta["graph"] is None                     # 没有路线发生——诚实的元

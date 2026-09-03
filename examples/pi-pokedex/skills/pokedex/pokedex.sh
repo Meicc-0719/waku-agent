@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pokedex lookup via the public PokeAPI (no API key). Prints one clean line.
+# 通过公共 PokeAPI（无 API 密钥）进行 Pokedex 查找。打印一行干净的线。
 set -euo pipefail
 
 name="${1:?usage: pokedex.sh <pokemon-name>}"
@@ -15,7 +15,7 @@ name = d["name"].title()
 hp, atk, dfn = stats["hp"], stats["attack"], stats["defense"]
 spa, spd_def, spd = stats["special-attack"], stats["special-defense"], stats["speed"]
 total = hp + atk + dfn + spa + spd_def + spd
-print("%s  #%d" % (name, d["id"]))
+print("%s  #%d" % (名称, d["id"]))
 print("  types:     %s" % types)
 print("  base:      HP %d / Atk %d / Def %d / SpA %d / SpD %d / Spd %d  (total %d)"
       % (hp, atk, dfn, spa, spd_def, spd, total))

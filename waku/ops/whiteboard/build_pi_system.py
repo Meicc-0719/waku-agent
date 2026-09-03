@@ -31,17 +31,17 @@ def build():
     e = []
     a = lambda x: _add(e, x)
 
-    # ---- title -------------------------------------------------------------
+    #  -  -  标题  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - -
     a(S.text(60, 44, "pi — one small loop, made strong", size=S.FS_TITLE))
     a(S.underline(64, 120, 700, color=PAL["orange"][1]))
     a(S.text(64, 140, "MIT  ·  agent-loop.ts = 792 lines  ·  4 tools  ·  37 providers",
              size=S.FS_HEADER, color=PAL["grey"][1]))
     a(S.socials_logos(1720, 40))
 
-    # ============ TOP SPINE ===============================================
-    # Boxes are BLACK by default (like the masters). Colour is spent only on the
-    # 3 container boundaries (loop / refused / waku), the pink model, the green
-    # reply chip, and a few one-line highlight notes. Widths hug the content.
+    # ============ 顶部脊柱 ==================================================
+    # 默认情况下，盒子是黑色的（就像大师一样）。颜色只花在
+    # 3个容器边界（循环/拒绝/waku），粉色模型，绿色
+    # 回复芯片，以及一些单行突出注释。宽度拥抱内容。
 
     a(S.card(60, 250, 355, "FACES · one brain, 4 costumes",
              "pi              → TUI\n"
@@ -62,7 +62,7 @@ def build():
 
     a(S.labeled_arrow(755, 320, 800, 320, "to model"))
 
-    # THE LOOP — the one container that earns an orange boundary ------------
+    # THE LOOP — 获得橙色边界的一个容器 ------------
     a(S.boundary(800, 225, 760, 345, "THE LOOP · agent-loop.ts · 792 lines", color="orange"))
     a(S.ellipse(835, 295, 185, 95, "LLM · 37 brains", color="pink"))
     a(S.diamond(1080, 298, 135, 88, "tools?", color="plain"))
@@ -78,7 +78,7 @@ def build():
     a(S.labeled_arrow(1412, 558, 855, 558, "results → loop"))
     a(S.arrow(855, 558, 855, 390))
 
-    # TWO EXITS -------------------------------------------------------------
+    # 两个出口 -------------------------------------------------------------------------
     a(S.chip(1580, 300, 165, 72, "REPLY", color="green"))
     a(S.card(1580, 405, 300, "SESSION = a tree",
              "one JSONL, {id, parentId}\n"
@@ -87,7 +87,7 @@ def build():
     a(S.arrow(1510, 470, 1580, 450))
     a(S.text(1580, 545, "~/.pi/agent/sessions/…jsonl", size=S.FS_SMALL, color=PAL["grey"][1]))
 
-    # ============ BAND: make pi strong ====================================
+    # ============ BAND：让 pi 更强 ========================================
     a(S.pill_header(60, 660, 540, "MAKE pi STRONG — cheapest context first", color="plain"))
 
     band = [
@@ -104,7 +104,7 @@ def build():
     a(S.text(380, 882, "lives in  ~/.pi/agent/ (you)  ·  <repo>/.pi/ (team)  ·  a package (world)",
              size=S.FS_SMALL, color=PAL["grey"][1]))
 
-    # ============ FOOTERS ==================================================
+    # ============ 页脚 ======================================================
     a(S.boundary(60, 925, 560, 205, "REFUSED — on purpose", color="red"))
     a(S.text(88, 988,
              "MCP          → a CLI + README\n"

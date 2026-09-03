@@ -26,7 +26,7 @@ import pytest
 from waku.ops import memory_arena as arena
 from waku.ops.memory_arena import INVENTED, MISS, PASS, STALE
 
-# --- the four outcomes -------------------------------------------------------
+# ---四种结果--------------------------------------------------------
 
 def test_the_expected_answer_present_is_a_pass():
     probe = {"expect_any": ["leather jacket"]}
@@ -78,7 +78,7 @@ def test_inventing_a_deadline_that_was_never_given_is_invented():
     assert arena.score("You never gave me a deadline for that.", probe)[0] == PASS
 
 
-# --- the two probe types that need more than a substring ---------------------
+# --- 需要多个子字符串的两种探测类型 ---------------------
 
 def test_retrieving_for_arithmetic_fails_even_with_the_right_number():
     """Getting 68 right while quietly searching memory is still wrong
@@ -103,7 +103,7 @@ def test_naming_one_party_is_half_a_thought():
     assert arena.score("Keep Tom away from Sam.", probe)[0] == PASS
 
 
-# --- the scoreboard ----------------------------------------------------------
+# --- 记分牌 ----------------------------------------------------------
 
 def test_a_system_that_invents_ranks_below_one_that_misses():
     """Ranking is by worst behaviour, not by score. A confident liar must not
@@ -127,7 +127,7 @@ def test_the_table_has_no_emojis():
     assert all(ord(c) < 0x2190 for c in arena.render(rows))
 
 
-# --- the fixture itself ------------------------------------------------------
+# --- 灯具本身 ------------------------------------------------------
 
 FIXTURE = arena.load_fixture()
 PROBES = [(t, p) for t, spec in FIXTURE["tracks"].items() for p in spec["probes"]]
@@ -173,7 +173,7 @@ def test_the_superseded_fact_was_actually_said_during_seeding():
                 assert stale.casefold() in seed, f"{probe['id']}: {stale} never seeded"
 
 
-# --- where the probes come from ----------------------------------------------
+# --- 探针来自哪里 ----------------------------------------------------------
 
 def test_the_shipped_fixture_is_only_an_example():
     """waku ships the mechanism, not the questions. The bundled probes exist to
@@ -214,8 +214,8 @@ def test_token_counting_reads_the_keys_the_ledger_actually_writes(tmp_path):
 
     tokens, calls = arena._ledger(tmp_path)
     assert tokens == 3164 + 94 + 3241 + 92
-    # One ROW is one API call. The grid reports this so "why did one question
-    # cost 4,783 tokens" is answered by a count, not by my inference.
+    # 一个 ROW 就是一个 API 调用。网格报告了这一点“为什么有一个问题
+    # “为什么一个问题消耗 4,783 个 Token”通过计数而非推测得出答案。
     assert calls == 2
 
 
@@ -237,18 +237,18 @@ def test_a_ledger_that_is_missing_is_zero_not_a_crash(tmp_path):
     assert arena._ledger(tmp_path) == (0, 0)
 
 
-# --- the runner --------------------------------------------------------------
-# run_arena() spends real money, so it was only ever verified by running it and
-# looking — which is exactly the gap that let the token bug ship. These drive
-# the whole seed -> probe -> score path with a fake Waku: no model, no keys, no
-# network, and no spend.
+# --- 跑步者 --------------------------------------------------------------------------
+# run_arena() 花费真钱，因此只能通过运行它来验证并且
+# 该差异正是 Token 问题出现的原因。这些驱动覆盖了
+# 整个种子 -> 探测 -> 带有假 Waku 的得分路径：没有模型，没有密钥，没有
+# 网络，而且不花钱。
 
 class _FakeWaku:
     """Records what it was told, answers what the script says, and writes the
     same usage.jsonl the real app does — so token accounting is exercised too."""
 
-    built: ClassVar[list] = []   # every instance a run created, so a test can inspect it
-    settles: ClassVar[bool] = True   # what facts.settle() reports back
+    built: ClassVar[list] = []   # 运行创建的每个实例，因此测试可以检查它
+    settles: ClassVar[bool] = True   # facts.settle() 报告返回什么
 
     def __init__(self, settings=None, **kw):
         from types import SimpleNamespace
@@ -258,13 +258,13 @@ class _FakeWaku:
         self.home.mkdir(parents=True, exist_ok=True)
         self._answers = dict(_FakeWaku.script)
         self.client = object()
-        # The runner flushes consolidation and then CLEARS the session before
-        # probing, so a seeded fact can only be reached through the store. A
-        # fake that cannot do that would let the real thing regress silently —
-        # which is the whole reason the bypass survived until a live race.
-        # A store that reports readiness, and records WHEN it was asked. The
-        # runner must ask after the last seed and before the first probe;
-        # anywhere else and it is timing the network instead of the memory.
+        # 跑步者刷新整合，然后清除之前的会话
+        # 探测，因此只能通过商店才能获得种子事实。一个
+        # 做不到这一点的假货会让真品悄然倒退——
+        # 这就是绕道在现场比赛之前得以幸存的全部原因。
+        # 报告准备情况并记录何时被询问的商店。这
+        # 跑步者必须在最后一个种子之后和第一个探针之前询问；
+        # 在其他任何地方，它都会对网络而不是内存进行计时。
         self.settled_after: list[int] = []
         facts = SimpleNamespace(settle=lambda timeout=120.0: (
             self.settled_after.append(len(self.seen)) or _FakeWaku.settles))
@@ -277,7 +277,7 @@ class _FakeWaku:
     def respond(self, message, source="cli", observer=None, **kw):
         from types import SimpleNamespace
         self.seen.append(message)
-        # every turn costs something, so a per-probe delta is observable
+        # 每转一圈都会花费一些成本，因此每个探头的增量是可观察到的
         with (self.home / "usage.jsonl").open("a", encoding="utf-8") as f:
             f.write(json.dumps({"in": 100, "out": 10}) + "\n")
         if observer:
@@ -308,12 +308,12 @@ def _offline(monkeypatch, declined=None):
 
     monkeypatch.setattr(consolidation, "consolidate_if_due", lambda *a, **k: 0)
     monkeypatch.setattr(arena, "adjudicate_refusal", lambda *a, **k: declined)
-    # Arena homes are now NAMED for their seed, so a real run reuses one and
-    # skips re-telling. That is the point of them — and it would make these
-    # tests depend on whether an earlier run left a `.seeded` marker behind,
-    # which is a suite that passes only on a machine that has never raced.
-    # A fresh directory per call restores isolation; the reuse behaviour gets
-    # its own test below, where the home is pinned deliberately.
+    # 竞技场主场现在以其种子命名，因此真正的比赛会重复使用一个和
+    # 跳过重述。这就是他们的重点——这将使这些
+    # 测试取决于早期运行是否留下了“.seed”标记，
+    # 这是一套仅通过从未参加过比赛的机器的套件。
+    # 每次调用一个新目录可恢复隔离；重用行为得到
+    # 下面是它自己的测试，其中的房屋是故意固定的。
     monkeypatch.setattr(arena, "arena_home",
                         lambda backend, track, seed, model:
                         Path(tempfile.mkdtemp(prefix=f"arena-test-{backend}-")))
@@ -390,7 +390,7 @@ def test_the_gate_decision_reaches_the_scorer(monkeypatch, tmp_path):
                                     "expect_any": ["68"], "expect_retrieval": False, "note": "n"}]
     import waku.app
     _FakeWaku.script = {"q1?": "68"}
-    _FakeWaku.gate = True          # it retrieved when it should not have
+    _FakeWaku.gate = True          # 它在不应该检索的时候检索到了
     monkeypatch.setattr(waku.app, "Waku", _FakeWaku)
     _offline(monkeypatch)
     events = []
@@ -411,7 +411,7 @@ def test_the_live_store_is_never_switched(monkeypatch, tmp_path):
     assert load_settings().semantic_store == "sqlite", "the real config must be untouched"
 
 
-# --- the two fixes this file exists to hold in place -------------------------
+# --- 该文件存在的两个修复是为了固定位置 --------------------------
 
 def test_the_conversation_is_cleared_before_any_probe_is_asked(monkeypatch, tmp_path):
     """history_turns is 12 (24 messages), and a track seeds far fewer than that,
@@ -542,7 +542,7 @@ def test_store_is_asked_to_settle_between_seeding_and_probing(tmp_path, monkeypa
     """
     import waku.app
 
-    fx = _arena_fixture(tmp_path)          # 2 seed lines, 2 probes
+    fx = _arena_fixture(tmp_path)          # 2 个种子系，2 个探针
     _FakeWaku.script = {"q1?": "alpha", "q2?": "new"}
     _FakeWaku.gate = True
     _FakeWaku.built = []
@@ -574,12 +574,12 @@ def test_a_store_that_never_settles_says_so_instead_of_scoring_silently(tmp_path
     _FakeWaku.script = {"q1?": "alpha", "q2?": "new"}
     _FakeWaku.gate = True
     _FakeWaku.built = []
-    _FakeWaku.settles = False            # the store never confirms
+    _FakeWaku.settles = False            # 店家从来不确认
     monkeypatch.setattr(waku.app, "Waku", _FakeWaku)
     _offline(monkeypatch)
     events = []
     arena.run_arena(["sqlite"], "t", lambda k, e: events.append((k, e)), fixture=fx)
-    _FakeWaku.settles = True             # do not leak the flag into other tests
+    _FakeWaku.settles = True             # 不要将标志泄漏到其他测试中
 
     warnings = [e for k, e in events if k == "warn"]
     assert warnings, "a store that never confirmed readiness must emit a warning"
@@ -636,7 +636,7 @@ def test_a_store_already_told_is_not_told_again(tmp_path, monkeypatch):
     """
     import waku.app
 
-    fx = _arena_fixture(tmp_path)          # 2 seed lines, 2 probes
+    fx = _arena_fixture(tmp_path)          # 2 个种子系，2 个探针
     home = tmp_path / "pinned"
     _FakeWaku.script = {"q1?": "alpha", "q2?": "new"}
     _FakeWaku.gate = True
@@ -670,7 +670,7 @@ def test_a_home_is_only_marked_ready_once_the_store_confirms_it_is_searchable(
     _FakeWaku.script = {"q1?": "alpha", "q2?": "new"}
     _FakeWaku.gate = True
     _FakeWaku.built = []
-    _FakeWaku.settles = False            # the store never confirms
+    _FakeWaku.settles = False            # 店家从来不确认
     monkeypatch.setattr(waku.app, "Waku", _FakeWaku)
     _offline(monkeypatch)
     monkeypatch.setattr(arena, "arena_home", lambda *a, **k: home)
@@ -733,8 +733,8 @@ def test_a_race_writes_to_its_own_hosted_partition_not_the_live_one(monkeypatch)
         assert partition.startswith("waku-arena-"), partition
         assert os.environ["MEM0_USER_ID"] == partition
         assert os.environ["ZEP_USER_ID"] == partition
-    # Leaking this would move the LIVE agent's memory to a benchmark partition
-    # — worse than the bug it fixes.
+    # 泄漏此信息会将 LIVE 代理的内存移动到基准分区
+    # ——比它修复的错误还要糟糕。
     assert "MEM0_USER_ID" not in os.environ
     assert "ZEP_USER_ID" not in os.environ
 
@@ -804,7 +804,7 @@ def test_the_panel_reads_the_races_hosted_partition_too(monkeypatch):
         f"{seen.get('partition')!r}"
     )
     assert rows[0]["kind"] == "arena", rows[0]["kind"]
-    # And it must not leak: the live agent has to keep its own partition.
+    # 而且它不能泄漏：实时代理必须保留自己的分区。
     assert "MEM0_USER_ID" not in os.environ
 
 
@@ -868,7 +868,7 @@ def test_an_already_told_store_emits_one_cached_event_not_a_fake_count(tmp_path,
     animate through a telling phase it was not doing."""
     import waku.app
 
-    fx = _arena_fixture(tmp_path)          # 2 seed lines
+    fx = _arena_fixture(tmp_path)          # 2 条种子系
     home = tmp_path / "pinned"
     _FakeWaku.script = {"q1?": "alpha", "q2?": "new"}
     _FakeWaku.gate = True
@@ -878,7 +878,7 @@ def test_an_already_told_store_emits_one_cached_event_not_a_fake_count(tmp_path,
     monkeypatch.setattr(arena, "arena_home", lambda *a, **k: home)
 
     _FakeWaku.built = []
-    arena.run_arena(["sqlite"], "t", lambda k, e: None, fixture=fx)   # first: seeds
+    arena.run_arena(["sqlite"], "t", lambda k, e: None, fixture=fx)   # 第一：种子
 
     events = []
     _FakeWaku.built = []

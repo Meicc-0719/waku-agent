@@ -42,4 +42,4 @@ def test_node_kinds_are_labelled_for_the_chart():
     kinds = {n["name"]: n["kind"] for n in triage_topology()["nodes"]}
     assert kinds["classify"] == "llm"
     assert kinds["check_calendar"] == "tool"
-    assert kinds["full_agent"] == "agent"      # THE loop, as a node — the story
+    assert kinds["full_agent"] == "agent"      # 作为一个节点的循环——故事

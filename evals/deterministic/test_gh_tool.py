@@ -60,7 +60,7 @@ def capture(monkeypatch):
     return seen
 
 
-# --- the boundary -----------------------------------------------------------
+# ---边界------------------------------------------------------------------------
 
 @pytest.mark.parametrize("command", [
     "pr merge", "pr create", "pr close", "pr comment", "pr edit",
@@ -101,7 +101,7 @@ def test_view_and_diff_require_a_real_number(no_subprocess):
         assert "number" in github.gh_read(command, number="not-a-number")  # type: ignore[arg-type]
 
 
-# --- argv construction ------------------------------------------------------
+# --- argv 构造 ------------------------------------------------------
 
 def test_argv_is_built_from_literals(capture):
     github.gh_read("pr view", number=42, repo="ShenSeanChen/waku-agent")
@@ -116,8 +116,8 @@ def test_list_commands_ask_for_json_and_clamp_the_limit(capture):
     argv = capture["argv"]
     assert "--json" in argv, "list output is parsed, so it must be requested as JSON"
     assert argv[argv.index("--limit") + 1] == "50", "an unbounded limit must be clamped"
-    # 0 means "didn't say", not "give me zero rows" — a tool that honoured a
-    # literal 0 would return nothing and look broken rather than unconfigured.
+    # 0 表示“没说”，而不是“给我零行”——这是一个尊重
+    # 文字 0 不会返回任何内容，并且看起来已损坏，而不是未配置。
     github.gh_read("issue list", limit=0)
     assert capture["argv"][capture["argv"].index("--limit") + 1] == "10"
 
@@ -158,7 +158,7 @@ def test_every_gh_call_is_bounded(capture):
     assert capture["kwargs"].get("timeout"), "the timeout must reach subprocess.run"
 
 
-# --- honest failure ---------------------------------------------------------
+# ---诚实的失败--------------------------------------------------------
 
 @pytest.mark.parametrize("exc,expect", [
     (FileNotFoundError(), "not installed"),
@@ -213,7 +213,7 @@ def test_malformed_json_does_not_raise(monkeypatch):
     assert "not JSON" in str(res)
 
 
-# --- registration -----------------------------------------------------------
+#  - - 登记  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - -
 
 def test_the_tool_is_off_unless_asked_for(tmp_path):
     """Every registered tool ships in every prompt, so a maintainer-only tool

@@ -46,27 +46,27 @@ def consolidate_if_due(
     rows = conn.execute(
         "SELECT id, role, content FROM chat_log WHERE consolidated = 0 ORDER BY id"
     ).fetchall()
-    if len(rows) < every_n * 2:  # each exchange = 2 rows (user + assistant)
+    if len(rows) < every_n * 2:  # 每次交换 = 2 行（用户 + 助理）
         return 0
 
     log = "\n".join(f"{r['role']}: {r['content']}" for r in rows)
     try:
         response = client.messages.create(
             model=small_model,
-            # generous budget: reasoning models (Kimi K2.6/K3, ...) spend a
-            # thinking block BEFORE the JSON, and this prompt carries the whole
-            # unconsolidated log (not one short message like the retrieval
-            # gate) — 600 was measured truncating kimi-k2.6 to a thinking-only
-            # reply (stop_reason=max_tokens, zero text blocks) on a 40-row backlog.
+            # 慷慨的预算：推理机型（Kimi K2.6/K3，...）花一个
+            # JSON 之前的思考块，这个提示包含了整个
+            # 未合并的日志（不是像检索那样的一条短消息）
+            # 门） — 600 被测量，将 kimi-k2.6 截断为仅思考
+            # 对 40 行积压的回复（stop_reason=max_tokens，零文本块）。
             max_tokens=4096,
             messages=[{"role": "user", "content": SUMMARIZER_PROMPT.format(log=log)}],
         )
         text = "".join(b.text for b in response.content if b.type == "text")
-        if "{" not in text:  # a reasoning-only / truncated reply, not a parse error
+        if "{" not in text:  # 仅推理/截断的回复，而不是解析错误
             return 0
         distilled = json.loads(text[text.index("{") : text.rindex("}") + 1])
     except Exception:
-        return 0  # never lose the log — it stays unconsolidated for next time
+        return 0  # 永远不会丢失日志——下次它不会合并
 
     for fact in distilled.get("facts", []):
         if fact.get("subject") and fact.get("content"):

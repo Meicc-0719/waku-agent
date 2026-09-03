@@ -30,7 +30,7 @@ def test_all_history_returns_every_thread(tmp_path, monkeypatch):
 
     out = session_action({"action": "history", "id": "__all__"})
     contents = [m["content"] for m in out["history"]]
-    # every thread present, ordered oldest -> newest
+    # 每个存在的线程，按最旧的 -> 最新的顺序排列
     assert contents == ["hi from A", "reply A", "hi from B", "reply B"]
 
 
@@ -58,6 +58,6 @@ def test_thread_history_includes_meta(tmp_path, monkeypatch):
     app.conn.commit()
 
     hist = _thread_history(app.conn, "t")
-    assert hist[0]["meta"] is None                     # user row
+    assert hist[0]["meta"] is None                     # 用户行
     assert hist[1]["meta"]["model"] == "gemini-3.5-flash"
     assert hist[1]["meta"]["gate"]["decision"] == "skip"

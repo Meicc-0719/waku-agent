@@ -28,8 +28,8 @@ def test_toggle_persists_and_roundtrips(monkeypatch, tmp_path):
     _isolate(monkeypatch, tmp_path)
     assert integrations.apply_provider_disabled("openai", disabled=True).ok
     assert os.environ["WAKU_DISABLED_PROVIDERS"] == "openai"
-    # dotenv.set_key quotes the value — verify it roundtrips correctly instead
-    # of asserting the exact format.
+    # dotenv.set_key 引用该值 - 验证它是否正确往返
+    # 断言确切的格式。
     assert "WAKU_DISABLED_PROVIDERS" in (tmp_path / ".env").read_text()
     from dotenv import dotenv_values
     assert dotenv_values(tmp_path / ".env")["WAKU_DISABLED_PROVIDERS"] == "openai"
@@ -44,7 +44,7 @@ def test_toggle_rejects_unknown_and_current(monkeypatch, tmp_path):
     result = integrations.apply_provider_disabled("anthropic", disabled=True)
     assert not result.ok and "current" in result.error
     assert os.environ.get("WAKU_DISABLED_PROVIDERS", "") == ""
-    # Enabling (or disabling a non-current provider) is still fine.
+    # 启用（或禁用非当前提供程序）仍然可以。
     assert integrations.apply_provider_disabled("anthropic", disabled=False).ok
     assert integrations.apply_provider_disabled("openai", disabled=True).ok
 

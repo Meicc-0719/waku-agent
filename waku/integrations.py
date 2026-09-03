@@ -37,10 +37,10 @@ class IntegrationState(StrEnum):
     first visit, about integrations that were already working.
     """
 
-    NOT_CONFIGURED = "not_configured"                        # nothing filled in
-    INSTALLED_BUT_UNCONFIGURED = "installed_but_unconfigured"  # something REQUIRED is missing
-    CONFIGURED = "configured"                                # complete, never tested
-    CONNECTED = "connected"                                  # probed, and it worked
+    NOT_CONFIGURED = "not_configured"                        # 没有填写任何内容
+    INSTALLED_BUT_UNCONFIGURED = "installed_but_unconfigured"  # 缺少必需的东西
+    CONFIGURED = "configured"                                # 完整，从未测试过
+    CONNECTED = "connected"                                  # 进行了探索，并且成功了
     ERROR = "error"
 
 
@@ -277,7 +277,7 @@ def registry() -> tuple[Integration, ...]:
     return provider_integrations() + INTEGRATIONS
 
 
-# T2 implementation: the cache path mirrors waku.ops.catalog's .waku storage.
+# T2 实现：缓存路径镜像 waku.ops.catalog 的 .waku 存储。
 _IMPORT_OK: dict[str, bool] = {}
 _HEALTH: dict[str, IntegrationStatus] | None = None
 _gateway_status_provider: Callable[[str], IntegrationStatus | None] | None = None
@@ -285,7 +285,7 @@ _gateway_reloader: Callable[[set[str]], dict[str, IntegrationStatus]] | None = N
 
 
 def _health_path() -> Path:
-    # Keep CLI and Dashboard aligned with the rest of Waku's runtime files.
+    # 使 CLI 和仪表板与 Waku 的其余运行时文件保持一致。
     from waku.config import load_settings
 
     return load_settings().home / "connections_health.json"
@@ -300,8 +300,8 @@ def _extra_installed(import_name: str) -> bool:
         try:
             _IMPORT_OK[import_name] = importlib.util.find_spec(import_name) is not None
         except ValueError:
-            # Test doubles and a few lazy optional packages can be present in
-            # sys.modules without a spec; they are still importable in practice.
+            # 测试替身和一些惰性可选包可以存在于
+            # 没有规范的 sys.modules；它们在实践中仍然很重要。
             _IMPORT_OK[import_name] = import_name in sys.modules
     return _IMPORT_OK[import_name]
 
@@ -375,9 +375,9 @@ def _status(integration: Integration, env: Mapping[str, str]) -> IntegrationStat
         status = _gateway_status_provider(integration.key)
         if status is not None:
             return status
-    # Everything required is present and the extra is installed. Whether it
-    # actually WORKS is a separate question, answered only by a probe — so the
-    # honest answer when no probe has run is "configured", not "needs setup".
+    # 所需的一切都已具备，并且额外的已安装。无论是
+    # 实际上 WORKS 是一个单独的问题，只能通过探针来回答 - 所以
+    # 当没有运行探测器时诚实的答案是“已配置”，而不是“需要设置”。
     return _health().get(integration.key, IntegrationStatus(IntegrationState.CONFIGURED,
                                                             "configured — not tested yet"))
 
@@ -532,15 +532,15 @@ def _otel_probe(values: Mapping[str, str]) -> None:
 
 
 def _provider_probe(values: Mapping[str, str]) -> None:
-    # Catalog has the provider-specific URL logic; a list operation is safe and
-    # is deliberately the same non-writing check used by the existing UI.
+    # 目录具有特定于提供商的 URL 逻辑；列表操作是安全的并且
+    # 故意与现有 UI 使用相同的非写入检查。
     from waku.ops import catalog
 
     provider = next((name for name, item in PROVIDERS.items() if item.key_env in values), "")
     if not provider:
         return
-    # A Save must validate the candidate key/endpoint, never a cached result
-    # produced by a previous credential for the same URL.
+    # 保存必须验证候选键/端点，而不是缓存的结果
+    # 由同一 URL 的先前凭据生成。
     result = catalog.list_models(provider, use_cache=False)
     if result.get("error"):
         raise ValueError(result["error"])
@@ -597,7 +597,7 @@ def apply_integration(key: str, values: Mapping[str, str], clear: tuple[str, ...
     integration = _find_integration(key)
     if integration is None:
         return ApplyResult(False, error="unknown integration")
-    # Providers have cross-field switching semantics and therefore their own API.
+    # 提供者具有跨领域切换语义，因此拥有自己的 API。
     if integration.group == "AI Providers":
         return ApplyResult(False, error="use apply_provider for AI Providers")
     fields = {field.name: field for field in integration.env}
@@ -677,10 +677,10 @@ def test_integration(key: str) -> IntegrationView:
     if not integration.enabled(values):
         view = _current_view(key)
         assert view is not None
-        # Switched off. The two "not ready" states survive as they are — turning
-        # a toggle off doesn't fill in a missing token. Anything that WAS ready
-        # (configured / connected / error) drops to CONFIGURED, because a
-        # disabled integration must never keep claiming it is connected.
+        # 已关闭。这两个“未准备好”的状态依然存在——转向
+        # 关闭开关不会填充缺失的标记。一切准备就绪
+        # （已配置/已连接/错误）下降到已配置，因为
+        # 禁用的集成绝不能一直声称它已连接。
         state = (
             view.status.state
             if view.status.state in (IntegrationState.NOT_CONFIGURED,
@@ -731,10 +731,10 @@ def apply_provider(provider: str, *, key: str | None = None, model: str | None =
         updates["WAKU_SMALL_MODEL"] = ""
     if key:
         updates[selected.key_env] = key
-    # Regional providers own their endpoint choice.  Keeping it beside that
-    # provider's key prevents a MiniMax URL, for example, from leaking into Kimi
-    # after a switch.  A legacy WAKU_BASE_URL for the current provider is
-    # migrated the next time its endpoint is saved.
+    # 区域提供商拥有自己的端点选择权。  把它放在旁边
+    # 例如，提供商的密钥可防止 MiniMax URL 泄漏到 Kimi 中
+    # 切换后。  当前提供商的旧版 WAKU_BASE_URL 是
+    # 下次保存其端点时进行迁移。
     if selected.base_url_env and (base_url is not None or switching):
         legacy = os.environ.get("WAKU_BASE_URL", "") if provider == previous else ""
         selected_base_url = (base_url or legacy or selected.configured_base_url() or "").strip()
@@ -745,9 +745,9 @@ def apply_provider(provider: str, *, key: str | None = None, model: str | None =
         updates["WAKU_BASE_URL"] = base_url
     if custom_key is not None:
         updates["WAKU_API_KEY"] = custom_key
-    # The modal always submits its selected Base URL.  Compare effective values
-    # rather than field presence so reopening and saving an unchanged provider
-    # does not perform a synchronous network probe every time.
+    # 模式始终提交其选择的基本 URL。  比较有效值
+    # 而不是现场存在，因此重新开放并保存未更改的提供商
+    # 并不每次都执行同步网络探测。
     current_key = os.environ.get(selected.key_env, "")
     legacy_base_url = os.environ.get("WAKU_BASE_URL", "") if provider == previous else ""
     current_base_url = legacy_base_url or selected.configured_base_url() or ""
@@ -768,9 +768,9 @@ def apply_provider(provider: str, *, key: str | None = None, model: str | None =
     contents = path.read_text(encoding="utf-8") if path.exists() else None
     before = {name: os.environ.get(name) for name in changed_updates}
     try:
-        # Validate a newly supplied key before persisting it.  catalog's probe
-        # intentionally reads environment variables, so expose only the
-        # candidate values for the duration of this non-writing request.
+        # 在保留新提供的密钥之前验证它。  目录探针
+        # 有意读取环境变量，因此仅公开
+        # 此非写入请求期间的候选值。
         candidate_key = key or os.environ.get(selected.key_env, "")
         if candidate_key and (key_changed or base_url_changed) and not force:
             probe_names = {"WAKU_PROVIDER", selected.key_env}

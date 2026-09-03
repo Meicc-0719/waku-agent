@@ -45,7 +45,7 @@ function dbQueryView(){
 // --- 只读 SQL 控制台（“类似 Supabase 的简易查询编辑器”）。
 function qFill(sql){ const b=document.getElementById("sqlbox"); if(b){ b.value=sql; runQuery(); } }
 async function runQuery(){
-  editing = true;   // keep the 5s refresh from wiping the query + results
+  editing = true;   // 保持 5 秒刷新不会擦除查询+结果
   const sql = (document.getElementById("sqlbox")||{}).value || "";
   const out = document.getElementById("qout");
   out.innerHTML = `<div class="meta">正在执行…</div>`;

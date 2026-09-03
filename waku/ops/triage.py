@@ -51,9 +51,9 @@ def run_triage(observer=None, message: str = "") -> dict:
 
     with agent_lock:
         agent = get_agent()
-        # _respond_via_graph is the same method the automatic door uses, so
-        # what you watch here IS what runs on every message when the flag is
-        # on — not a demo path that could drift from it.
+        # _respond_via_graph 与自动门使用的方法相同，因此
+        # 你在这里看到的是当标志是时每条消息上运行的内容
+        # on — 不是一个可能偏离它的演示路径。
         result = agent._respond_via_graph(text, notify, stream=False)
 
     if result is None:

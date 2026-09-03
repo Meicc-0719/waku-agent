@@ -12,7 +12,7 @@ import shutil
 
 from waku.ops import coding_eval as ce
 
-_TRUE = shutil.which("true") or "/usr/bin/true"   # a real no-op binary, exits 0
+_TRUE = shutil.which("true") or "/usr/bin/true"   # 真正的无操作二进制文件，退出 0
 
 
 def _stub_pi(monkeypatch):
@@ -37,7 +37,7 @@ def test_verify_fail_when_code_is_wrong(tmp_path, monkeypatch):
             "files": {"fizzbuzz.py": "def fizzbuzz(n):\n    return 'wrong'\n"},
             "verify": "python3 -c \"from fizzbuzz import fizzbuzz; assert fizzbuzz(3)=='Fizz'\""}
     passed, _why, _ = ce.run_coding_case("anthropic", "claude-opus-4-8", case)
-    assert not passed                       # pi 'ran' but the code fails verify
+    assert not passed                       # pi“跑”但代码验证失败
 
 
 def test_missing_key_is_reported(tmp_path, monkeypatch):
@@ -54,7 +54,7 @@ def test_unmapped_provider_is_reported(tmp_path, monkeypatch):
 
 
 def test_every_pinned_provider_maps_to_a_pi_provider():
-    # the arena's pinned providers must all reach pi, or the coding round can't run them
+    # 竞技场的固定提供者必须全部达到 pi，否则编码轮无法运行它们
     for prov in ("anthropic", "openai", "gemini", "kimi", "xai", "glm"):
         assert prov in ce.PI_PROVIDER
 
@@ -73,7 +73,7 @@ def test_coding_case_for_message_matches_trimmed():
 
 
 def test_stream_runner_scores_by_verify_and_emits_lines(tmp_path, monkeypatch):
-    _stub_pi(monkeypatch)                       # pi = no-op; seeded file provides the code
+    _stub_pi(monkeypatch)                       # pi = 无操作；种子文件提供代码
     monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
     lines = []
     passed, why, _secs = ce.run_coding_stream(
@@ -83,7 +83,7 @@ def test_stream_runner_scores_by_verify_and_emits_lines(tmp_path, monkeypatch):
         verify="python3 -c \"from fizzbuzz import fizzbuzz; assert fizzbuzz(15)=='FizzBuzz'\"",
         on_line=lines.append)
     assert passed is True and why == "tests pass"
-    assert any(ln.startswith("$ pi") for ln in lines)   # the launch line streamed
+    assert any(ln.startswith("$ pi") for ln in lines)   # 发射线流式传输
 
 
 def test_stream_runner_free_form_has_no_verdict(tmp_path, monkeypatch):
@@ -92,4 +92,4 @@ def test_stream_runner_free_form_has_no_verdict(tmp_path, monkeypatch):
     passed, _why, _ = ce.run_coding_stream("anthropic", "claude-opus-4-8",
                                           task="build snake", files=None, verify=None,
                                           on_line=lambda _ln: None)
-    assert passed is None            # nothing to score -> no pass/fail, it just ran
+    assert passed is None            # 没有得分 -> 没有通过/失败，它只是运行

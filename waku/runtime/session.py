@@ -56,28 +56,28 @@ class Session:
 
     def __init__(self, settings: Settings, memory=None, session_id: str = "default"):
         self.settings = settings
-        self.memory = memory  # waku.memory.Memory (None until Phase-2 wiring)
+        self.memory = memory  # waku.memory.Memory（第 2 阶段接线之前无）
         self.session_id = session_id
         self.history: list[dict] = []
 
     def build_system(self, user_message: str, notify=None) -> str:
         from datetime import datetime
 
-        # The agent runs on your laptop, so it should know your laptop's clock.
-        # Local time WITH the timezone name — enough to resolve "in 30 minutes".
+        # 该代理在您的笔记本电脑上运行，因此它应该知道您笔记本电脑的时钟。
+        # 带有时区名称的本地时间 — 足以解决“30 分钟内”的问题。
         now = datetime.now().astimezone()
         parts = [load_soul(self.settings),
                  f"\nRight now it is {now:%A, %Y-%m-%d %H:%M} ({now:%Z}, UTC{now:%z}).",
-                 # the agent should know its own brain — "what model are you?"
-                 # is the first question every curious user asks
+                 # 智能体应该了解自己的大脑——“你是什么模型？”
+                 # 这是每个好奇的用户问的第一个问题
                  (f"Your model: you are running on '{self.settings.model}' via the "
                  f"'{self.settings.provider}' provider, inside Waku, a local-first "
                  f"open-source agent harness (github.com/ShenSeanChen/waku-agent).")]
 
         if self.memory is not None:
-            # Hero moment #1: a cheap judge decides IF we retrieve at all —
-            # default-on retrieval is slow and biases answers (see
-            # memory/retrieval_gate.py for the why).
+            # 英雄时刻＃1：一个廉价的法官决定我们是否能检索到 -
+            # 默认检索速度很慢并且会使答案产生偏差（请参阅
+            # memory/retrieval_gate.py 了解原因）。
             retrieved = self.memory.gated_retrieve(user_message, notify=notify)
             if retrieved:
                 parts.append("\nRelevant memory:\n" + retrieved)
@@ -106,10 +106,10 @@ class Session:
             self.memory.log_chat(user_message, record, session_id=self.session_id,
                                  source=source, meta=meta)
 
-    # ---- session lifecycle (the "New chat" / history feature)
-    # A session is just a tag on chat_log rows. Starting a new one clears working
-    # memory; switching reloads a past conversation's history so replies have
-    # context. Consolidation still reads ALL unconsolidated rows regardless.
+    # ---- 会话生命周期（“新聊天”/历史记录功能）
+    # 会话只是 chat_log 行上的一个标签。开始新的工作可以清理工作
+    # 记忆;切换会重新加载过去的对话历史记录，以便回复
+    # 语境。无论如何，合并仍会读取所有未合并的行。
     def start_new(self, session_id: str) -> None:
         self.session_id = session_id
         self.history = []
@@ -119,8 +119,8 @@ class Session:
         self.history = []
         if self.memory is None:
             return
-        # only the recent tail of a past conversation goes back into working
-        # memory (respond() also windows it, but don't hold the whole thread)
+        # 只有过去谈话的最近的尾声才能恢复工作
+        # 内存（respond() 也打开它，但不保留整个线程）
         turns = self.settings.history_turns
         for user_msg, reply in list(self.memory.session_history(session_id))[-turns:]:
             self.history.append({"role": "user", "content": user_msg})

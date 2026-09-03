@@ -49,35 +49,35 @@ from waku.memory.retrieval_gate import should_retrieve
 
 pytestmark = pytest.mark.skipif(not HAS_KEY, reason="LLM-as-judge needs the active provider's API key")
 
-# What each error direction actually costs the user, in the same unit, so the
-# headline score can weight them instead of averaging them away.
+# 每个错误方向实际上给用户带来的成本是多少，以相同的单位计算，因此
+# 标题得分可以对它们进行加权，而不是对它们进行平均。
 #
-#   false NO  — the gate declined to search when it should have. The fact the
-#               user told Waku is simply not in the prompt, so the reply is
-#               confidently wrong or asks a question it was already told the
-#               answer to. Nothing in the trace says "memory was skipped and
-#               that was the mistake"; it just looks like Waku forgot.
-#   false YES — the gate searched when it did not need to. Cost: one FTS5
-#               query (microseconds, local) and a few hundred characters of
-#               prompt. Occasionally an irrelevant fact nudges the answer.
+#   false NO——大门在应该进行搜查时拒绝进行搜查。事实是
+#               用户告诉 Waku 根本不在提示中，所以回复是
+#               自信地错了或者问了一个已经被告知的问题
+#               回答。跟踪中没有任何内容表明“内存被跳过并且
+#               那是错误”；看起来 Waku 忘记了。
+#   false YES — 大门在不需要时进行搜索。成本：一台 FTS5
+#               查询（微秒，本地）和几百个字符
+#               迅速的。有时，一个不相关的事实会推动答案。
 #
-# 4:1 is a judgment call, not a measurement. It is written here as a named
-# constant precisely so a reader can disagree with the number and change it,
-# rather than having to reverse-engineer it out of a formula.
+# 4:1 是一个判断，而不是一个衡量标准。这里写为命名的
+# 精确地恒定，以便读者可以不同意该数字并更改它，
+# 而不必根据公式对其进行逆向工程。
 FALSE_NEGATIVE_COST = 4.0
 FALSE_POSITIVE_COST = 1.0
 
 
 # ──────────────────────────────────────────────────────────────────────
-#  Dataset — each case is a message + the memory that exists at the time,
-#  labeled with the correct gate decision. Hand-curated to cover the four
-#  categories from issue #77.
+#  数据集——每个案例都是一条消息+当时存在的记忆，
+#  标有正确的门决策。手工策划以涵盖四个
+#  第 77 期的类别。
 #
-#  `memory_snippets` is shown to the JUDGE so it can reason about whether
-#  retrieval would help. The gate itself never sees memory — it decides
-#  from the message alone — so the snippets are not passed to should_retrieve.
-#  `should_retrieve` is the ground-truth label for the summary metrics and
-#  is NEVER shown to the judge.
+#  `memory_snippets` 会被展示给 JUDGE，这样它就可以推断是否
+#  检索会有帮助。门本身永远看不到记忆——它决定
+#  仅来自消息 - 因此片段不会传递给 should_retrieve。
+#  `should_retrieve` 是摘要指标的真实标签，
+#  永远不会向法官展示。
 # ──────────────────────────────────────────────────────────────────────
 
 
@@ -99,7 +99,7 @@ class GateCase:
 
 
 DATASET: list[GateCase] = [
-    # ── Category 1: Chitchat — should NOT retrieve
+    # ── 第一类：闲聊——不应该检索
     GateCase(
         id="chitchat-1",
         category="chitchat",
@@ -135,7 +135,7 @@ DATASET: list[GateCase] = [
         should_retrieve=False,
     ),
 
-    # ── Category 2: Direct question about a stored fact — SHOULD retrieve
+    # ── 第 2 类：关于存储事实的直接问题 - 应该检索
     GateCase(
         id="direct-fact-1",
         category="direct-fact",
@@ -168,11 +168,11 @@ DATASET: list[GateCase] = [
         should_retrieve=True,
     ),
 
-    # ── Category 3: Follow-up whose referent is in chat history, not memory
+    # ── 第3类：追随者，其所指对象在聊天记录中，而不是记忆中
     #
-    # The user is continuing a conversation — the context is in the chat
-    # history (which the gate does not see), not in the memory store. The
-    # gate should NOT retrieve — the answer is in the conversation, not memory.
+    # 用户正在继续对话 - 上下文在聊天中
+    # 历史（门看不到），不在内存中。这
+    # 门不应该检索——答案在对话中，而不是记忆中。
     GateCase(
         id="followup-history-1",
         category="followup-history",
@@ -204,12 +204,12 @@ DATASET: list[GateCase] = [
         should_retrieve=False,
     ),
 
-    # ── Category 4: A question whose answer memory does not contain
+    # ── 第四类：答案记忆中不包含的问题
     #
-    # The user asks something personal that Waku has no memory of. The gate
-    # SHOULD still retrieve — the gate's job is to decide "does this need
-    # memory?", not "will memory succeed?". A personal question always
-    # warrants a search.
+    # 用户询问了一些 Waku 不记得的私人问题。大门
+    # 仍然应该检索 - 门的工作是决定“这是否需要
+    # 记忆？”，而不是“记忆会成功吗？”。始终是个人问题
+    # 需要进行搜查。
     GateCase(
         id="missing-memory-1",
         category="missing-memory",
@@ -244,7 +244,7 @@ DATASET: list[GateCase] = [
 
 
 # ──────────────────────────────────────────────────────────────────────
-#  Gate runner — calls the real retrieval gate once per case, cached
+#  Gate runner — 每个案例调用一次真正的检索门，并缓存
 # ──────────────────────────────────────────────────────────────────────
 
 
@@ -277,8 +277,8 @@ def gate_results():
 
     settings = load_settings()
     client = get_client(settings)
-    # Fall back to the provider's default small model when WAKU_SMALL_MODEL
-    # is unset — the gate needs a concrete model id to call.
+    # 当 WAKU_SMALL_MODEL 时回退到提供程序的默认小模型
+    # 未设置 — 门需要一个具体的模型 ID 才能调用。
     small_model = settings.small_model or PROVIDERS[settings.provider].small_model
 
     results: dict[str, GateOutcome] = {}
@@ -289,7 +289,7 @@ def gate_results():
 
 
 # ──────────────────────────────────────────────────────────────────────
-#  Scored eval — DeepEval GEval scores the gate's decision quality
+#  Scored eval — DeepEval GEval 对门的决策质量进行评分
 # ──────────────────────────────────────────────────────────────────────
 
 
@@ -382,13 +382,13 @@ def test_gate_decision_is_reasonable(case: GateCase, gate_results, gate_metric):
 
 
 # ──────────────────────────────────────────────────────────────────────
-#  Scored eval — is the QUERY any good? A yes is only half the decision.
+#  评估得分 — QUERY 有用吗？回答“是”只是决定的一半。
 #
-#  should_retrieve returns (retrieve, query, reason). The boolean above only
-#  proves the gate chose to look; `query` is what it actually looks WITH, and
-#  it is passed straight to SqliteFactStore.search(). A "yes" carrying a
-#  useless query retrieves nothing, so from the caller's side it is
-#  indistinguishable from a "no" — the failure the decision eval cannot see.
+#  should_retrieve 返回（检索、查询、原因）。仅上面的布尔值
+#  证明门选择了看； `query` 是它实际看起来的样子，并且
+#  它直接传递给 SqliteFactStore.search()。一个“是”携带着
+#  无用的查询不会检索任何内容，因此从调用者的角度来看，它是
+#  与“不”没有区别——决策评估看不到的失败。
 # ──────────────────────────────────────────────────────────────────────
 
 
@@ -485,10 +485,10 @@ def test_retrieve_query_would_find_the_memory(case: GateCase, gate_results, quer
     if not outcome.retrieve:
         pytest.skip("gate said no — there is no query to score")
     if not case.should_retrieve:
-        # The gate searched on a case that should have been skipped. The query
-        # is beside the point: the decision was already wrong, and
-        # test_gate_decision_is_reasonable is what fails for it. Scoring the
-        # query here would report the same one mistake twice.
+        # 大门搜查了一个本应跳过的案件。查询
+        # 不是重点：这个决定已经是错误的，而且
+        # test_gate_decision_is_reasonable 是失败的原因。得分
+        # 这里的查询会报告同一个错误两次。
         pytest.skip("gate said yes on a skip-case — the decision eval owns that failure")
 
     assert_test(
@@ -502,7 +502,7 @@ def test_retrieve_query_would_find_the_memory(case: GateCase, gate_results, quer
 
 
 # ──────────────────────────────────────────────────────────────────────
-#  Summary — the cost-weighted headline, then each error direction on its own
+#  摘要 — 成本加权标题，然后是每个错误方向
 # ──────────────────────────────────────────────────────────────────────
 
 
@@ -513,7 +513,7 @@ def test_gate_accuracy_summary(gate_results):
     ways this gate can be wrong do not cost the same thing (see
     ``FALSE_NEGATIVE_COST``). Plain accuracy averages a silently-lost fact
     together with a wasted local search and reports one number that hides
-    which happened — the exact blind spot issue #77 is about. Both directions
+    which happened — the exact blind spot issue #77 左右。两个方向
     therefore also get their own labelled section, and any miss prints a
     warning naming the cases.
 
@@ -525,8 +525,8 @@ def test_gate_accuracy_summary(gate_results):
     """
     tp = fp = tn = fn = 0
     by_category: dict[str, list[bool]] = {}
-    missed: list[GateCase] = []      # false NO — the expensive direction
-    needless: list[GateCase] = []    # false YES — the cheap direction
+    missed: list[GateCase] = []      # false NO——昂贵的方向
+    needless: list[GateCase] = []    # false YES——便宜的方向
 
     for case in DATASET:
         gate_said = gate_results[case.id].retrieve
@@ -545,8 +545,8 @@ def test_gate_accuracy_summary(gate_results):
             missed.append(case)
 
     total = len(DATASET)
-    positives = tp + fn   # cases that SHOULD have retrieved
-    negatives = tn + fp   # cases that should NOT have
+    positives = tp + fn   # 应该检索的案例
+    negatives = tn + fp   # 不应该有的情况
     accuracy = (tp + tn) / total
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     recall = tp / positives if positives > 0 else 0.0
@@ -556,17 +556,17 @@ def test_gate_accuracy_summary(gate_results):
         else 0.0
     )
 
-    # 1.0 = flawless, 0.0 = every case wrong in the most expensive way
-    # available. Normalising by the worst case keeps the number readable as a
-    # percentage even if the weights are retuned.
+    # 1.0 = 完美无缺，0.0 = 每个案例都以最昂贵的方式出错
+    # 可用的。按最坏情况进行归一化可以使数字可读为
+    # 即使权重被重新调整，百分比也是如此。
     incurred = fn * FALSE_NEGATIVE_COST + fp * FALSE_POSITIVE_COST
     worst = positives * FALSE_NEGATIVE_COST + negatives * FALSE_POSITIVE_COST
     weighted = 1 - incurred / worst if worst > 0 else 1.0
     miss_rate = fn / positives if positives > 0 else 0.0
     false_alarm_rate = fp / negatives if negatives > 0 else 0.0
 
-    # How many retrieve-cases handed the query eval something to score. Read
-    # straight off the gate results — no judge call, no extra spend.
+    # 有多少检索案例给查询评估一些东西来评分。读
+    # 直接得出结果——无需评判，无需额外支出。
     scorable = sum(
         1 for c in DATASET if c.should_retrieve and gate_results[c.id].retrieve
     )
@@ -610,9 +610,9 @@ def test_gate_accuracy_summary(gate_results):
         acc = sum(correct) / len(correct)
         lines.append(f"    {cat:20s}  {acc:.0%}  ({sum(correct)}/{len(correct)})")
 
-    # Name the cases, not just the count. "FN=1" tells a reader the gate missed
-    # something; this tells them WHICH something, and what the gate thought it
-    # was doing — which is where a prompt fix actually starts.
+    # 列出案例的名称，而不仅仅是计数。 “FN=1”告诉读者错过了门
+    # 某物;这告诉他们什么事情，以及大门的想法
+    # 正在做的事情——这就是快速修复实际开始的地方。
     if missed:
         lines += [
             "",
@@ -632,9 +632,9 @@ def test_gate_accuracy_summary(gate_results):
 
     print("\n".join(lines))
 
-    # Soft floor on the WEIGHTED score, not raw accuracy: a gate that scores
-    # 50% by getting every skip-case right and every retrieve-case wrong is
-    # useless, and only the weighted number says so.
+    # 加权分数的软底，而不是原始准确性：得分的门
+    # 50% 通过正确处理每个跳过案例和错误的每个检索案例
+    # 没用，只有加权数字才这么说。
     assert weighted >= 0.5, (
         f"Cost-weighted gate score {weighted:.0%} is below 50% — worse than random "
         f"once a missed retrieval is counted at {ratio:.0f}x a needless one "

@@ -45,9 +45,9 @@ def bundled_skill_dirs() -> list[Path]:
 class Memory:
     def __init__(self, conn: sqlite3.Connection, settings: Settings, client: anthropic.Anthropic,
                  episode_store=None):
-        # episode_store: inject an already-built store (the dashboard caches ONE
-        # NotionEpisodeStore process-wide — its constructor hits the network,
-        # so building one per Memory would re-query Notion on every poll).
+        # Episode_store：注入一个已经构建的商店（仪表板缓存一个
+        # NotionEpisodeStore 进程范围 - 它的构造函数访问网络，
+        # 因此，为每个内存构建一个会在每次轮询时重新查询 Notion）。
         self.conn = conn
         self.settings = settings
         self.client = client
@@ -57,10 +57,10 @@ class Memory:
 
     @staticmethod
     def _make_fact_store(conn, settings):
-        # Every branch here returns something that satisfies FactStore
-        # (semantic/base.py) and is held to it by the conformance suite — which
-        # is the whole reason a hosted service can stand in for local SQLite
-        # without anything upstream noticing.
+        # 这里的每个分支都会返回满足 FactStore 的内容
+        # (semantic/base.py) 并由一致性套件保留 - 其中
+        # 这就是托管服务可以替代本地 SQLite 的全部原因
+        # 没有任何上游注意到。
         if settings.semantic_store == "supabase":
             from waku.memory.semantic.supabase_store import SupabaseFactStore
 
@@ -87,7 +87,7 @@ class Memory:
             return NotionEpisodeStore()
         return SqliteEpisodeStore(conn)
 
-    # ---- retrieval (gated — see retrieval_gate.py for why)
+    # ---- 检索（门控——请参阅retrieval_gate.py 了解原因）
     def gated_retrieve(self, message: str, notify=None) -> str:
         retrieve, query, reason = retrieval_gate.should_retrieve(
             self.client, self.settings.small_model, message
@@ -100,12 +100,12 @@ class Memory:
         found += self.episodes.search(query, top_k=3)
         return "\n".join(found)
 
-    # ---- procedural
+    # ----程序性的
     def matching_skills(self, message: str) -> str:
         matched = self.skills.match(message)
         return "\n\n".join(f"### {s.name}\n{s.body}" for s in matched)
 
-    # ---- write paths
+    # ---- 写入路径
     def log_chat(self, user_message: str, reply: str, session_id: str = "default",
                  source: str = "cli", meta: dict | None = None) -> None:
         import json as _json
@@ -113,15 +113,15 @@ class Memory:
             "INSERT INTO chat_log (role, content, session_id, source) VALUES ('user', ?, ?, ?)",
             (user_message, session_id, source),
         )
-        # meta (gate/latency/iterations/tools) rides on the assistant row so a
-        # reopened thread can render the full turn card, not just the text.
+        # 元（门/延迟/迭代/工具）位于辅助行上，因此
+        # 重新打开的线程可以渲染完整的回合卡，而不仅仅是文本。
         self.conn.execute(
             "INSERT INTO chat_log (role, content, session_id, source, meta) VALUES ('assistant', ?, ?, ?, ?)",
             (reply, session_id, source, _json.dumps(meta) if meta else None),
         )
         self.conn.commit()
 
-    # ---- sessions (for the dashboard's chat history + "New chat")
+    # ---- 会话（仪表板的聊天历史记录+“新聊天”）
     def session_history(self, session_id: str) -> list[tuple[str, str]]:
         """The (user, assistant) exchanges of one past session, in order — used
         to reload working memory when the user switches back to a conversation."""

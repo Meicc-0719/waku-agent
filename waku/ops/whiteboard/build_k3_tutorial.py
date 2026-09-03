@@ -34,7 +34,7 @@ def act1():
              size=S.FS_HEADER, color=S.PAL["grey"][1]))
     a(S.socials_block(1980, 44))
 
-    # rising chain of WHITE nodes, colored strokes, labeled arrows
+    # 白色节点的上升链，彩色笔画，标记箭头
     rungs = [
         ("A3  Bag-of-words\ncount words, ignore order\n\"not good\" == \"good not\"", "grey"),
         ("A4  LSTM  (what you built)\nreads left->right, keeps memory\nbut slow + forgets far back", "blue"),
@@ -50,25 +50,25 @@ def act1():
             a(S.labeled_arrow(prev[0], prev[1], x, y + bh / 2, "gets better at"))
         prev = (x + bw, y + bh / 2)
 
-    # A5 turning-point annotation (blue side-note)
+    # A5转折点注释（蓝色旁注）
     a5x = x0 + 2 * (bw + gap)
     a(S.annotate(a5x, ybase - 2 * step - 60,
                  "* THE turning point (2017) --\n  the only atom they must keep"))
 
-    # A7 LLM as an ellipse (agent-ish node), pink
+    # A7 LLM 作为椭圆（代理节点），粉红色
     llx, lly = x0 + 4 * (bw + gap), ybase - 4 * step
     a(S.ellipse(llx, lly, 300, 150, "A7  LLM\nTransformer x huge scale\nx the whole internet",
                 color="pink"))
     a(S.labeled_arrow(prev[0], prev[1], llx, lly + 75, "gets better at"))
 
-    # A8 cost wall — red subsystem boundary with white sub-nodes inside
+    # A8 成本墙 — 红色子系统边界，内部有白色子节点
     wx = llx + 300 + gap
     a(S.boundary(wx, 200, 320, 620, "A8  THE COST WALL", color="red"))
     a(S.labeled_box(wx + 30, 300, 260, 110, "too many\nparameters", color="red"))
     a(S.labeled_box(wx + 30, 470, 260, 130, "attention costs\nn squared\n(A5's hidden price)", color="red"))
     a(S.labeled_arrow(llx + 300, lly + 75, wx, 500, "hits"))
 
-    # A9 Kimi K3 — green boundary with three trick chips
+    # A9 Kimi K3 — 绿色边界，带有三个技巧芯片
     hx = wx + 320 + gap
     a(S.boundary(hx, 180, 430, 640, "A9  KIMI K3", color="green"))
     a(S.annotate(hx + 26, 230, "the hero that beats the wall"))
@@ -94,7 +94,7 @@ def act2(standalone=True):
     if standalone:
         a(S.socials_block(1640, 44))
 
-    # B1 the rig: prompt chip -> Waku ellipse -> three provider chips
+    # B1 装备：提示芯片 -> Waku 椭圆 -> 三个提供商芯片
     a(S.text(80, 170, "B1   The rig = Waku", size=S.FS_HEADER, color=S.PAL["blue"][1]))
     a(S.chip(80, 250, 200, 90, "one prompt", color="green"))
     a(S.ellipse(360, 235, 220, 120, "Waku\n(swap the brain)", color="pink"))
@@ -108,7 +108,7 @@ def act2(standalone=True):
     a(S.text(80, 400, "unfair advantage: nobody else demos on their own multi-provider agent",
              size=S.FS_SMALL, color=S.PAL["grey"][1]))
 
-    # three test nodes (white, colored stroke), each with a blue "grades" note
+    # 三个测试节点（白色、彩色笔画），每个节点都有蓝色“等级”注释
     cards = [
         ("B2  Pelican", "SVG of a pelican\non a bicycle --\nvisual, instant to judge",
          "grades A7  (raw capability)", "green", "Willison benchmark, Jul 16 2026"),
@@ -128,7 +128,7 @@ def act2(standalone=True):
             a(S.source_label(x + 10, y + ch + 42, src))
         a(S.arrow(rig[0] + i * 20, rig[1], x + cw / 2, y, color=S.INK))
 
-    # B5 verdict — red subsystem boundary
+    # B5 判决 — 红色子系统边界
     vy = 880
     a(S.boundary(80, vy, 1900, 190, "B5  The verdict", color="red"))
     a(S.text(120, vy + 80,
@@ -157,7 +157,7 @@ def combined():
     e = act1()
     dy = 1180
     a1_bottom = 1080
-    # dashed divider between the two acts
+    # 两个行为之间的虚线分隔线
     e.append(S.hand_line(60, a1_bottom, [[0, 0], [2620, 0]],
                          color=S.PAL["grey"][1], sw=S.SW_DETAIL))
     e[-1]["strokeStyle"] = "dashed"

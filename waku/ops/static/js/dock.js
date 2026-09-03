@@ -51,7 +51,7 @@ async function viewAllHistory(){
 // 若停靠栏有正在流式输出的轮次则不拉取。
 async function syncLiveView(){
   if (!liveView || CHAT.some(m => m.pending)) return;
-  await loadThreadInto(liveView, {guard: true});   // guard: repaint only if changed
+  await loadThreadInto(liveView, {guard: true});   // 守卫：仅在更改时重新绘制
 }
 function closeSessMenu(){ const m=document.getElementById("sessmenu"); if(m) m.remove(); }
 function toggleSessMenu(ev){

@@ -24,18 +24,18 @@ def test_idle_session_rotates(tmp_path, monkeypatch):
     monkeypatch.setenv("WAKU_SESSION_IDLE_MINUTES", "60")
     app = make_waku(tmp_path / "home", client=ScriptedClient([]))
     before = app.session.session_id
-    _seed(app, before, age_minutes=120)          # 2h idle > 60m threshold
+    _seed(app, before, age_minutes=120)          # 2小时空闲> 60m阈值
     maybe_rotate_session(app)
     assert app.session.session_id != before
     assert app.session.session_id.startswith("dashboard-")
-    assert app.session.history == []             # fresh working memory too
+    assert app.session.history == []             # 工作记忆也很新鲜
 
 
 def test_active_session_stays(tmp_path, monkeypatch):
     monkeypatch.setenv("WAKU_SESSION_IDLE_MINUTES", "60")
     app = make_waku(tmp_path / "home", client=ScriptedClient([]))
     before = app.session.session_id
-    _seed(app, before, age_minutes=5)            # active conversation
+    _seed(app, before, age_minutes=5)            # 积极的对话
     maybe_rotate_session(app)
     assert app.session.session_id == before
 
@@ -44,7 +44,7 @@ def test_empty_session_stays(tmp_path, monkeypatch):
     monkeypatch.setenv("WAKU_SESSION_IDLE_MINUTES", "60")
     app = make_waku(tmp_path / "home", client=ScriptedClient([]))
     before = app.session.session_id
-    maybe_rotate_session(app)                   # no messages at all -> no-op
+    maybe_rotate_session(app)                   # 根本没有消息 -> 无操作
     assert app.session.session_id == before
 
 
@@ -70,7 +70,7 @@ def test_provider_switch_resets_stale_model_overrides(tmp_path, monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "fake-key-for-tests")
     monkeypatch.setattr(settings_api, "find_dotenv", lambda **k: "", raising=False)
 
-    # intercept at the env-write layer; abort before the agent rebuild
+    # 在env-write层拦截；在代理重建之前中止
     def fake_set_key(path, k, v):
         captured[k] = v
         raise RuntimeError("stop-before-rebuild")
@@ -84,6 +84,6 @@ def test_provider_switch_resets_stale_model_overrides(tmp_path, monkeypatch):
         pass
     assert captured.get("WAKU_MODEL", "unset") in ("", "unset") or \
         captured.get("WAKU_PROVIDER") == "gemini"
-    # the actual contract: stale kimi ids must have been blanked
+    # 实际合同：过时的 kimi id 必须已被清空
     assert captured.get("WAKU_MODEL") != "kimi-k3"
     assert captured.get("WAKU_SMALL_MODEL") != "kimi-k3"

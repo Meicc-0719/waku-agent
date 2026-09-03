@@ -78,7 +78,7 @@ class SkillLoader:
         """Transparent trigger: keyword overlap between the message and each
         skill's name+description. No embeddings, no magic — you can compute
         the score in your head."""
-        if self._scan_sig() != self._sig:   # a skill was added/edited — reload
+        if self._scan_sig() != self._sig:   # 添加/编辑了一项技能 - 重新加载
             self.refresh()
         msg_words = set(re.findall(r"[a-z0-9]{3,}", message.lower()))
         scored = []

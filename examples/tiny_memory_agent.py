@@ -81,21 +81,21 @@ def ask(question: str, demo: bool = False) -> str:
     memory = (demo_store(settings, client) if demo
               else Memory(connect(settings.home), settings, client))
 
-    # 1. THE GATE. "what's 17 times 4" needs no memory; asking anyway costs a
-    #    search and risks an irrelevant fact biasing the answer.
+    # 1. 大门。 “17乘以4等于多少”不需要记忆；无论如何询问都会花费
+    #    搜索并冒着不相关的事实使答案产生偏差的风险。
     retrieve, query, reason = should_retrieve(client, settings.small_model, question)
     print(f"gate      : {'retrieve' if retrieve else 'skip'} — {reason}")
 
-    # 2. RETRIEVE. Note the gate rewrites the query: the store is searched for
-    #    the gate's keywords, not the user's phrasing. That is why a question
-    #    asked in Chinese can still find facts stored in English.
+    # 2. 检索。注意门重写了查询：搜索商店
+    #    门的关键字，而不是用户的措辞。这就是为什么有一个问题
+    #    用中文询问仍然可以找到用英文存储的事实。
     facts = memory.facts.search(query, settings.retrieval_top_k) if retrieve else []
     if retrieve:
         print(f"searched  : {query!r} -> {len(facts)} fact(s)")
         for f in facts:
             print(f"  - {f}")
 
-    # 3. ANSWER. One call. No tools, so no tool schemas in the prompt.
+    # 3. 回答。一通电话。没有工具，因此提示中没有工具架构。
     reply = client.messages.create(
         model=settings.model,
         max_tokens=400,
@@ -104,8 +104,8 @@ def ask(question: str, demo: bool = False) -> str:
     )
     usage = getattr(reply, "usage", None)
     if usage:
-        # The receipt, printed every run. A number you cannot see is a number
-        # you will not believe when it matters.
+        # 每次运行都会打印收据。你看不到的数字就是一个数字
+        # 当重要的时候你不会相信。
         tin = getattr(usage, "input_tokens", 0)
         tout = getattr(usage, "output_tokens", 0)
         print(f"cost      : {tin} in + {tout} out = {tin + tout} tokens, 1 call")

@@ -49,7 +49,7 @@ def test_a_turn_that_never_ended_does_not_indent_the_rest_of_the_day(tmp_path):
     assert render_trace(trace, console) == 5
 
     lines = console.export_text().splitlines()
-    assert lines[3].startswith("11:00:00 turn start")  # not pushed right by the crash
+    assert lines[3].startswith("11:00:00 turn start")  # 没有被崩溃推动
     assert lines[4].startswith("  11:00:01 gate")
     assert lines[5].startswith("11:00:02 turn end")
 

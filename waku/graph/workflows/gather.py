@@ -42,9 +42,9 @@ from collections.abc import Callable
 
 from waku.graph.engine import END, START, Graph, Node
 
-# Each scan writes only keys carrying its own prefix. Parallel nodes that write
-# the same key raise GraphStateCollision — the engine's backstop — but a
-# convention a reviewer can check by eye is the actual defence.
+# 每次扫描仅写入带有自己前缀的键。写入的并行节点
+# 相同的键引发 GraphStateCollision — 引擎的后挡板 — 但
+# 审阅者可以通过肉眼检查的惯例是实际的辩护。
 SCAN_KEYS = {
     "scan_github": ("gh_text", "gh_open_prs", "gh_open_issues"),
     "scan_web": ("web_text",),
@@ -128,17 +128,17 @@ def build_gather_graph(*, github_fn: Callable[[], dict],
     g.add_node(Node("scan_memory", lambda s: _safe(
         lambda: {"mem_text": memory_fn()}, {"mem_text": ""}), kind="tool"))
 
-    # One model call, no tools. See rule 1 in the module docstring.
+    # 一种模型调用，无需工具。请参阅模块文档字符串中的规则 1。
     g.add_node(Node("synthesize", lambda s: {"digest": synth_fn(s)}, kind="llm"))
-    # The one write in the whole graph, and it is a file a human opens.
+    # 写在整个图中，它是一个人打开的文件。
     g.add_node(Node("draft_digest", lambda s: {"draft_path": draft_fn(s)}, kind="tool"))
 
     for scan in SCAN_KEYS:
-        g.add_edge(START, scan)          # no deps between them -> one wave
-        g.add_edge(scan, "synthesize")   # synthesize waits for all four
+        g.add_edge(START, scan)          # 他们之间没有任何部门 -> 一波
+        g.add_edge(scan, "synthesize")   # 综合等待所有四个
 
-    # The router lives on synthesize: it IS the barrier, so triage's separate
-    # join node would be dead weight here.
+    # 路由器依赖于综合：它是屏障，所以分类是分开的
+    # 连接节点在这里将是沉重的负担。
     g.add_router("synthesize", needs_action,
                  {"propose": "draft_digest", "quiet": END})
     g.add_edge("draft_digest", END)

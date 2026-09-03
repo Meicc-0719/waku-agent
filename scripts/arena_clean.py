@@ -1,7 +1,7 @@
 """Wipe the hosted memory partitions the Arena and the quickstarts write to.
 
-    python scripts/arena_clean.py              # dry run: lists, deletes nothing
-    python scripts/arena_clean.py --yes        # actually delete
+    python scripts/arena_clean.py              # 试运行：列出，不删除任何内容
+    python scripts/arena_clean.py --yes        # 实际上删除
 
 WHY THIS EXISTS
 
@@ -43,8 +43,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Partitions this repo is known to write to. `waku` is deliberately absent --
-# it is the real assistant's, and it takes an extra flag.
+# 该存储库已知要写入的分区。 “waku”是故意缺席的——
+# 这是真正的助手的，需要额外的标志。
 ARENA_PREFIXES = ("quickstart-", "waku-arena-", "waku-latency-", "iso-test-")
 REAL = "waku"
 
@@ -53,8 +53,8 @@ def mem0_users() -> tuple[object, list[str]]:
     from mem0 import MemoryClient
 
     client = MemoryClient()
-    # get_all(filters={}) is a 400 -- mem0 requires a non-empty filter. users()
-    # is the enumeration endpoint, and it flags vendor playground entities.
+    # get_all(filters={}) 是一个 400 -- mem0 需要一个非空过滤器。用户()
+    # 是枚举端点，它标记供应商游乐场实体。
     payload = client.users()
     rows = payload.get("results", payload) if isinstance(payload, dict) else payload
     users = sorted(
@@ -99,13 +99,13 @@ def classify(user: str, playground: bool, include_waku: bool,
         return (True, "written by this repo (arena or quickstart)")
     if playground:
         return (True, "vendor playground data -- never written by this repo")
-    # Zep's onboarding sandbox is the documented source of the cross-user
-    # entity bleed, so leaving it in place defeats the whole cleanup.
+    # Zep 的入职沙箱是跨用户的文档来源
+    # 实体流血，因此将其留在原处会导致整个清理工作失败。
     return (True, "not written by this repo -- vendor demo/sandbox data")
 
 
 def main(apply: bool, include_waku: bool) -> None:
-    plan: list[tuple[str, str, str, str]] = []  # (service, user, verdict, why)
+    plan: list[tuple[str, str, str, str]] = []  # （服务、用户、结论、原因）
     live = hosted_stores()
     print(f"assistant is configured for: {', '.join(sorted(live))}\n")
 

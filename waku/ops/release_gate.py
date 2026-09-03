@@ -19,7 +19,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()  # the key check below must see .env, same as the app does
+load_dotenv()  # 下面的关键检查必须看到 .env，与应用程序相同
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -67,8 +67,8 @@ def main() -> None:
         print("\nGATE CLOSED — deterministic evals failed. Fix before releasing.")
         sys.exit(1)
 
-    # judge needs the ACTIVE provider's key (anthropic, openrouter, ...), same
-    # rule as evals/helpers.HAS_KEY
+    # 判断需要 ACTIVE 提供商的密钥（anthropic、openrouter...），相同
+    # 规则为 evals/helpers.HAS_KEY
     from waku.config import load_settings
     from waku.loop.models import PROVIDERS
 

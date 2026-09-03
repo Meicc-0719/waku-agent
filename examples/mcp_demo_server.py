@@ -5,7 +5,7 @@ so the connector story runs with zero extra installs:
 
     pip install -e '.[mcp]'
     cp examples/mcp.demo.json .waku/mcp.json
-    make dashboard          # its tools appear under Tools > Available > MCP servers
+    make dashboard          # 其工具显示在工具 > 可用 > MCP 服务器下
 
 Its tools register as `demo_word_count` and `demo_reverse_text`. Swap in your own
 @mcp.tool() functions, or point mcp.json at any real MCP server the same way —
@@ -14,10 +14,10 @@ that's the whole point: connectors plug in without changing Waku's code.
 
 from __future__ import annotations
 
-# `MCPServer` is what the SDK's 2.x line calls the class 1.x shipped as
-# `mcp.server.fastmcp.FastMCP`. The old import path is gone, not deprecated,
-# so this file raised ModuleNotFoundError under the installed SDK until
-# 2026-08-26. The decorator API below is unchanged.
+# `MCPServer` 是 SDK 的 2.x 系列对 1.x 类的调用
+# `mcp.server.fastmcp.FastMCP`。旧的导入路径已消失，但并未弃用，
+# 所以这个文件在安装的 SDK 下引发了 ModuleNotFoundError 直到
+# 2026年8月26日。下面的装饰器 API 没有变化。
 from mcp.server.mcpserver import MCPServer
 
 mcp = MCPServer("demo")
@@ -36,13 +36,13 @@ def reverse_text(text: str) -> str:
 
 
 if __name__ == "__main__":
-    # stdio by default — how Waku's MCPBridge talks to a local server.
-    # `--http` runs the same two tools over Streamable HTTP instead, which is
-    # how it talks to a remote one. Same tools, same code: only the transport
-    # differs, which is the thing worth seeing.
+    # 默认情况下为 stdio — Waku 的 MCPBridge 如何与本地服务器通信。
+    # `--http` 通过 Streamable HTTP 运行相同的两个工具，即
+    # 它如何与远程人交谈。相同的工具，相同的代码：仅传输
+    # 不同，这是值得一看的。
     #
     #   python examples/mcp_demo_server.py --http --port 8931
-    #   # then in .waku/mcp.json:
+    #   # 然后在 .waku/mcp.json 中：
     #   {"servers": [{"name": "demo", "url": "http://127.0.0.1:8931/mcp"}]}
     import argparse
 

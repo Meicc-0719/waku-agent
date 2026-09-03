@@ -15,17 +15,17 @@ def _gate_skip():
 
 
 def test_prompt_history_is_windowed(tmp_path, monkeypatch):
-    monkeypatch.setenv("WAKU_HISTORY_TURNS", "3")   # keep only last 3 turns
+    monkeypatch.setenv("WAKU_HISTORY_TURNS", "3")   # 只保留最后3回合
     sent = []
 
     class Recorder(ScriptedClient):
         def _create(self, **kwargs):
-            # snapshot the message count NOW — run_loop mutates the same list
-            # (appends the assistant reply) after this call returns
+            # 现在截取消息计数——run_loop 改变同一个列表
+            # （附助理回复）此电话返回后
             sent.append(list(kwargs.get("messages", [])))
             return self._script.pop(0)
 
-    # 5 turns; each turn = gate call (skip) + one loop call
+    # 5 圈；每转 = 门调用（跳过）+ 一次循环调用
     script = []
     for _ in range(5):
         script += [_gate_skip(), response([text_block("ok")])]
@@ -33,13 +33,13 @@ def test_prompt_history_is_windowed(tmp_path, monkeypatch):
     for i in range(5):
         app.respond(f"message number {i}")
 
-    # the LAST loop call's messages: at most 3 turns * 2 rows + the new user
-    # message = 7, and it must NOT contain the oldest turns
+    # 最后一次循环调用的消息：最多 3 轮 * 2 行 + 新用户
+    # message = 7，并且它不能包含最旧的回合
     last = sent[-1]
     assert len(last) <= 3 * 2 + 1, f"window not applied: {len(last)} messages"
     text_blob = " ".join(str(m.get("content", "")) for m in last)
     assert "message number 0" not in text_blob
-    assert "message number 4" in text_blob   # the newest turn is present
+    assert "message number 4" in text_blob   # 最新的转弯出现了
 
 
 def test_default_window_is_generous_but_finite(tmp_path, monkeypatch):

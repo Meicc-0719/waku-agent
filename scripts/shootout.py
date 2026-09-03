@@ -70,7 +70,7 @@ def run_one(provider: str, model: str, cases: list[dict], trials: int = 1) -> di
             settings = Settings(provider=provider, model=model, small_model="",
                                 home=home, apple_calendar=False)
             app = Waku(settings=settings)
-            resolved_model = settings.model   # get_client filled the default
+            resolved_model = settings.model   # get_client填写默认值
             if "setup_fact" in case:
                 app.memory.facts.add(case["setup_fact"]["subject"], case["setup_fact"]["content"])
             t0 = time.perf_counter()
@@ -78,7 +78,7 @@ def run_one(provider: str, model: str, cases: list[dict], trials: int = 1) -> di
                 result = app.respond(case["input"])
                 ok, w = check_case(case, result.tool_calls)
                 iters_seen.append(result.iterations)
-            except Exception as exc:  # a crashed turn is a failed trial, not a crashed shootout
+            except Exception as exc:  # 转弯失败是一次失败的尝试，而不是一次失败的枪战
                 ok, w = False, f"error: {str(exc)[:90]}"
             lat.append(time.perf_counter() - t0)
             i1, o1 = _ledger_totals(home)

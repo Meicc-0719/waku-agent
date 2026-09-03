@@ -17,8 +17,8 @@ import { StringEnum } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { defineTool, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-// The real Gen-6+ offensive chart: attacking type -> types it hits for 2x.
-// StringEnum (not Type.Union) keeps the parameter Google/Gemini-compatible.
+// 真正的 Gen-6+ 进攻图表：进攻类型 -> 命中类型 2 倍。
+// StringEnum（不是 Type.Union）保持参数 Google/Gemini 兼容。
 const TYPES = [
 	"normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison",
 	"ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark",
@@ -64,8 +64,8 @@ const typeMatchup = defineTool({
 	},
 });
 
-// Team Rocket guard: hands off the Pokemon Center (.waku runtime data).
-// Blocks the exact mistake waku's own rules forbid — wiping .waku or `rm -rf /`.
+// 火箭队后卫：放开口袋妖怪中心（.waku 运行时数据）。
+// 阻止 waku 自己的规则禁止的确切错误 - 擦除 .waku 或 `rm -rf /`。
 const ROCKET = /\brm\b[^\n]*\s(-[rRfF]+\s+)?(\.waku(\/|\b)|\/\s|~\/?\s*$)/;
 
 export default function pokemonBattle(pi: ExtensionAPI) {

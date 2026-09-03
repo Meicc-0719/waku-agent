@@ -54,8 +54,8 @@ def env_or(name: str, default: str) -> str:
     """
     return os.getenv(name, "").strip() or default
 
-# A row id as its backend chose to express it: sqlite counts, Supabase and
-# hosted APIs hand out opaque strings. Never parse it — pass it back verbatim.
+# 行 ID 作为其后端选择表达它：sqlite counts、Supabase 和
+# 托管 API 分发不透明的字符串。永远不要解析它——逐字传回。
 FactId = int | str
 
 

@@ -1,7 +1,7 @@
 """Reset .waku to a clean, curated state for a demo / recording.
 
-    python scripts/demo_seed.py                 # clean slate, KEEPS the spend ledger
-    python scripts/demo_seed.py --reset-spend   # also wipe usage.jsonl (money/tokens)
+    python scripts/demo_seed.py                 # 清零，保留支出账本
+    python scripts/demo_seed.py --reset-spend   # 同时清除 usage.jsonl（费用/Token）
 
 What it does (your old state is backed up first, never just deleted):
   1. moves the current .waku aside to .waku.bak-<timestamp>
@@ -30,11 +30,11 @@ from waku.memory.episodic.store import SqliteEpisodeStore
 from waku.memory.semantic.store import SqliteFactStore
 from waku.tools.calendar import make_tool
 
-# Curated seed — clean, no duplicates. Edit these to taste before recording.
+# 精选种子——干净，无重复。在录制之前编辑这些内容以供品味。
 FACTS = [
-    # The parentheses around each multi-line string are load-bearing, not style:
-    # inside a collection, a MISSING COMMA silently glues two entries into one
-    # instead of erroring. ruff's ISC004 flags exactly that shape.
+    # 每个多行字符串周围的括号是承载的，而不是样式：
+    # 在集合中，缺失的逗号会默默地将两个条目粘合成一个
+    # 而不是出错。 ruff 的 ISC004 恰好标记了这种形状。
     ("user", ("The user runs the YouTube channel 'Sean's AI Stories' and films implementation "
               "walkthroughs. His X account is @ShenSeanChen. All of his Chinese social media "
               "accounts are called 肖恩君Sean.")),
@@ -56,28 +56,28 @@ def main(reset_spend: bool = False) -> None:
         backup = home.with_name(f"{home.name}.bak-{stamp}")
         shutil.copytree(home, backup)
         print(f"backed up {home} -> {backup}")
-        # calendar.ics + these dirs are plain files no process holds open.
-        # traces/ = the Loop & Tools history; clear it so those tabs start empty.
+        # calendar.ics + 这些目录是普通文件，没有进程保持打开状态。
+        # traces/ 保存循环与工具历史记录；清除后这些选项卡会从空状态开始。
         (home / "calendar.ics").unlink(missing_ok=True)
         for sub in ("outbox", "skills", "traces"):
             d = home / sub
             if d.exists():
                 shutil.rmtree(d)
-        # Ops eval history — start empty so a live `make gate` adds a visible row.
+        # 操作评估历史记录 - 从空开始，因此实时“make gateway”添加可见行。
         (home / "eval_runs.jsonl").unlink(missing_ok=True)
         (home / "eval_report.json").unlink(missing_ok=True)
-        # The spend ledger is a permanent record — only wiped on explicit request.
+        # 支出账本是永久记录——只有在明确要求时才会被擦除。
         if reset_spend:
             (home / "usage.jsonl").unlink(missing_ok=True)
 
     settings.ensure_home()
     conn = connect(home)
 
-    # Clear the DB rows IN PLACE — never delete state.db. Deleting the file
-    # would leave any live gateway (a running `make telegram`, the dashboard,
-    # an open CLI) holding a broken, read-only connection to the old inode.
+    # 就地清除数据库行 — 切勿删除 state.db。删除文件
+    # 会留下任何实时网关（正在运行的“make telegram”、仪表板、
+    # 一个开放的 CLI）持有与旧 inode 的损坏的只读连接。
     for table in ("chat_log", "calendar_events", "facts", "episodes"):
-        conn.execute(f"DELETE FROM {table}")   # triggers keep the FTS index in sync
+        conn.execute(f"DELETE FROM {table}")   # 触发器使 FTS 索引保持同步
     conn.commit()
 
     facts, episodes = SqliteFactStore(conn), SqliteEpisodeStore(conn)
@@ -88,7 +88,7 @@ def main(reset_spend: bool = False) -> None:
     create_event = make_tool(conn, home).fn
     print(create_event(**EVENT))
 
-    # regenerate the human-readable MEMORY.md mirror for the fresh state
+    # 重新生成人类可读的 MEMORY.md 镜像以达到新状态
     from waku.memory import Memory
 
     Memory(conn, settings, None).export_markdown()
@@ -111,9 +111,9 @@ if __name__ == "__main__":
                         help="also wipe usage.jsonl (the money/token spend ledger)")
     args = parser.parse_args()
     if not args.yes:
-        # Safety gate: this destroys live memory/calendar/traces. Refuse unless the
-        # human explicitly confirms with --yes. See CLAUDE.md ("Never wipe runtime
-        # data without asking first"). It backs up, but restoring is a hassle.
+        # 安全门：这会破坏实时内存/日历/痕迹。拒绝，除非
+        # human 明确确认 --yes。请参阅 CLAUDE.md（“永远不要擦除运行时
+        # 数据无需先询问”）。它会备份，但恢复很麻烦。
         print("REFUSING to run: demo_seed clears .waku (memory, calendar, chat, traces"
               + (", AND spend" if args.reset_spend else "") + ").")
         print("This is destructive. If you truly mean it, re-run with --yes:")

@@ -80,11 +80,11 @@ def render_trace(path: Path, console: Console | None = None) -> int:
                 continue
 
             kind = event.get("type", "event")
-            # Turns never nest, so depth is binary: the turn_start/turn_end pair
-            # always sits flush left and the events between them are indented one
-            # level. Assigning the depth rather than adding to it keeps a turn that
-            # crashed before writing its turn_end from pushing the rest of the day
-            # steadily to the right.
+            # 转弯永远不会嵌套，因此深度是二进制的：turn_start/turn_end 对
+            # 始终位于左侧齐平，并且它们之间的事件缩进一个
+            # 等级。分配深度而不是增加深度可以保持一个转弯
+            # 在写下它的turn_end之前崩溃了，因为推动了当天剩下的时间
+            # 稳定地向右。
             if kind in {"turn_start", "turn_end"}:
                 turn_depth = 0
             timestamp = str(event.get("ts", ""))

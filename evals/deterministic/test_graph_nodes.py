@@ -54,8 +54,8 @@ def test_agent_node_runs_a_real_loop_turn_with_tagged_events():
     state = run_graph(one_node_graph(node), {"message": "note milk"},
                       observer=lambda kind, ev: events.append((kind, ev)))
 
-    assert calls == [{"text": "milk"}]                    # the tool really ran
-    assert state["result"].reply == "Noted!"              # a real LoopResult
+    assert calls == [{"text": "milk"}]                    # 该工具确实运行了
+    assert state["result"].reply == "Noted!"              # 真正的 LoopResult
     assert state["result"].iterations == 2
     inner = [(k, ev) for k, ev in events if k in ("llm", "tool")]
     assert inner, "inner loop events must pass through to the outer observer"

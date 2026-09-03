@@ -37,7 +37,7 @@ def policy(**over):
     return should_answer(**{**base, **over})
 
 
-# ---------- the incident itself
+# ---------- 事件本身
 
 
 def test_unconfigured_bot_ignores_every_server_channel():
@@ -56,7 +56,7 @@ def test_unconfigured_bot_still_answers_dms():
     assert policy(is_dm=True) is True
 
 
-# ---------- opening it up, one deliberate step at a time
+# ---------- 打开它，一次一个深思熟虑的步骤
 
 
 def test_an_allowlisted_channel_answers_only_on_a_mention():
@@ -93,7 +93,7 @@ def test_both_allowlists_must_pass_in_a_channel():
     assert policy(**{**ok, "mentioned": False}) is False
 
 
-# ---------- the spend stop
+# ---------- 支出停止
 
 
 def test_turn_budget_stops_at_the_ceiling():
@@ -110,7 +110,7 @@ def test_turn_budget_is_a_rolling_hour_not_a_fixed_window():
     assert budget.allow(now=1000.0 + 3601) is True, "turns older than an hour must expire"
 
 
-# ---------- parsing
+# ---------- 解析
 
 
 def test_id_lists_tolerate_the_way_people_actually_write_them(monkeypatch):

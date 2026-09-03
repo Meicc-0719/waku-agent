@@ -1,6 +1,6 @@
-// waku dashboard — inline Memory/SOUL/skill editing actions.
-// Split out of app.js: classic <script>, shared global scope (no build
-// step, no modules). Load order + rules: static/README.md.
+// waku 仪表板 — 内联内存/灵魂/技能编辑操作。
+// 从 app.js 中分离出来：经典 <script>，共享全局范围（无构建
+// 步骤，无模块）。加载顺序+规则：static/README.md。
 
 function editFact(id){
   const row = document.getElementById("fact-"+id); if(!row) return;
@@ -21,7 +21,7 @@ async function delMem(action, id){
   await postJSON("/api/memory", {action, id});
   refresh();
 }
-// dirty-state: a Save button stays muted until its editor actually changes
+// 脏状态：“保存”按钮保持静音，直到其编辑器实际更改
 function dirty(btnId){ editing = true; const b = document.getElementById(btnId); if (b) b.disabled = false; }
 async function saveSoul(){
   const v = document.getElementById("soul").value;

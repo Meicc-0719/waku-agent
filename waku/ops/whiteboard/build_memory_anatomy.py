@@ -25,7 +25,7 @@ OUT = pathlib.Path("docs/whiteboards/memory-anatomy.excalidraw")
 def build() -> list:
     e: list = []
 
-    # ---- title -------------------------------------------------------------
+    #  -  -  标题  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - -
     e.append(S.text(60, 40, "26.08.15  Memory System Anatomy", size=S.FS_TITLE))
     e.append(S.underline(64, 96, 660, color=S.PAL["red"][1]))
     e.append(S.text(60, 116,
@@ -34,11 +34,11 @@ def build() -> list:
                     size=S.FS_BODY))
     e += S.socials_block(2210, 44)
 
-    # ---- SCOPE: the outer frame -------------------------------------------
+    # ---- 范围：外框 ------------------------------------------------------
     e += S.boundary(60, 200, 1560, 1130,
                     "SCOPE  —  if I have two users, what do they share?", color="red")
 
-    # One ephemeral turn across the top, so Q2 has real traffic to label.
+    # 顶部有一个短暂的转弯，因此第二季度有真正的流量需要标记。
     e += S.chip(150, 255, 220, 70, "a user turn")
     e += S.labeled_box(560, 245, 320, 90, "working memory")
     e += S.ellipse(1060, 245, 280, 90, "the agent", color="pink")
@@ -46,7 +46,7 @@ def build() -> list:
     e.append(S.arrow(375, 290, 555, 290))
     e.append(S.arrow(885, 290, 1055, 290))
 
-    # Q2 is the three arrows OUT of the store — that is the whole question.
+    # Q2 是商店外面的三个箭头——这就是整个问题。
     e.append(S.arrow(360, 535, 610, 340))
     e.append(S.arrow(830, 535, 710, 340))
     e.append(S.arrow(1300, 535, 810, 340))
@@ -54,7 +54,7 @@ def build() -> list:
                               "keyword  ·  vector (RAG)  ·  graph traversal  ·  don't",
                     size=S.FS_SMALL))
 
-    # ---- THE STORE ---------------------------------------------------------
+    # ---- 商店 ---------------------------------------------------------
     e += S.boundary(110, 470, 1460, 320, "THE STORE   ·   Q1  what SHAPE?", color="plain")
 
     e += S.labeled_box(150, 540, 430, 110, "Procedural\nhow to act · skills")
@@ -65,11 +65,11 @@ def build() -> list:
     e.append(S.text(625, 668, "FILE  +  ROWS\nMEMORY.md  ·  state.db", size=S.FS_SMALL))
     e.append(S.text(1095, 668, "ROWS\nSQLite + FTS5", size=S.FS_SMALL))
 
-    # ---- the two arrows that matter ---------------------------------------
+    # ---- 重要的两个箭头 --------------------------------------
     e += S.labeled_arrow(620, 900, 620, 800, "write · supersede · merge · retire")
     e += S.labeled_arrow(1060, 800, 1060, 900, "\"what's already here?\"")
 
-    # ---- THE MANAGER -------------------------------------------------------
+    # ---- 经理 -------------------------------------------------------
     e += S.boundary(110, 910, 1460, 215,
                     "THE MANAGER   ·   Q3  what happens to what is no longer true?",
                     color="plain")
@@ -83,17 +83,17 @@ def build() -> list:
     e += S.card(1215, 985, 330, "Job 4  REFLECT",
                 "when does it think?\nEVERYONE: per-turn only")
 
-    # the jobs run in sequence — draw the motion
+    # 作业按顺序运行 - 绘制运动
     e.append(S.arrow(485, 1038, 500, 1038))
     e.append(S.arrow(840, 1038, 855, 1038))
     e.append(S.arrow(1195, 1038, 1210, 1038))
 
-    # Job 4's missing back-edge: dashed and red, because it is the gap
+    # 作业 4 缺少的后边缘：虚线和红色，因为它是间隙
     e += S.labeled_arrow(1380, 985, 1380, 815, "off the critical path",
                          color=S.PAL["red"][1], dashed=True)
     e.append(S.red_note(1405, 850, "nobody does this"))
 
-    # ---- SCOPE footer ------------------------------------------------------
+    # ---- 范围页脚 ------------------------------------------------------
     e.append(S.text(150, 1262,
                     "waku: one user, one machine     ·     mem0: shared across agents in an org",
                     size=S.FS_SMALL))
@@ -101,7 +101,7 @@ def build() -> list:
                         "Zep: PROJECT-WIDE ONTOLOGY — a schema set in a signup wizard "
                         "shapes every user's graph, and deleting users never clears it"))
 
-    # ---- the grid: same three questions, four systems ----------------------
+    # ----网格：同样的三个问题，四个系统--------------------
     e += S.pill_header(1680, 200, 980, "THE SAME THREE QUESTIONS, FOUR ANSWERS", color="plain")
 
     e += S.card(1680, 275, 980, "waku  /  Hermes",
@@ -127,19 +127,19 @@ def build() -> list:
                 "written months apart, or notice a contradiction it never saw together.",
                 color="red")
 
-    # the gap in the grid points back at the gap in the manager
+    # 网格中的间隙指向管理器中的间隙
     e.append(S.arrow(1670, 985, 1420, 1010, color=S.PAL["red"][1], dashed=True))
 
-    # ---- the finding that cost us a day ------------------------------------
+    # ---- 这个发现让我们花了一天的时间 ------------------------------------
     e += S.card(1680, 1110, 980, "measured, not read off a docs page",
                 "Both mem0 and Zep mark the dead fact dead — and BOTH still return it\n"
                 "from a plain search. mem0 scored the superseded row 0.3474 against\n"
                 "0.3429 for the live one. Read the lifecycle field, or ship the wrong date.")
 
-    # Q2 listed its options and never said when you would pick one. That is the
-    # question the audience actually has, and "keyword vs RAG vs graph" is
-    # unanswerable as a ranking — it only resolves against how much you have
-    # and what kind of question you ask of it.
+    # Q2 列出了它的选项，但从未透露何时会选择一个。那就是
+    # 观众实际上有的问题，“关键字 vs RAG vs 图表”是
+    # 作为一个排名是无法回答的——它只根据你拥有的数量来决定
+    # 以及你问它什么样的问题。
     e += S.pill_header(1680, 1290, 980, "SO WHEN DO YOU ACTUALLY NEED EMBEDDINGS?",
                        color="plain")
 

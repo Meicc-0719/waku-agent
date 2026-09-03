@@ -30,10 +30,10 @@ READONLY_SCOPE = "https://www.googleapis.com/auth/calendar.events.readonly"
 DEFAULT_SCOPES = [READONLY_SCOPE]
 TIMEOUT = 30
 
-# waku's own OAuth client (Desktop app).
-# TODO: Fill in the project-owned Google OAuth client ID and secret before
-# release. Desktop-app client secrets are identifiers, not confidential
-# credentials; every user must still grant access in their own browser.
+# waku 自己的 OAuth 客户端（桌面应用程序）。
+# TODO：之前填写项目拥有的 Google OAuth 客户端 ID 和密钥
+# 发布。桌面应用程序客户端机密是标识符，而不是机密
+# 证书;每个用户仍然必须在自己的浏览器中授予访问权限。
 BUNDLED_CLIENT_CONFIG = {
     "installed": {
         "client_id": "",
@@ -116,8 +116,8 @@ def connect(home: Path) -> str:
                 scopes=DEFAULT_SCOPES,
             )
             client_source = "bundled OAuth client"
-        # port=0 = any free local port. The redirect lands back on this machine,
-        # so no server and no public URL are involved anywhere.
+        # port=0 = 任何空闲的本地端口。重定向返回到这台机器上，
+        # 所以任何地方都不涉及服务器和公共 URL。
         creds = flow.run_local_server(port=0)
     except Exception as exc:
         return f"Google sign-in failed or was cancelled ({type(exc).__name__}). Nothing was saved."
@@ -149,8 +149,8 @@ def list_google_events(home: Path, start: str = "", end: str = "", limit: int = 
     today = _dt.date.today().isoformat()
     s = (start or today)[:10]
     e = (end or s)[:10]
-    # Google wants RFC3339 with an offset; local midnight to local midnight+1d
-    # so "today" means the user's today, not UTC's.
+    # 谷歌希望 RFC3339 带有偏移量；当地午夜至当地午夜+1d
+    # 所以“今天”是指用户的今天，而不是 UTC 的今天。
     tz = _dt.datetime.now().astimezone().tzinfo
     lo = _dt.datetime.fromisoformat(s).replace(tzinfo=tz)
     hi = _dt.datetime.fromisoformat(e).replace(tzinfo=tz) + _dt.timedelta(days=1)
@@ -161,7 +161,7 @@ def list_google_events(home: Path, start: str = "", end: str = "", limit: int = 
             calendarId="primary",
             timeMin=lo.isoformat(),
             timeMax=hi.isoformat(),
-            singleEvents=True,          # expand recurring series into instances
+            singleEvents=True,          # 将重复序列扩展为实例
             orderBy="startTime",
             maxResults=max(1, min(int(limit or 20), 100)),
         ).execute()

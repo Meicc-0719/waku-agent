@@ -22,8 +22,8 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-MAX_RUNS = 50      # keep the log small; older races roll off the front
-REPLY_CAP = 1000   # truncate stored replies so the file doesn't bloat
+MAX_RUNS = 50      # 保持日志较小；老比赛从前面滚下来
+REPLY_CAP = 1000   # 截断存储的回复，使文件不会膨胀
 
 
 def _path(home: Path) -> Path:
@@ -47,8 +47,8 @@ def _slim(r: dict) -> dict:
         "gate": gate.get("decision") if isinstance(gate, dict) else gate,
         "tools": [t.get("tool") for t in (r.get("tools") or [])],
         "error": r.get("error"),
-        "completion": r.get("completion"),   # {passed, why, case} on a scored case, else None
-        "quality": r.get("quality"),         # {score, reason, judge} when K3-judged, else None
+        "completion": r.get("completion"),   # {passed, Why, case} 已评分案例，否则无
+        "quality": r.get("quality"),         # {score, Reason, Judge} 当 K3 判断时，否则 None
         "reply": (r.get("reply") or "")[:REPLY_CAP],
     }
 
@@ -119,7 +119,7 @@ def aggregate(runs: list[dict]) -> list[dict]:
                 a["tin"] += r.get("tokens_in") or 0
                 a["tout"] += r.get("tokens_out") or 0
                 a["cost"] += r.get("cost_usd") or 0.0
-            # Completion: only races on a KNOWN battery case carry a verdict.
+            # 完成：只有使用已知电池盒的比赛才会有结论。
             c = r.get("completion")
             if c is not None:
                 a["scored"] += 1
@@ -131,7 +131,7 @@ def aggregate(runs: list[dict]) -> list[dict]:
     out = [{"spec": a["spec"], "provider": a["provider"], "model": a["model"],
             "runs": a["runs"], "ok": a["ok"], "total_latency_ms": a["lat"],
             "total_tokens_in": a["tin"], "total_tokens_out": a["tout"],
-            "total_tokens": a["tin"] + a["tout"],  # kept for back-compat / sorting
+            "total_tokens": a["tin"] + a["tout"],  # 保留用于向后兼容/排序
             "cases_passed": a["passed"], "cases_scored": a["scored"],
             "quality_n": a["qn"],
             "quality_avg": round(a["qsum"] / a["qn"], 1) if a["qn"] else None,

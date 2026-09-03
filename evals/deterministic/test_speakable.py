@@ -10,8 +10,8 @@ STRIPPED = [
     ("All set! 🎉 Booked for Saturday. 🎾", "All set! Booked for Saturday."),
     ("Done ✅ — added 3 events 🚀🚀🚀", "Done — added 3 events"),
     ("Here you go 😊👍", "Here you go"),
-    ("Nice 🇬🇧 flag", "Nice flag"),            # regional-indicator flag
-    ("**Bold** and `code` and # heading", "Bold and code and heading"),
+    ("Nice 🇬🇧 flag", "Nice flag"),            # 区域指标标志
+    ("**Bold** and `code` and # 标题", "粗体和代码以及标题"),
     ("plain words, nothing to strip", "plain words, nothing to strip"),
 ]
 
@@ -23,4 +23,4 @@ def test_speakable_strips_emoji_and_markdown(raw, expected):
 
 def test_speakable_handles_empty():
     assert _speakable("") == ""
-    assert _speakable("💥✨🔥") == ""   # all-emoji → nothing to say
+    assert _speakable("💥✨🔥") == ""   # 全表情符号 → 无话可说

@@ -10,7 +10,7 @@ Two outputs from the same events:
    events as a span tree any OTel backend can render. For a local dashboard:
 
        pip install 'waku-agent[tracing]'
-       phoenix serve                                # localhost:6006
+       phoenix serve                                # 本地主机:6006
        OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 python -m waku
 
    Langfuse cloud speaks OTel too — point the endpoint + auth headers there
@@ -88,9 +88,9 @@ class Tracer:
             return None
 
     def _write(self, record: dict) -> None:
-        # An older Windows release may have created this daily file in GBK.
-        # Refuse to make a mixed-encoding JSONL file: validate once, explain how
-        # to preserve the old file, and never guess or rewrite user data.
+        # 较旧的 Windows 版本可能以 GBK 格式创建了此每日文件。
+        # 拒绝制作混合编码的 JSONL 文件：验证一次，解释如何
+        # 保留旧文件，并且永远不要猜测或重写用户数据。
         if not self._trace_encoding_checked:
             if self.path.exists():
                 for _ in iter_trace_lines(self.path):
@@ -113,14 +113,14 @@ class Tracer:
         with (self.settings.home / "usage.jsonl").open("a", encoding="utf-8") as f:
             f.write(json.dumps(record) + "\n")
 
-    # ---- the Observer: called by the loop for every llm/tool/gate/... event
+    # ---- 观察者：由每个 llm/tool/gate/... 事件的循环调用
     def event(self, kind: str, event: dict) -> None:
         if kind == "text":
-            return  # streaming token deltas are for the live UI, not the trace
+            return  # 流令牌增量用于实时 UI，而不是跟踪
         if kind == "llm":
             self._record_usage(event)
-            # stamp WHICH brain answered — in a multi-model world (shootouts,
-            # live model switching) a trace without the model is half a trace
+            # 大脑回答的邮票——在多模型世界中（枪战、
+            # 实时模型切换）没有模型的轨迹是半轨迹
             event = {"provider": self.settings.provider,
                      "model": self.settings.model or "", **event}
         self._write({"type": kind, **event})
@@ -134,7 +134,7 @@ class Tracer:
             ):
                 pass
 
-    # ---- one run = one root span + turn_start/turn_end JSONL markers
+    # ---- 一次运行 = 一次根跨度 + Turn_start/turn_end JSONL 标记
     @contextmanager
     def turn(self, user_message: str):
         self._write({"type": "turn_start", "user_message": user_message})
@@ -154,7 +154,7 @@ class Tracer:
     def end_turn(self, reply: str, iterations: int) -> None:
         self._write({"type": "turn_end", "reply": reply, "iterations": iterations})
         if getattr(self, "_otel_provider", None):
-            # flush per turn: the trace should survive even a killed process
+            # 每轮刷新：即使进程被杀死，跟踪也应该存活
             self._otel_provider.force_flush(timeout_millis=2000)
 
 

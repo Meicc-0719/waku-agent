@@ -83,7 +83,7 @@ def test_pypi_metadata_is_present(field):
 
 
 def test_evals_never_inherit_the_developers_env():
-    """THE regression for #2. `make_waku` must pin every switch that changes
+    """THE regression for #2. `make_waku` 必须固定每个发生变化的开关
     what a turn DOES, so the suite describes its own world instead of the
     maintainer's .env. Deliberately NOT pinned: `experimental`, because
     test_delegate.py drives it via monkeypatch.setenv to prove the env var
@@ -114,9 +114,9 @@ def test_a_scripted_turn_ignores_the_graph_flag(tmp_path, monkeypatch):
         pytest.skip("graph workflows not built on this branch")
 
     monkeypatch.setenv("WAKU_GRAPH_WORKFLOWS", "1")
-    # Exactly two responses: the retrieval gate, then the answer. That count IS
-    # the assertion — a triage graph would spend a third on classification and
-    # this client would raise IndexError instead of answering.
+    # 恰好有两个响应：检索门，然后是答案。那算的是
+    # 断言 - 分类图将花费三分之一用于分类和
+    # 该客户端将引发 IndexError 而不是回答。
     gate = response([text_block('{"retrieve": false, "reason": "greeting"}')])
     app = make_waku(tmp_path / "home",
                     client=ScriptedClient([gate, response([text_block("hi")])]))

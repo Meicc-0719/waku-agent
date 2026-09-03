@@ -35,9 +35,9 @@ import os
 from waku.config import Settings
 from waku.memory.semantic.base import env_or
 
-# Every fact Waku stores belongs to the one person running it, and Mem0 scopes
-# by user_id. A stable default keeps a single-user install from scattering its
-# memory across generated ids; override when several people share a project.
+# Waku 存储的每一个事实都属于运行它的一个人，并且 Mem0 范围
+# 通过 user_id。稳定的默认设置可以防止单用户安装分散其
+# 生成的 id 之间的内存；当多人共享一个项目时覆盖。
 _DEFAULT_USER = "waku"
 
 
@@ -49,9 +49,9 @@ class Mem0FactStore:
         self.user_id = env_or("MEM0_USER_ID", _DEFAULT_USER)
         self.top_k = settings.retrieval_top_k
 
-    # Waku keeps subject and content apart; Mem0 stores one blob. Round-tripping
-    # through "subject: content" keeps `[subject] content` renderable on the way
-    # out without a second field or a second call.
+    # Waku 将主题和内容分开； Mem0 存储 1 个 blob。往返
+    # 通过“主题：内容”保持“[主题]内容”可渲染
+    # 没有第二个字段或第二个调用。
     @staticmethod
     def _pack(subject: str, content: str) -> str:
         return f"{subject.lower().strip()}: {content}"
@@ -66,7 +66,7 @@ class Mem0FactStore:
             [{"role": "user", "content": self._pack(subject, content)}],
             user_id=self.user_id,
             metadata={"source": source},
-            infer=False,   # see the module docstring — the contract needs this
+            infer=False,   # 请参阅模块文档字符串 - 合约需要这个
         )
 
     def search(self, query: str, top_k: int = 4) -> list[str]:
@@ -86,15 +86,15 @@ class Mem0FactStore:
         return [self._row(row) for row in self._rows(rows)]
 
     def update(self, fact_id: int | str, content: str, subject: str | None = None) -> bool:
-        # Mem0 stores one blob, so a subject-only edit still has to rewrite the
-        # whole thing — read the current subject back rather than dropping it.
+        # Mem0 存储一个 blob，因此仅主题编辑仍然需要重写
+        # 整个事情——读回当前的主题而不是放弃它。
         if subject is None:
             current = next((r for r in self.list(500) if str(r["id"]) == str(fact_id)), None)
             subject = current["subject"] if current else ""
         try:
             self.client.update(memory_id=str(fact_id), text=self._pack(subject, content))
         except Exception:
-            return False   # unknown id — False, never an exception (base.py)
+            return False   # 未知 id — 错误，绝不例外 (base.py)
         return True
 
     def settle(self, timeout: float = 120.0) -> bool:
@@ -133,10 +133,10 @@ class Mem0FactStore:
             return False
         return True
 
-    # --- shapes -------------------------------------------------------------
-    # The hosted API has returned both a bare list and {"results": [...]} across
-    # versions. Accept either rather than pinning to whichever shipped the day
-    # this was written; a benchmark that breaks on a minor SDK bump is useless.
+    # --- 形状------------------------------------------------------------------------
+    # 托管 API 返回了一个裸列表和 {"results": [...]}
+    # 版本。接受其中之一，而不是固定到当天发货的那个
+    # 这是写的；因 SDK 的微小变化而中断的基准测试是没有用的。
     @staticmethod
     def _rows(payload) -> list[dict]:
         if isinstance(payload, dict):

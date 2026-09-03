@@ -53,8 +53,8 @@ class NotionEpisodeStore:
                 "NOTION_EPISODES_DATABASE_ID environment variable"
             )
         self.client = Client(auth=self.token)
-        # notion-client >= 2.5 (Notion API 2025-09-03): rows live under a
-        # database's data source, so resolve database_id -> data_source_id once.
+        # notion-client >= 2.5 (Notion API 2025-09-03): 行位于 a
+        # 数据库的数据源，因此解析一次database_id -> data_source_id。
         sources = self.client.databases.retrieve(database_id=self.database_id).get(
             "data_sources"
         ) or []
@@ -89,7 +89,7 @@ class NotionEpisodeStore:
         if not keywords:
             return self.recent(top_k)
 
-        # Deduplicate while preserving order.
+        # 在保持顺序的同时进行重复数据删除。
         keywords = list(dict.fromkeys(keywords))
         matches = []
         for page in self._query_all():

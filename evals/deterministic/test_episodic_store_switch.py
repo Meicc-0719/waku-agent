@@ -20,9 +20,9 @@ class _FakeNotionClient:
     same rows as one created in the test body."""
 
     _pages: ClassVar[list[dict]] = []
-    _init_count = 0     # Client constructions — the dashboard must build ONE
-    _query_count = 0    # data-source queries — the result cache throttles these
-    _query_fails = False   # simulate a Notion outage after a successful fetch
+    _init_count = 0     # 客户端构建——仪表板必须构建一个
+    _query_count = 0    # 数据源查询——结果缓存限制这些
+    _query_fails = False   # 模拟成功获取后的 Notion 中断
 
     def __init__(self, auth: str | None = None) -> None:
         type(self)._init_count += 1
@@ -58,7 +58,7 @@ class _FakeNotionClient:
             raise RuntimeError("notion is down")
         type(self)._query_count += 1
         assert data_source_id == "test-ds-id"
-        # the real API excludes archived pages from query results
+        # 真正的 API 从查询结果中排除存档页面
         return {"results": [p for p in type(self)._pages if not p.get("archived")],
                 "has_more": False}
 
@@ -74,7 +74,7 @@ def fake_notion(monkeypatch):
     monkeypatch.setitem(sys.modules, "notion_client", fake_module)
     monkeypatch.setenv("NOTION_TOKEN", "test-token")
     monkeypatch.setenv("NOTION_EPISODES_DATABASE_ID", "test-db-id")
-    # the dashboard caches the store + result module-wide — reset between tests
+    # 仪表板在模块范围内缓存存储 + 结果 - 在测试之间重置
     from waku.ops import dashboard
 
     monkeypatch.setattr(dashboard, "_notion_store", None)
@@ -107,7 +107,7 @@ def test_factory_returns_notion_store_when_configured(monkeypatch, fake_notion):
 
 
 def test_apply_settings_rejects_unknown_episodic_store(monkeypatch, tmp_path):
-    # chdir so a regression of the guard can't write into the real project .env
+    # chdir 因此守卫的回归无法写入真实的项目 .env
     monkeypatch.chdir(tmp_path)
     from waku.ops.settings_api import apply_settings
 
@@ -170,7 +170,7 @@ def test_memory_action_delete_episode_routes_to_notion(monkeypatch, fake_notion,
 def test_collect_episodes_notion_outage_degrades_gracefully(monkeypatch, fake_notion, tmp_path):
     _isolated_home(monkeypatch, tmp_path)
     monkeypatch.setenv("WAKU_EPISODIC_STORE", "notion")
-    monkeypatch.delenv("NOTION_TOKEN", raising=False)  # constructor raises ValueError
+    monkeypatch.delenv("NOTION_TOKEN", raising=False)  # 构造函数引发 ValueError
 
     from waku.ops.dashboard import collect
 
@@ -178,7 +178,7 @@ def test_collect_episodes_notion_outage_degrades_gracefully(monkeypatch, fake_no
     assert data["episodes"] == []
     assert data["episodes_source"] == "notion"
     assert "NOTION_TOKEN" in data["episodes_error"]
-    assert "facts" in data  # the rest of the payload still rendered
+    assert "facts" in data  # 其余的有效负载仍然呈现
 
 
 def test_manage_memory_delete_episode_accepts_notion_string_id(fake_notion):
@@ -191,7 +191,7 @@ def test_manage_memory_delete_episode_accepts_notion_string_id(fake_notion):
 
     memory = types.SimpleNamespace(episodes=store, facts=None)
     tool = make_manage_memory_tool(memory)
-    assert tool.fn("delete", kind="episode", id=page_id) == f"Deleted episode #{page_id}."
+    assert tool.fn("delete", kind="episode", id=page_id) == f"Deleted episode #{page_id}。”
     assert _FakeNotionClient._pages[0]["archived"] is True
 
 
@@ -211,7 +211,7 @@ def test_manage_memory_delete_episode_sqlite_accepts_string_id(tmp_path):
 
 
 def test_collect_builds_notion_client_once_across_refreshes(monkeypatch, fake_notion, tmp_path):
-    """Issue #20: repeated collect() calls (dashboard auto-refresh) must reuse
+    """Issue #20：重复的collect()调用（仪表板自动刷新）必须重复使用
     ONE Notion client and serve the cached result within the TTL — not rebuild
     the client and re-query Notion on every poll."""
     _isolated_home(monkeypatch, tmp_path)
@@ -223,15 +223,15 @@ def test_collect_builds_notion_client_once_across_refreshes(monkeypatch, fake_no
 
     from waku.ops import dashboard
 
-    fake_notion._init_count = 0   # ignore the setup construction above
+    fake_notion._init_count = 0   # 忽略上面的设置结构
     fake_notion._query_count = 0
 
     payloads = [dashboard.collect() for _ in range(3)]
 
     assert all(p["episodes_source"] == "notion" and p["episodes_error"] == "" for p in payloads)
     assert [p["episodes"] for p in payloads] == [payloads[0]["episodes"]] * 3
-    assert fake_notion._init_count == 1   # client built once, then cached
-    assert fake_notion._query_count == 1  # result cached for the TTL, no re-query
+    assert fake_notion._init_count == 1   # 客户端构建一次，然后缓存
+    assert fake_notion._query_count == 1  # 结果已缓存 TTL，无需重新查询
 
 
 def test_collect_refetches_after_ttl_but_reuses_client(monkeypatch, fake_notion, tmp_path):
@@ -244,15 +244,15 @@ def test_collect_refetches_after_ttl_but_reuses_client(monkeypatch, fake_notion,
 
     from waku.ops import dashboard
 
-    monkeypatch.setattr(dashboard, "_NOTION_EPISODES_TTL", 0)   # every poll is stale
+    monkeypatch.setattr(dashboard, "_NOTION_EPISODES_TTL", 0)   # 每个民意调查都是陈旧的
     fake_notion._init_count = 0
     fake_notion._query_count = 0
 
     dashboard.collect()
     dashboard.collect()
 
-    assert fake_notion._query_count == 2   # TTL expired → refetch each time
-    assert fake_notion._init_count == 1    # …but the client is still built once
+    assert fake_notion._query_count == 2   # TTL 过期 → 每次重新获取
+    assert fake_notion._init_count == 1    # …但客户端仍然是构建一次
 
 
 def test_collect_serves_stale_episodes_during_notion_outage(monkeypatch, fake_notion, tmp_path):
@@ -275,7 +275,7 @@ def test_collect_serves_stale_episodes_during_notion_outage(monkeypatch, fake_no
     assert data["episodes_source"] == "notion"
     assert "notion is down" in data["episodes_error"]
     assert [e["summary"] for e in data["episodes"]] == ["cached episode"]
-    assert "facts" in data   # the rest of the payload still rendered
+    assert "facts" in data   # 其余的有效负载仍然呈现
 
 
 def test_delete_episode_busts_the_episodes_cache(monkeypatch, fake_notion, tmp_path):
@@ -290,10 +290,10 @@ def test_delete_episode_busts_the_episodes_cache(monkeypatch, fake_notion, tmp_p
 
     from waku.ops import dashboard
 
-    assert len(dashboard.collect()["episodes"]) == 2   # populates the cache
+    assert len(dashboard.collect()["episodes"]) == 2   # 填充缓存
 
     page_id = _FakeNotionClient._pages[0]["id"]
     assert dashboard.memory_action({"action": "delete_episode", "id": page_id}) == {"ok": True}
 
-    after = dashboard.collect()   # cache busted → refetch, not the stale pair
+    after = dashboard.collect()   # 缓存已损坏 → 重新获取，而不是陈旧的对
     assert [e["summary"] for e in after["episodes"]] == ["second"]

@@ -1,6 +1,6 @@
-// waku dashboard — model picker/catalog/pins, and the remaining Settings toggle.
-// Split out of app.js: classic <script>, shared global scope (no build
-// step, no modules). Load order + rules: static/README.md.
+// waku 仪表板 — 模型选择器/目录/引脚，以及其余的设置切换。
+// 从 app.js 中分离出来：经典 <script>，共享全局范围（无构建
+// 步骤，无模块）。加载顺序+规则：static/README.md。
 
 async function saveSettings(){
   const experimental = document.getElementById("set-experimental")?.value;
@@ -11,9 +11,9 @@ async function saveSettings(){
 }
 function markEditing(){ editing = true; }
 
-// Model picker: fill the settings datalist from /api/models (the active
-// endpoint's live catalog; on OpenRouter each entry says free / tool support).
-// Waku's loop needs tool calling, so tool-less models are labelled as such.
+// 模型选择器：从 /api/models 填充设置数据列表（活动的
+// 端点的实时目录；在 OpenRouter 上，每个条目都表示免费/工具支持）。
+// Waku 的循环需要工具调用，因此无工具模型被标记为此类。
 let modelCatalog = null;
 async function loadModelList(){
   const dl = document.getElementById("model-list");
@@ -42,11 +42,11 @@ async function loadModelList(){
   renderCatalog();
 }
 
-// The catalog browser (shown when the endpoint lists models, i.e. OpenRouter):
-// suggested picks per SLOT, a search + free/tools filter, and the full list
-// grouped by vendor. Every row can go to either slot: "use" is the loop model
-// (needs tool calling), "gate" is the small model (needs terse JSON, so
-// reasoning models are steered away from it).
+// 目录浏览器（当端点列出模型时显示，即 OpenRouter）：
+// 每个老虎机的建议选择、搜索+免费/工具过滤器以及完整列表
+// 按供应商分组。每行都可以进入任一插槽：“use”是循环模型
+// （需要工具调用），“gate”是小模型（需要简洁的 JSON，所以
+// 推理模型则远离它）。
 let catFilter = {q: "", free: false, tools: false};
 
 function modelRow(m, st){
@@ -69,9 +69,9 @@ function modelRow(m, st){
   </div>`;
 }
 
-// Slot suggestions are transparent heuristics over catalog metadata (tools,
-// price, context, reasoning), NOT a quality leaderboard. Loop: tool-capable,
-// free first, then biggest context. Gate: cheap non-reasoning instruct-style.
+// 插槽建议是对目录元数据（工具、
+// 价格、背景、推理），而不是质量排行榜。循环：工具可用，
+// 首先是免费，然后是最大的背景。 Gate：廉价的非推理指令式。
 const GATE_HINT = /instruct|gemma|haiku|flash|mini|nano|lite|small/;
 function loopPicks(ms){
   return ms.filter(m => m.tools)
@@ -138,9 +138,9 @@ function renderCatalogList(){
   list.innerHTML = h;
 }
 
-// One-click model switch: posts to /api/providers so the provider/model pair
-// is validated and applied by the integrations layer. Keeps the other slot
-// (main vs gate) as-is. Live for the next turn.
+// 一键模型切换：发布到 /api/providers，以便提供者/模型对
+// 由集成层验证和应用。保留另一个插槽
+// （主与门）按原样。为下一个回合而活。
 async function switchModel(id, asGate){
   const st = (D && D.settings) || {};
   const msg = document.getElementById("free-switch-msg");
@@ -153,9 +153,9 @@ async function switchModel(id, asGate){
                                      : (asGate ? "Gate model is now " : "Model is now ") + id + ". Applies from your next message.";
 }
 
-// "Your models" — the curated shortlist the chat pill shows, spanning every
-// provider. The first pinned model per provider is that provider's default
-// (used when you switch to it). pin/unpin/default all POST /api/pin.
+// “你的模特”——聊天药丸显示的精选候选名单，涵盖每个
+// 提供者。每个提供商的第一个固定模型是该提供商的默认模型
+// （切换到它时使用）。固定/取消固定/默认全部 POST /api/pin.
 function yourModelsCard(st){
   const pinned = st.pinned || [];
   const providers = (st.providers || []).map(p => p.name);
@@ -167,12 +167,12 @@ function yourModelsCard(st){
                   : `<a class="reveal" onclick="pinModel('${esc(p.provider)}','${esc(p.model)}','default')" title="make this ${esc(p.provider)}'s default">make default</a>`}
       <a class="reveal" onclick="pinModel('${esc(p.provider)}','${esc(p.model)}','unpin')" title="remove from your list">remove</a>
     </div>`).join("") || `<div class="meta">No models pinned yet — add one below.</div>`;
-  // The add row is self-contained: pick any provider + type/choose a model id,
-  // then Add. Works even for providers with no live catalog. The datalist
-  // suggests the CURRENT provider's models (the only one we've fetched).
+  // 添加行是独立的：选择任何提供商 + 类型/选择模型 ID，
+  // 然后添加。即使对于没有实时目录的提供商也适用。数据列表
+  // 建议当前提供商的模型（我们获取的唯一一个）。
   const provOpts = providers.map(n => `<option value="${esc(n)}" ${n===st.provider?"selected":""}>${esc(n)}</option>`).join("");
-  // Populate the model <select> for the initially-selected provider once the
-  // card is in the DOM (a fresh fetch of that provider's catalog).
+  // 填充模型 <select> 为最初选择的提供者一旦
+  // 卡位于 DOM 中（该提供商目录的最新获取）。
   setTimeout(() => loadAddModels(st.provider), 0);
   return `<h2>Your models <span class="meta" style="font-weight:400">— what the chat switcher shows</span></h2>
     <div class="card">
@@ -186,8 +186,8 @@ function yourModelsCard(st){
     </div>`;
 }
 
-// Fill the add-row model <select> with a provider's catalog (any provider, not
-// just the active one — the backend takes a ?provider= override).
+// 使用提供者的目录（任何提供者，而不是
+// 只是活动的 - 后端采用 ?provider= 覆盖）。
 async function loadAddModels(provider){
   const sel = document.getElementById("add-model");
   const msg = document.getElementById("add-msg");
@@ -213,7 +213,7 @@ async function addPinnedModel(){
   const provider = document.getElementById("add-prov")?.value;
   const model = document.getElementById("add-model")?.value;
   if (!provider || !model) return;
-  await pinModel(provider, model, "pin");   // refreshes; the row appears in the list
+  await pinModel(provider, model, "pin");   // 刷新；该行出现在列表中
 }
 
 async function pinModel(provider, model, action){
@@ -221,10 +221,10 @@ async function pinModel(provider, model, action){
   if (!r.error){ editing = false; await refresh(); }
 }
 
-// --- Models page: a grid of provider cards (logo, name, status dot, actions)
-// plus an edit modal. Status is derived, never stored: unconfigured = no key,
-// configured = key set but disabled, enabled = key set and available. The
-// ACTIVE provider (settings.provider) can't be disabled (server guards too).
+// --- 模型页面：提供商卡网格（徽标、名称、状态点、操作）
+// 加上一个编辑模式。状态是派生的，从不存储：未配置=无密钥，
+// 配置 = 按键设置但已禁用，启用 = 按键设置且可用。这
+// 无法禁用 ACTIVE 提供程序 (settings.provider)（服务器防护也是如此）。
 function providerCardStatus(p, st){
   const keySet = !!(p.fields && p.fields[0] && p.fields[0].configured);
   if (!keySet) return "unconfigured";
@@ -258,18 +258,18 @@ function providerCard(p, st){
     </div></div>`;
 }
 
-// enable/disable a provider (the grid button). Server keeps the key; the
-// provider just leaves/enters the available list.
+// 启用/禁用提供程序（网格按钮）。服务器保管密钥；这
+// 提供者只需离开/进入可用列表。
 async function toggleProvider(provider, disabled){
   const r = await postJSON("/api/providers", {provider, disabled});
   if (!r.ok) alert(r.error || "update failed");
   else { editing = false; await refresh(); }
 }
 
-// --- edit modal: API key (+ main/small model when this provider is current,
-// with a searchable live catalog) and a "set as current" action.
+// --- 编辑模式：API 密钥（+ 主/小模型，当该提供商当前存在时，
+// 带有可搜索的实时目录）和“设置为当前”操作。
 function openProviderModal(provider){
-  markEditing();   // keep the 5s refresh loop from wiping this modal
+  markEditing();   // 防止 5 秒刷新循环擦除此模式
   const st = (D && D.settings) || {};
   const p = (D.providers || []).find(x => x.key === provider);
   if (!p) return;
@@ -311,8 +311,8 @@ function closeProviderModal(){
   if (root) root.innerHTML = "";
 }
 
-// Populate both modal pickers from one request: this provider's live catalog,
-// or its defaults when there is no catalog. Manual typing always still works.
+// 根据一个请求填充两个模式选择器：该提供商的实时目录，
+// 或没有目录时的默认值。手动打字仍然有效。
 async function loadModalModels(provider){
   setupModelPickers([], provider);
   setModelPickerMeta("Loading models…");
@@ -334,7 +334,7 @@ async function loadModalModels(provider){
   }
 }
 
-// Shared model list for the currently open modal.
+// 当前打开模态的共享模型列表。
 let _modalModels = [];
 let _activeModelPicker = null;
 let _outsidePickerListener = false;
@@ -512,8 +512,8 @@ async function saveProviderModal(provider){
   await submitProviderModal(provider, payload, "pm-save");
 }
 
-// "Set as current": apply_provider switches provider and picks its default
-// models when none are passed (keeps the key field if one was just typed).
+// “设置为当前”：apply_provider 切换提供程序并选择其默认值
+// 未传递任何内容时的模型（如果刚刚键入，则保留关键字段）。
 async function makeCurrentProvider(provider){
   await submitProviderModal(provider, modalKeyPayload(provider), "pm-make-current");
 }

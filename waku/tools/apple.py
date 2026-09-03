@@ -37,12 +37,12 @@ from waku.tools.registry import Tool
 _TIMEOUT = 30
 _PROBE_TIMEOUT = 8
 _PROBE_APPS = ("Calendar", "Mail", "Reminders", "Notes")
-# A tool that takes 75s to FAIL is worse than no tool: it blocks a chat turn and
-# then apologises. These budgets are set so a broken app gives up quickly with an
-# actionable message. Measured on a real Mac 2026-07-31:
-#   Calendar  `count of calendars`        instant   -> usable
-#   Reminders `count of lists`            7.8s      -> slow but alive
-#   Mail      `count of messages of inbox` TIMED OUT at 120s (-1712)
+# 一个需要 75 秒才能失败的工具比没有工具更糟糕：它会阻止聊天回合，并且
+# 然后道歉。这些预算的设置是为了让一个损坏的应用程序很快就放弃
+# 可操作的消息。 2026 年 7 月 31 日在真实 Mac 上测量：
+#   日历“日历计数”即时 -> 可用
+#   提醒“列表计数”7.8 秒 -> 缓慢但活跃
+#   邮件“收件箱邮件计数”在 120 秒时超时 (-1712)
 _SLOW_APP_TIMEOUT = 25
 _cache: dict[str, tuple[float, str]] = {}
 
@@ -53,7 +53,7 @@ def _is_running(app: str) -> bool:
         return subprocess.run(["pgrep", "-x", app], capture_output=True,
                               check=False, timeout=5).returncode == 0
     except (OSError, subprocess.SubprocessError):
-        return True  # cannot tell — assume it is up and let _osa report the truth
+        return True  # 无法判断 - 假设已经启动并让 _osa 报告真相
 
 
 def ensure_running(app: str, timeout: float = 12.0) -> None:
@@ -75,7 +75,7 @@ def ensure_running(app: str, timeout: float = 12.0) -> None:
         subprocess.run(["open", "-gj", "-a", app], capture_output=True,
                        check=False, timeout=15)
     except (OSError, subprocess.SubprocessError):
-        return  # cannot launch it; _osa will say what actually went wrong
+        return  # 无法启动它； _osa 会说出到底出了什么问题
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if _is_running(app):
@@ -107,9 +107,9 @@ def probe_apple_tools() -> None:
     """Verify Automation access to every app without reading or writing user data."""
     failures = []
     for app in _PROBE_APPS:
-        # Without the launch a closed app answers -600 and the probe reports it
-        # as an Automation-permission failure — a different problem with a
-        # different fix, and a trip to System Settings for nothing.
+        # 如果不启动，关闭的应用程序会回答 -600 并且探测器会报告它
+        # 作为自动化权限失败 - 一个不同的问题
+        # 不同的修复，以及免费的系统设置之旅。
         ok, detail = _osa(
             f'tell application "{app}" to return version',
             timeout=_PROBE_TIMEOUT,
@@ -129,9 +129,9 @@ def _parse_applescript_date(raw: str) -> datetime | None:
     if not m:
         return None
     try:
-        # Naive on purpose: Calendar.app renders wall-clock local time with no
-        # offset, and every comparison below is against local `now`. Attaching a
-        # tz here would invent information AppleScript never gave us.
+        # 故意天真：Calendar.app 渲染挂钟本地时间，没有
+        # 偏移量，下面的每个比较都是针对本地的“now”。附上一个
+        # tz 这里会发明 AppleScript 从未给过我们的信息。
         return datetime.strptime(  # noqa: DTZ007
             f"{m.group(1)} {m.group(2).replace(chr(8239), ' ')}", "%B %d, %Y %I:%M:%S %p")
     except ValueError:
@@ -173,9 +173,9 @@ def read_apple_calendar(days_ahead: int = 7) -> str:
                 "name of every calendar'` to see the names."
             )
 
-        # NO `whose` filter — see the module docstring. We pull two raw columns
-        # per calendar (~6s each) and match them up in Python. The filter itself
-        # is free here; it is the Apple Event predicate that costs 25s.
+        # 没有“whose”过滤器——请参阅模块文档字符串。我们拉出两个原始列
+        # 每个日历（每个约 6 秒）并在 Python 中将它们匹配。过滤器本身
+        # 这里是免费的；这是花费 25 秒的 Apple 事件谓词。
         blocks = "\n".join(f'''
   try
     tell calendar "{c}"

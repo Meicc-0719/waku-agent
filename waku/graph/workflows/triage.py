@@ -55,7 +55,7 @@ def classify_message(client, small_model: str, message: str) -> tuple[str, str]:
     try:
         response = client.messages.create(
             model=small_model,
-            max_tokens=600,  # reasoning models think before the JSON
+            max_tokens=600,  # 推理模型先于 JSON 进行思考
             messages=[{"role": "user", "content": TRIAGE_PROMPT.format(message=message)}],
         )
         text = "".join(b.text for b in response.content if b.type == "text")
@@ -97,7 +97,7 @@ def build_triage_graph(*, classify_fn: Callable[[str], tuple[str, str]],
     def classify(state: dict) -> dict:
         route, reason = classify_fn(state["message"])
         notify = state.get("_notify")
-        if notify:  # the human-readable "why" — traced, and shown on the turn card
+        if notify:  # 人类可读的“为什么”——被追踪并显示在转牌上
             notify("triage", {"route": route, "reason": reason})
         return {"route": route, "triage_reason": reason}
 
@@ -107,7 +107,7 @@ def build_triage_graph(*, classify_fn: Callable[[str], tuple[str, str]],
     g.add_node(Node("full_agent", lambda s: {"result": full_fn(s)}, kind="agent"))
     g.add_edge(START, "classify")
     g.add_edge(START, "check_calendar")
-    # the router waits on BOTH parallel branches before deciding
+    # 路由器在决定之前等待两个并行分支
     g.add_node(Node("gather", lambda s: {}, kind="fn"))
     g.add_edge("classify", "gather")
     g.add_edge("check_calendar", "gather")

@@ -148,7 +148,7 @@ def test_constructor_requires_token_and_database_id(monkeypatch):
     fake_module = types.ModuleType("notion_client")
     fake_module.Client = _FakeNotionClient
     monkeypatch.setitem(sys.modules, "notion_client", fake_module)
-    # Isolate from a developer's real .env, which may set these.
+    # 与开发人员的真实 .env 隔离，后者可能会设置这些。
     monkeypatch.delenv("NOTION_TOKEN", raising=False)
     monkeypatch.delenv("NOTION_EPISODES_DATABASE_ID", raising=False)
 

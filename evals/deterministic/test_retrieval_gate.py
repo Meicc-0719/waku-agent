@@ -31,7 +31,7 @@ def gate(reply_text: str):
     return should_retrieve(client, "small-model", "when am I meeting Alex?")
 
 
-# ---------- the happy path: a clean decision is read correctly
+# ---------- 幸福之路：正确解读干净的决定
 
 
 def test_a_yes_carries_the_search_query_through():
@@ -76,7 +76,7 @@ def test_a_reasoning_block_before_the_json_is_tolerated():
     assert query == "Alex meeting"
 
 
-# ---------- the contract that actually matters: fail OPEN
+# ---------- 真正重要的合约：失败 OPEN
 
 
 def test_a_reply_with_no_json_at_all_fails_open():
@@ -131,7 +131,7 @@ def test_a_missing_query_falls_back_to_the_whole_message():
     assert query == "when am I meeting Alex?"
 
 
-# ---------- the prompt itself
+# ---------- 提示本身
 
 
 def test_the_gate_asks_for_json_only_and_formats_the_message_in():

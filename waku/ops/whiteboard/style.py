@@ -8,7 +8,7 @@ here were reverse-engineered from those masters, not invented:
   - Roughness:   1 (controlled hand stroke), NOT 2 (scratchy)
   - Stroke wt:   1 detail / 2 container / 4 emphasis  (a real hierarchy)
   - Type scale:  16 body -> 30 header -> 60 title      (dramatic, thumbnail-safe)
-  - Palette:     signature green #b2f2bb, bold red/blue, grey structure
+  - Palette:     signature green #b2f2bb，粗体红/蓝，灰色结构
   - Grouping:    frames with names
   - Identity:    socials block + watermark on anything shareable
 
@@ -23,36 +23,36 @@ import hashlib
 import itertools
 import pathlib
 
-# ---- the style constants (from the masters) --------------------------------
+# ---- 风格常量（来自大师）--------------------------------
 
-FONT = 5            # Excalifont (current hand-drawn). Masters use 5, not 1.
+FONT = 5            # Excalifont（当前手绘）。大师使用 5，而不是 1。
 LINE_HEIGHT = 1.25
-ROUGHNESS = 1       # controlled hand stroke. Masters are 1, not 2.
+ROUGHNESS = 1       # 受控的手部行程。大师是1，不是2。
 
-# stroke-width hierarchy
+# 笔划宽度层次结构
 SW_DETAIL, SW_BOX, SW_EMPHASIS = 1, 2, 4
 
-# type scale — Excalidraw presets: S=16, M=20, L=28, XL=36.
-# Majority of text is S/M; L is reserved for big titles only.
-FS_TITLE = 28    # L  — big titles only
-FS_HEADER = 20   # M  — section headers
-FS_BOX = 16      # S  — node labels
-FS_BODY = 16     # S  — body / notes
-FS_SMALL = 16    # S  — fine print too: S is the floor, only S/M/L are allowed
+# 类型比例 — Excalidraw 预设：S=16、M=20、L=28、XL=36。
+# 大部分文字是S/M； L 仅保留用于大标题。
+FS_TITLE = 28    # L——仅限大标题
+FS_HEADER = 20   # M——节标题
+FS_BOX = 16      # S——节点标签
+FS_BODY = 16     # S——正文/注释
+FS_SMALL = 16    # S — 也有细则：S 是地板，仅允许 S/M/L
 
 INK = "#1e1e1e"
 BLACK = "#000000"
 
-# palette: name -> (fill, stroke). Fills are the masters' saturated pastels.
+# 调色板：名称->（填充、描边）。填充物是大师的饱和粉彩。
 PAL = {
-    "green":  ("#b2f2bb", "#2f9e44"),   # signature: the loop / the hero / final reply
-    "red":    ("#ffc9c9", "#e03131"),   # harness boundary / honest red-ink / cost wall
-    "blue":   ("#a5d8ff", "#1971c2"),   # LLM-ops / observability
-    "orange": ("#ffd8a8", "#e8590c"),   # the loop step
-    "pink":   ("#fcc2d7", "#c2255c"),   # LLM / agent nodes
-    "grey":   ("#e9ecef", "#868e96"),   # neutral state / config
-    "yellow": ("#ffec99", "#f08c00"),   # highlight / callout
-    "plain":  ("transparent", INK),     # bare container
+    "green":  ("#b2f2bb", "#2f9e44"),   # 签名：循环/英雄/最终回复
+    "red":    ("#ffc9c9", "#e03131"),   # 线束边界/诚实的红墨水/成本墙
+    "blue":   ("#a5d8ff", "#1971c2"),   # LLM-操作/可观察性
+    "orange": ("#ffd8a8", "#e8590c"),   # 循环步骤
+    "pink":   ("#fcc2d7", "#c2255c"),   # LLM/代理节点
+    "grey":   ("#e9ecef", "#868e96"),   # 中立状态/配置
+    "yellow": ("#ffec99", "#f08c00"),   # 突出显示/标注
+    "plain":  ("transparent", INK),     # 裸容器
 }
 
 _ids = itertools.count(1)
@@ -63,7 +63,7 @@ def _id(prefix: str) -> str:
 
 
 def _seed(n: int) -> int:
-    # stable pseudo-seed derived from element ordinal (no RNG -> reproducible)
+    # 从元素序数派生的稳定伪种子（无 RNG -> 可重现）
     return (n * 2654435761) % (2**31)
 
 
@@ -93,7 +93,7 @@ def _base(kind: str, x, y, w, h, stroke, bg, sw, frame=None, group=None):
     }
 
 
-# ---- primitives ------------------------------------------------------------
+# ---- 原语------------------------------------------------------------------------
 
 def text(x, y, s, *, size=FS_BODY, color=INK, align="left", frame=None,
          group=None, width=None):
@@ -288,7 +288,7 @@ def watermark(x, y):
     return text(x, y, "@ShenSeanChen", size=FS_BODY, color=PAL["grey"][1])
 
 
-# ---- standard components (match the hand-drawn masters) --------------------
+# ---- 标准组件（与手绘大师匹配） --------------------
 
 def card(x, y, w, title, body, *, color="plain", title_color=None,
          body_color=INK, min_h=0, frame=None, group=None):
@@ -311,7 +311,7 @@ def card(x, y, w, title, body, *, color="plain", title_color=None,
     return out
 
 
-# ---- images + social logos -------------------------------------------------
+# ---- 图片+社交标志------------------------------------------------
 
 ASSETS = pathlib.Path(__file__).resolve().parent / "assets"
 _FILES: dict = {}
@@ -357,7 +357,7 @@ def socials_logos(x, y, *, size=44, row=58, text_dx=64):
     return out
 
 
-# ---- document + validation -------------------------------------------------
+# ---- 文档+验证------------------------------------------------
 
 def document(elements):
     return {

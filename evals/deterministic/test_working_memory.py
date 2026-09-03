@@ -17,14 +17,14 @@ def test_system_prompt_includes_current_time():
     settings = load_settings()
     settings.ensure_home()
     system = Session(settings, memory=None).build_system("what should I do in 30 minutes?")
-    # a HH:MM clock must be present — not just a date — so the model never has
-    # to ask the user for the time (the live bug).
+    # 必须存在 HH:MM 时钟——而不仅仅是日期——因此模型永远不会有
+    # 询问用户时间（实时错误）。
     assert re.search(r"\b\d{2}:\d{2}\b", system), "system prompt is missing a HH:MM time"
     assert "Right now it is" in system
 
 
 def test_session_tags_history_with_its_session_id():
-    # sessions are just a session_id label; a fresh Session carries the default.
+    # session只是一个session_id标签；新的会话带有默认值。
     settings = load_settings()
     assert Session(settings, memory=None).session_id == "default"
     s = Session(settings, memory=None)

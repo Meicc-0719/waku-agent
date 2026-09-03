@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
 
-# evals/ sits next to waku/, not inside it — make both importable when
-# running `pytest evals` from the repo root.
+# evals/ 位于 waku/ 旁边，而不是在其中 - 使两者都可以导入
+# 从存储库根目录运行“pytest evals”。
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

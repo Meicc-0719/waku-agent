@@ -11,19 +11,19 @@ from __future__ import annotations
 import re
 import sqlite3
 
-# The scripts unicode61 does not segment. It counts these as alphanumeric but
+# unicode61 脚本不分段。它将这些视为字母数字，但是
 # puts no word boundary between them, so a whole run — 「阿历克斯喜欢游泳」 — is
-# indexed as ONE term. An exact match on a name inside that run can therefore
-# never hit, which is why these tokens, and only these, are searched as
-# prefixes. Turning *every* token into `token*` would quietly make "car" match
-# "carpet": a worse failure than this one, because it still looks like it works.
+# 索引为一个术语。因此，该运行中的名称完全匹配可以
+# 从未命中，这就是为什么这些标记，并且只有这些标记，被搜索为
+# 前缀。将*每个*标记转换为“标记*”会悄悄地使“汽车”匹配
+# “地毯”：比这个更糟糕的失败，因为它看起来仍然有效。
 _UNSEGMENTED = re.compile(
     "["
-    "\u3040-\u309f"  # Hiragana
-    "\u30a0-\u30ff"  # Katakana
-    "\u3400-\u4dbf"  # CJK Unified Ideographs Extension A
-    "\u4e00-\u9fff"  # CJK Unified Ideographs
-    "\uf900-\ufaff"  # CJK Compatibility Ideographs
+    "\u3040-\u309f"  # 平假名
+    "\u30a0-\u30ff"  # 片假名
+    "\u3400-\u4dbf"  # 中日韩统一表意文字扩展 A
+    "\u4e00-\u9fff"  # 中日韩统一表意文字
+    "\uf900-\ufaff"  # CJK 兼容性表意文字
     "]"
 )
 
@@ -86,8 +86,8 @@ class SqliteFactStore:
         ).fetchall()
         return [f"[{r['subject']}] {r['content']}" for r in rows]
 
-    # --- CRUD: humans (dashboard) and the agent (manage_memory tool) edit memory.
-    # The facts_au / facts_ad triggers keep the FTS index in sync automatically.
+    # --- CRUD：人类（仪表板）和代理（manage_memory 工具）编辑内存。
+    # facts_au /facts_ad 触发器自动保持 FTS 索引同步。
     def list(self, limit: int = 200) -> list[dict]:
         rows = self.conn.execute(
             "SELECT id, subject, content, source, created_at FROM facts ORDER BY id DESC LIMIT ?",

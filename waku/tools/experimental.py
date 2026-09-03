@@ -46,8 +46,8 @@ from waku.tools.registry import Tool
 
 PI_INSTALL_HINT = "npm install -g --ignore-scripts @earendil-works/pi-coding-agent"
 
-# Does this pi understand --mode json? Checked once per process (via --help so
-# no model call is made); None = not probed yet.
+# 这个 pi 理解 --mode json 吗？每个进程检查一次（通过 --help 所以
+# 不进行模型调用）；无 = 尚未探测。
 _PI_JSON_MODE: bool | None = None
 
 
@@ -115,7 +115,7 @@ def _run_pi_json(cmd: list, workdir: Path, timeout: int, notify):
     def _pump_stdout():
         for ln in proc.stdout:
             lines.put(ln)
-        lines.put(None)  # sentinel: stdout closed, pi is done
+        lines.put(None)  # 哨兵：stdout 已关闭，pi 已完成
 
     def _pump_stderr():
         stderr_parts.append(proc.stderr.read() or "")
@@ -134,7 +134,7 @@ def _run_pi_json(cmd: list, workdir: Path, timeout: int, notify):
             line = lines.get(timeout=min(0.5, remaining))
         except queue.Empty:
             continue
-        if line is None:  # stdout closed — pi is done
+        if line is None:  # stdout 已关闭 — pi 已完成
             break
         raw.append(line)
         try:
@@ -169,7 +169,7 @@ def _run_pi_json(cmd: list, workdir: Path, timeout: int, notify):
                                 "tokens_in": tin, "tokens_out": tout})
     return proc.wait(), reply, "".join(stderr_parts), raw, tin, tout, cost
 
-# Still-skeleton boxes: name → what it will do, and its box on the whiteboard.
+# 静止骨架框：名称→它将做什么，以及白板上的框。
 PLANNED = [
     {"name": "run_command", "box": "Terminal tool",
      "description": "Run a shell command in a sandbox and read the output — Hermes's 'Terminal' "
@@ -206,19 +206,19 @@ def make_delegate_tool(settings: Settings) -> Tool:
             workdir = Path(cwd).expanduser()
             if not workdir.is_dir():
                 return f"delegate_task: the working directory '{cwd}' doesn't exist."
-            in_workspace = False   # working in the user's own project; don't relocate/auto-run
+            in_workspace = False   # 在用户自己的项目中工作；不重新定位/自动运行
         else:
-            # Repo-less task: land it in a dated, documented workspace folder so
-            # the scripts survive and are traceable (not a temp dir), then auto-run.
+            # 无存储库任务：将其放置在一个过时的、记录的工作区文件夹中，以便
+            # 脚本存活并且可追踪（不是临时目录），然后自动运行。
             workdir = workspace.new_run_folder(settings.model or settings.provider, task)
             in_workspace = True
 
         timeout = int(timeout_seconds) or int(os.getenv("WAKU_DELEGATE_TIMEOUT", "300"))
-        # Run pi on the SAME brain the loop is using, so the sub-agent's coding is
-        # this model's coding (that's the point of a per-model comparison). pi
-        # natively speaks every provider we pin; fall back to pi's own default if
-        # this provider isn't mappable. -a/--no-session = headless; stdin=DEVNULL
-        # so pi never blocks on a TTY it doesn't have under the server.
+        # 在循环使用的同一大脑上运行 pi，因此子代理的编码是
+        # 该模型的编码（这是每个模型比较的重点）。圆周率
+        # 我们固定的每个提供商都以母语为母语；回退到 pi 自己的默认值，如果
+        # 该提供商不可映射。 -a/--no-session = 无头；标准输入=DEVNULL
+        # 所以 pi 永远不会阻塞服务器下没有的 TTY。
         from waku.ops.coding_eval import PI_PROVIDER, _key_for
         cmd = [pi_bin]
         pi_prov = PI_PROVIDER.get(settings.provider)
@@ -230,7 +230,7 @@ def make_delegate_tool(settings: Settings) -> Tool:
         json_mode = _pi_supports_json(pi_bin)
         if json_mode:
             cmd += ["--mode", "json"]
-        cmd += _project_pi_flags()   # the repo's own extensions + skills ride along
+        cmd += _project_pi_flags()   # 存储库自己的扩展+技能随之而来
         cmd += ["-p", task, "-a", "--no-session"]
 
         raw_events: list[str] = []
@@ -241,7 +241,7 @@ def make_delegate_tool(settings: Settings) -> Tool:
                     cmd, workdir, timeout, notify)
             except OSError as exc:
                 return f"Couldn't launch pi: {exc}"
-            _record_subagent_usage(settings, tin, tout)   # the arena's cost now sees pi
+            _record_subagent_usage(settings, tin, tout)   # 竞技场的成本现在看到 pi
             if code is None:
                 return (f"pi was still working after {timeout}s so I stopped it — try a smaller "
                         f"task, or raise WAKU_DELEGATE_TIMEOUT.")
@@ -258,8 +258,8 @@ def make_delegate_tool(settings: Settings) -> Tool:
                 return f"Couldn't launch pi: {exc}"
             code, stdout_text, stderr = result.returncode, result.stdout, result.stderr
 
-        # Full pi transcript alongside the work (workspace) or in the outbox;
-        # in json mode the raw event stream is preserved too (pi-events.jsonl).
+        # 完整的 pi 成绩单与工作（工作区）一起或在发件箱中；
+        # 在 json 模式下，原始事件流也被保留（pi-events.jsonl）。
         transcript = (workdir / "pi-transcript.log") if in_workspace else (
             settings.home / "outbox" / f"delegate-{datetime.now():%Y%m%d-%H%M%S}.log")
         transcript.parent.mkdir(parents=True, exist_ok=True)
@@ -280,8 +280,8 @@ def make_delegate_tool(settings: Settings) -> Tool:
         if not in_workspace:
             return f"pi finished the delegated task in {workdir}.\n{summary}\n(full log: {transcript})"
 
-        # Scratch task: document the run (dated MANIFEST) and auto-run the script,
-        # feeding the run result back into the loop so the model can react to it.
+        # Scratch 任务：记录运行（注明日期的 MANIFEST）并自动运行脚本，
+        # 将运行结果反馈回循环中，以便模型可以对其做出反应。
         files = workspace.created_files(workdir)
         run = workspace.autorun(workdir)
         workspace.write_manifest(workdir, settings.provider, settings.model or "(default)", task, files, run)
@@ -313,7 +313,7 @@ def make_delegate_tool(settings: Settings) -> Tool:
             "required": ["task"],
         },
         fn=delegate_task,
-        wants_notify=True,   # streams pi's live events through the loop's observer
+        wants_notify=True,   # 通过循环的观察者流 pi 的实时事件
     )
 
 

@@ -49,20 +49,20 @@ from waku.memory.semantic.base import env_or
 
 _DEFAULT_USER = "waku"
 
-# graph.add() is async: it returns an Episode with processed=False in ~0.2s,
-# and the text only becomes searchable once Zep has decomposed it into nodes
-# and edges.
+# graph.add() 是异步的：它会在大约 0.2 秒内返回processed=False 的 Episode，
+# 只有在 Zep 将文本分解为节点后，文本才变得可搜索
+# 和边缘。
 #
-# This started as a blind two-second sleep, on my claim that the SDK offered no
-# readiness signal. That claim was wrong — Episode.processed is exactly that
-# signal — and the sleep was far too short besides: a first live run found the
-# data still unsearchable, which I nearly reported as "Zep ingested nothing".
-# It had ingested everything; I had asked too early and then misread an empty
-# result as an empty store.
+# 这开始是一个盲目的两秒睡眠，我声称 SDK 没有提供任何功能
+# 准备就绪信号。这种说法是错误的——Episode.processed 正是如此
+# 信号——而且睡眠时间太短了：第一次实时运行发现
+# 数据仍然无法搜索，我几乎将其报告为“Zep 没有摄入任何东西”。
+# 它已经吞噬了一切；我问得太早了，然后误读了一个空的
+# 结果是一个空商店。
 #
-# So: poll until Zep says it is done, and cap it. A benchmark must wait for a
-# contestant to be ready — anything else measures queue depth — but it must
-# also not hang forever on one that never finishes.
+# 所以：轮询直到 Zep 说它已经完成，然后限制它。基准必须等待
+# 参赛者要做好准备——任何其他衡量队列深度的东西——但它必须
+# 也不要永远挂在永远不会完成的事情上。
 _MAX_WAIT = float(env_or("ZEP_MAX_WAIT_SECONDS", "120"))
 _POLL_EVERY = 2.0
 
@@ -204,15 +204,15 @@ class ZepFactStore:
                 pass
         return deleted
 
-    # --- shapes -------------------------------------------------------------
+    # --- 形状------------------------------------------------------------------------
     def _search_rows(self, query: str, top_k: int) -> list[dict]:
         try:
             found = self.client.graph.search(query=query, user_id=self.user_id, limit=top_k)
         except Exception:
             return []
         rows = []
-        # A search returns edges and/or nodes depending on scope; both carry a
-        # uuid and some rendered text, under different attribute names.
+        # 搜索根据范围返回边和/或节点；两者都携带一个
+        # uuid 和一些呈现的文本，在不同的属性名称下。
         for group in ("edges", "nodes"):
             for item in (getattr(found, group, None) or []):
                 rows.append(self._row(item))

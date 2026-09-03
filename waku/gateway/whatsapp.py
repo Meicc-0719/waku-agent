@@ -100,7 +100,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from waku.app import Waku
-from waku.gateway.cli import _observer  # mirror gate/tool activity on the laptop terminal
+from waku.gateway.cli import _observer  # 笔记本电脑终端上的镜像门/工具活动
 from waku.integrations import IntegrationState, IntegrationStatus
 
 
@@ -149,7 +149,7 @@ def _build_handler(
             self.send_header("Content-Type", "application/json")
             self.end_headers()
 
-        # ── GET /webhook — Meta's one-time verification challenge ──────
+        # ── GET /webhook — Meta 的一次性验证挑战 ──────
         def do_GET(self) -> None:
             parsed = urlparse(self.path)
             if parsed.path != "/webhook":
@@ -171,7 +171,7 @@ def _build_handler(
                 self._set_json(403)
                 self.wfile.write(b"forbidden")
 
-        # ── POST /webhook — incoming messages from WhatsApp ────────────
+        # ── POST /webhook — 来自 WhatsApp 的传入消息 ────────────
         def do_POST(self) -> None:
             parsed = urlparse(self.path)
             if parsed.path != "/webhook":
@@ -182,8 +182,8 @@ def _build_handler(
             content_length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(content_length)
 
-            # Verify Meta's X-Hub-Signature-256 — without this, anyone who
-            # finds the webhook URL can forge payloads and drive the agent.
+            # 验证 Meta 的 X-Hub-Signature-256 — 没有这个，任何人
+            # 发现 webhook URL 可以伪造有效负载并驱动代理。
             sig = self.headers.get("X-Hub-Signature-256", "")
             expected = "sha256=" + hmac.new(
                 app_secret.encode(), body, hashlib.sha256
@@ -201,12 +201,12 @@ def _build_handler(
                 self.wfile.write(b"bad json")
                 return
 
-            # Always 200 fast — Meta retries on timeouts and will disable
-            # your webhook after enough failures.
+            # 始终 200 快 — 元在超时时重试并将禁用
+            # 经过足够多的失败后，您的网络钩子。
             self._set_json(200)
             self.wfile.write(b"{}")
 
-            # Parse the webhook payload
+            # 解析 webhook 负载
             for entry in data.get("entry", []):
                 for change in entry.get("changes", []):
                     value = change.get("value", {})
@@ -289,9 +289,9 @@ class WhatsAppHandle:
         self.server, self.thread = server, thread
 
     def stop(self) -> None:
-        # shutdown() must be called from a thread OTHER than the one running
-        # serve_forever, or it deadlocks — the supervisor always calls from
-        # the dashboard thread, so this is safe.
+        # shutdown() 必须从正在运行的线程以外的线程调用
+        # serve_forever，否则就会死锁——主管总是从
+        # 仪表板线程，所以这是安全的。
         self.server.shutdown()
         self.server.server_close()
         if self.thread.is_alive():

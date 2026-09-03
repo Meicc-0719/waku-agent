@@ -94,7 +94,7 @@ def unconsolidated(conn) -> int:
     return conn.execute("SELECT COUNT(*) FROM chat_log WHERE consolidated = 0").fetchone()[0]
 
 
-# ---------- the threshold
+# ----------门槛
 
 
 @pytest.mark.parametrize("exchanges", [0, 1, 2])
@@ -127,7 +127,7 @@ def test_exactly_at_the_threshold_it_fires(memory):
     assert memory.client.calls == 1, "one summarizer call per consolidation, not one per exchange"
 
 
-# ---------- what it writes
+# ---------- 写的是什么
 
 
 def test_facts_and_the_episode_both_land(memory):
@@ -166,7 +166,7 @@ def test_a_conversation_worth_no_facts_still_marks_the_log_done(memory):
     assert unconsolidated(memory.conn) == 0
 
 
-# ---------- bookkeeping: the expensive mistakes
+# ---------- 簿记：代价高昂的错误
 
 
 def test_consolidated_rows_are_never_read_twice(memory):
@@ -176,7 +176,7 @@ def test_consolidated_rows_are_never_read_twice(memory):
     run(memory, [response([text_block(DISTILLED)])])
     assert unconsolidated(memory.conn) == 0
 
-    # a second run must not even ASK the model — there is nothing unconsolidated
+    # 第二次运行甚至不能询问模型——没有什么是未合并的
     assert run(memory, script=[]) == 0
     assert memory.client.calls == 0
     assert memory.conn.execute("SELECT COUNT(*) FROM facts").fetchone()[0] == 2
@@ -191,7 +191,7 @@ def test_only_the_rows_it_read_are_marked(memory):
 
     class LateWriter(ScriptedClient):
         def _create(self, **kw):
-            add_exchanges(memory.conn, 1)      # a message lands mid-summary
+            add_exchanges(memory.conn, 1)      # 一条消息出现在摘要中间
             return super()._create(**kw)
 
     consolidate_if_due(memory.conn, LateWriter([response([text_block(DISTILLED)])]),
@@ -203,7 +203,7 @@ def test_only_the_rows_it_read_are_marked(memory):
     assert {r["id"] for r in still_open}.isdisjoint({r["id"] for r in seen})
 
 
-# ---------- failure posture: never lose the log
+# ---------- 失败姿势：永不丢失日志
 
 
 def test_a_summarizer_error_leaves_the_log_untouched(memory):
@@ -252,7 +252,7 @@ def test_a_reasoning_model_that_never_reaches_text_leaves_the_log_untouched(memo
 def test_the_summarizer_asks_for_a_budget_a_reasoning_model_can_finish_in(memory):
     """THE assertion the test above cannot make.
 
-    The bug #74 fixed was a 600-token ceiling: a reasoning model spent all of it
+    The bug #74 修复了 600 个代币的上限：推理模型花掉了所有的代币
     thinking and never emitted the JSON. But the test above passes on the
     UNFIXED code, because both versions end the same way — return 0, log
     untouched, no facts. The old path just gets there by raising ValueError into
@@ -284,7 +284,7 @@ def test_the_summarizer_asks_for_a_budget_a_reasoning_model_can_finish_in(memory
     )
 
 
-# ---------- the prompt
+# ----------提示
 
 
 def test_the_prompt_carries_the_log_and_demands_json_only():

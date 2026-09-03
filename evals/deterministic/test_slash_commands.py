@@ -60,7 +60,7 @@ def test_the_runner_table_and_the_commands_cannot_drift():
     assert dashboard.WORKFLOW_RUNNERS() == commands.discover()
 
 
-# --- the parser --------------------------------------------------------------
+# --- 解析器 --------------------------------------------------------------
 
 def test_a_leading_slash_is_a_command():
     assert commands.parse("/gather") == ("gather", "")
@@ -94,7 +94,7 @@ def test_running_an_unknown_name_returns_none_rather_than_raising():
     assert commands.run("definitely-not-a-workflow", lambda *a: None) is None
 
 
-# --- the UI must stop claiming you cannot choose ------------------------------
+# --- UI 必须停止声称您无法选择 ------------------------------------------
 
 def test_the_dashboard_no_longer_says_you_never_pick_a_mode():
     """That sentence was true when triage was the only workflow. It became

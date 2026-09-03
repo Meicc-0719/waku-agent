@@ -50,8 +50,8 @@ def _identity(auth_file: Path) -> str:
     try:
         stored = json.loads(auth_file.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
-        # Same treatment as the storage layer gives it: a file that will not
-        # parse costs a sign-in, not an explanation.
+        # 与存储层给予它的处理相同：一个文件不会
+        # parse 需要登录，而不是解释。
         return "unreadable — will sign in again"
 
     claims = _claims(stored.get("tokens", {}).get("access_token", ""))
@@ -62,12 +62,12 @@ def _identity(auth_file: Path) -> str:
         return who
     left = datetime.fromtimestamp(exp, UTC) - datetime.now(UTC)
     if left.total_seconds() <= 0:
-        # Worth saying rather than hiding: an expired token is refreshed
-        # silently on the next call, and someone reading this should not
-        # mistake the refresh for a problem.
+        # 值得说而不是隐藏：过期的令牌被刷新
+        # 在下一次通话时保持沉默，阅读本文的人不应该
+        # 将刷新误认为有问题。
         return f"{who} — token expired, refreshes on next use"
-    # Minutes below an hour: a token minted fifty minutes ago rendered as
-    # "0h left", which reads as expired and is the opposite of the truth.
+    # 不足一小时仅显示分钟：50 分钟前生成的 Token 会显示为
+    # “0h left”，读作已过期，与事实相反。
     minutes = int(left.total_seconds() // 60)
     return f"{who} — {minutes // 60}h left" if minutes >= 60 else f"{who} — {minutes}m left"
 
@@ -138,28 +138,28 @@ def _login(home: Path, name: str) -> int:
 
     from waku.tools.mcp_client import MCPBridge
 
-    # Success here is "a token now exists for the account you chose", not "a
-    # session was established". They came apart in practice: the sign-in
-    # completed, the token was written, and the reconnect on the same
-    # already-failed exit stack reported an error anyway — so the command said
-    # it failed immediately after succeeding. This command exists to sign in;
-    # holding a session is the next run's job.
+    # 这里的成功是“您选择的帐户现在存在一个令牌”，而不是“一个
+    # 会话已建立”。它们在实践中分开：登录
+    # 完成，令牌被写入，并在同一时间重新连接
+    # 无论如何，已经失败的退出堆栈报告了一个错误 - 所以命令说
+    # 成功后立即失败。该命令存在用于登录；
+    # 举行会议是下一次运行的工作。
     bridge = MCPBridge(home / "mcp.json")
     try:
         bridge.start()
     except TimeoutError:
-        # A traceback here is the wrong answer to "you took too long in the
-        # browser". The sign-in may still have completed — the callback writes
-        # the token whether or not anyone is still waiting — so say what to
-        # check rather than what broke.
+        # 这里的回溯是“你花了太长时间”的错误答案
+        # browser”。登录可能仍已完成 - 回调写入
+        # 令牌，无论是否有人仍在等待 - 所以说什么
+        # 检查而不是检查损坏的地方。
         print("\n  Timed out waiting for the browser sign-in.")
         print("  If you did finish it, `waku mcp` will show the account. Otherwise run this again.")
         return 1
     except Exception:
-        # Swallowed deliberately, and only here: the token below is the thing
-        # that was asked for, and it is either on disk or it is not. A
-        # connection error after a successful sign-in is noise the next run
-        # will not reproduce.
+        # 故意吞下去的，而且只有这里：下面的令牌就是东西
+        # 这是所要求的，它要么在磁盘上，要么不在磁盘上。一个
+        # 成功登录后出现连接错误，下次运行时会出现噪音
+        # 不会重现。
         pass
     finally:
         bridge.close()

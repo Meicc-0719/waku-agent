@@ -7,7 +7,7 @@
     files — and the only one that retires a fact by stamping a time on it.
 
 
-    pip install zep-cloud        # or, from the repo root: uv pip install -e '.[arena]'
+    pip install zep-cloud        # 或者，从存储库根目录： uv pip install -e '.[arena]'
     export ZEP_API_KEY=...
     python examples/memory-native/zep_native.py
 
@@ -43,12 +43,12 @@ import time
 from dotenv import load_dotenv
 from zep_cloud import Zep
 
-load_dotenv()  # your .env at the repo root, same keys waku uses
+load_dotenv()  # 您的 .env 位于存储库根目录，waku 使用相同的密钥
 
 USER = os.environ.get("ZEP_QUICKSTART_USER", "quickstart-zep")
 
-# The same three sentences in all four quickstarts. The third CONTRADICTS the
-# second -- that is the whole test.
+# 所有四个快速入门中都有相同的三句话。第三个矛盾
+# 第二——这就是整个测试。
 FACTS = [
     "I met Alex at the Lisbon AI meetup in March. He runs a robotics startup.",
     "Our product launch is scheduled for May.",
@@ -71,11 +71,11 @@ def main() -> None:
     try:
         client.user.add(user_id=USER)
     except Exception:
-        pass  # already exists
+        pass  # 已经存在
 
-    # 1. WRITE, then WAIT. The wait is not politeness, it is correctness --
-    #    this is the step whose absence makes benchmarks score Zep as having
-    #    forgotten something it was still filing.
+    # 1. 写，然后等待。等待不是礼貌，而是正确——
+    #    这一步的缺失使得 Zep 的基准评分为
+    #    忘记了仍在归档的东西。
     print("-- telling it three things ------------------------------------")
     for fact in FACTS:
         episode = client.graph.add(user_id=USER, type="text", data=fact)
@@ -83,24 +83,24 @@ def main() -> None:
         print(f"         (accepted, processed={getattr(episode, 'processed', None)})")
         _wait_until_processed(client)
 
-    # 2. READ BACK RAW -- as nodes, because that is what Zep made of you.
-    #    Compare these against the three sentences. They are not a subset of
-    #    your words; they are entities Zep decided exist.
+    # 2. READ BACK RAW——作为节点，因为这就是 Zep 为你打造的。
+    #    将它们与三个句子进行比较。它们不是以下的子集
+    #    你的话；它们是 Zep 决定存在的实体。
     print("\n-- what it actually built -------------------------------------")
     for node in client.graph.node.get_by_user_id(user_id=USER, limit=50) or []:
         summary = getattr(node, "summary", "") or ""
         print(f"  node : {getattr(node, 'name', '?')} -- {summary[:90]}")
 
-    # 3. SEARCH, three ways.
+    # 3. 搜索，三种方式。
     print("\n-- asking ------------------------------------------------------")
     for label, question in QUESTIONS:
         found = client.graph.search(query=question, user_id=USER, limit=3)
         print(f"  {label} : {question}\n              -> {_first(found)}")
 
-    # 4. THE CONTRADICTION -- the reason to care about Zep at all.
-    #    Look for an edge carrying an `invalid_at` (or `expired_at`) timestamp.
-    #    In a row store, "launch is in May" just sits there forever, equally
-    #    retrievable. Here it should be marked superseded AT a point in time.
+    # 4. 矛盾——关心 Zep 的理由。
+    #    查找带有“invalid_at”（或“expired_at”）时间戳的边。
+    #    在排店里，“五月上市”就永远坐在那里，同样如此
+    #    可检索。此处应将其标记为在某个时间点被取代。
     print("\n-- the superseded fact ----------------------------------------")
     edges = getattr(client.graph.search(query="product launch date", user_id=USER,
                                         limit=10, scope="edges"), "edges", None) or []
@@ -111,7 +111,7 @@ def main() -> None:
         state = f"INVALID from {invalid}" if invalid else "still valid"
         print(f"  {getattr(edge, 'fact', '?')}\n      -> {state}")
 
-    # 5. WHERE TO LOOK.
+    # 5. 去哪里看。
     print("\n-- see it yourself --------------------------------------------")
     print(f"  https://app.getzep.com -> your project -> Users -> {USER}")
     print("  'Graph' for the picture, 'Episodes' for the raw text you sent.")
@@ -150,7 +150,7 @@ def _wait_until_processed(client) -> None:
             found = client.graph.episode.get_by_user_id(user_id=USER, lastn=20)
             episodes = getattr(found, "episodes", found) or []
             done = bool(episodes) and all(getattr(e, "processed", False) for e in episodes)
-            # processed=True is necessary and NOT sufficient -- see docstring.
+            # processed=True 是必要的，但还不够——请参阅文档字符串。
             nodes = len(client.graph.node.get_by_user_id(user_id=USER, limit=100) or [])
             stable = stable + 1 if done and nodes == last and nodes > 0 else 0
             last = nodes

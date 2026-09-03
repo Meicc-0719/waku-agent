@@ -35,8 +35,8 @@ from waku.ops.whiteboard import style as S
 
 OUT = Path(__file__).resolve().parents[3] / "docs" / "whiteboards" / "loop-vs-graph.excalidraw"
 
-# One pixel per 12ms, so the real measurements set the bar lengths. The timeline
-# is evidence; scaling it by hand would make it a drawing of an argument.
+# 每 12 毫秒 1 个像素，因此实际测量值决定条的长度。时间线
+# 是证据；用手缩放它会使其成为论证的图画。
 MS = 1 / 12.0
 BAR_H = 30
 
@@ -93,7 +93,7 @@ def build() -> list:
                     "A loop DISCOVERS what to do next.   A graph PRE-DETERMINES what happens next.",
                     size=S.FS_HEADER))
 
-    # ======================= LEFT: THE LOOP, as a cycle =====================
+    # ======================= 左：循环，作为一个循环 =====================
     e += _pill(70, 178, 1010, "THE LOOP  —  it comes back")
 
     e += S.chip(70, 350, 130, 56, "you", color="green")
@@ -106,16 +106,16 @@ def build() -> list:
     e.append(S.arrow(480, 378, 558, 378))
     e += S.labeled_arrow(760, 378, 848, 378, "yes")
     e += S.labeled_arrow(660, 430, 660, 558, "no")
-    # THE back-edge: the loop's whole identity in one arrow. Routed ABOVE the
-    # row — sending it underneath put it straight through the "no" branch, and
-    # the one arrow that has to be unmissable cannot be the one crossing others.
+    # 后边缘：循环的整个特性在一个箭头中。路由上方
+    # row — 将其发送到下方，将其直接穿过“否”分支，并且
+    # 不可错过的一支箭不能是与其他箭交叉的那支箭。
     e.append(_curve([(950, 344), (950, 272), (375, 272), (375, 334)], sw=S.SW_EMPHASIS))
     e.append(S.text(520, 240, "and look again... and again", size=S.FS_BODY))
     e.append(S.text(70, 624,
                     "you cannot draw where this ends, because it does not know either.",
                     size=S.FS_BODY, color=S.PAL["red"][1]))
 
-    # ======================= RIGHT: THE GRAPH, as a fan =====================
+    # ======================= 右：图表，作为粉丝 =====================
     e += _pill(1190, 178, 1140, "THE GRAPH  —  it fans out")
 
     e += S.chip(1190, 380, 120, 56, "START", color="green")
@@ -136,7 +136,7 @@ def build() -> list:
                     "every edge is on the page before anything runs.",
                     size=S.FS_BODY, color=S.PAL["green"][1]))
 
-    # ======================= THE RECEIPTS: two timelines ====================
+    # ======================= 收据：两个时间线====================
     e += _pill(70, 660, 2260, "THE SAME JOB, MEASURED ON ONE MACHINE")
 
     X0 = 110
@@ -166,7 +166,7 @@ def build() -> list:
     e.append(S.text(barrier_x + 14, 1114, "so calendar and memory idle here for 1.9s",
                     size=S.FS_BODY, color=S.PAL["red"][1]))
 
-    # scoreboard, parked right of the timelines
+    # 记分牌，停在时间线的右侧
     e += _box(1500, 780, 380, 86, "gathering\n6.7s  ->  1.9s   (3.5x)", fill="green")
     e += _box(1920, 780, 380, 86, "whole run\n15.3s  ->  13.2s   (14%)")
     e.append(S.red_note(1500, 900,
@@ -177,7 +177,7 @@ def build() -> list:
     e += _box(1500, 1080, 800, 74,
               "a graph does NOT replace the loop — agent_node runs one whole loop turn AS a node")
 
-    # ======================= the ladder + the skeptic =======================
+    # ======================= 梯子 + 怀疑论者 =========================
     e += _pill(70, 1330, 1010, "THE LADDER  —  each rung is something you stopped leaving to chance")
     rungs = [("prompt", "the words"), ("context", "what's in the window"),
              ("skill", "the procedure"), ("loop", "between the calls"),

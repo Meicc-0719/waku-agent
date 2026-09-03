@@ -84,21 +84,21 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE chat_log ADD COLUMN session_id TEXT DEFAULT 'default'")
         conn.commit()
     if "source" not in cols:
-        # which gateway a message came in through (cli / voice / telegram / dashboard)
+        # 消息通过哪个网关传入（cli / 语音 / 电报 / 仪表板）
         conn.execute("ALTER TABLE chat_log ADD COLUMN source TEXT DEFAULT 'cli'")
         conn.commit()
     if "meta" not in cols:
-        # per-turn telemetry as JSON on the assistant row (gate decision,
-        # latency, iterations, tools) — so reopening a thread still shows how
-        # each answer was produced, not just the plain text.
+        # 辅助行上的每圈遥测数据为 JSON（门决策、
+        # 延迟、迭代、工具）——因此重新打开线程仍然可以显示如何
+        # 每个答案都已生成，而不仅仅是纯文本。
         conn.execute("ALTER TABLE chat_log ADD COLUMN meta TEXT")
         conn.commit()
 
 
 def connect(home: Path, check_same_thread: bool = True) -> sqlite3.Connection:
-    # check_same_thread=False lets the dashboard's threaded HTTP server reuse
-    # one agent connection across worker threads (guarded by a lock). busy_timeout
-    # avoids "database is locked" when the dashboard reads while a chat writes.
+    # check_same_thread=False 让仪表板的线程 HTTP 服务器重用
+    # 跨工作线程的一个代理连接（由锁保护）。繁忙超时
+    # 避免在聊天写入时仪表板读取时“数据库被锁定”。
     conn = sqlite3.connect(home / "state.db", check_same_thread=check_same_thread)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA busy_timeout=3000")

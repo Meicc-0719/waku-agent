@@ -34,8 +34,8 @@ def ignored(rel: str) -> bool:
     ).returncode == 0
 
 
-# Every runtime artifact a home can hold, for the DEFAULT home and for an
-# alternate one (DISCORD_HOME, or any WAKU_HOME a user points elsewhere).
+# 一个 home 可以容纳的每个运行时工件，对于 DEFAULT home 和一个
+# 备用之一（DISCORD_HOME，或用户在其他地方指向的任何 WAKU_HOME）。
 ARTIFACTS = ["state.db", "SOUL.md", "usage.jsonl", "calendar.ics",
              "traces/2026-07-26.jsonl", "outbox/msg-1.txt"]
 
@@ -52,9 +52,9 @@ def test_no_agent_home_leaks_its_runtime_data(home, artifact):
 
 @pytest.mark.parametrize("secret", [
     ".env",
-    "credentials.json",            # Google OAuth client secret
-    "client_secret_123.json",      # what the Google console actually names it
-    "token.json",                  # a refresh token, worse than the key
+    "credentials.json",            # Google OAuth 客户端密钥
+    "client_secret_123.json",      # Google 控制台实际上将其命名为什么
+    "token.json",                  # 刷新令牌，比密钥更糟糕
     ".gcp/service-account.json",
 ])
 def test_secrets_are_ignored(secret):
@@ -69,9 +69,9 @@ def test_nothing_from_a_runtime_home_is_currently_tracked():
     the rule existed, .gitignore does not untrack it — git keeps following it
     forever and check-ignore still says 'ignored'. This is the check that
     catches that: ask git what it is actually tracking."""
-    # .env.example is the documented TEMPLATE and is tracked on purpose — every
-    # value in it is empty, commented, or a placeholder path. It is the one
-    # ".env*" file that belongs in the repo.
+    # .env.example 是记录的模板，并且是有意跟踪的 - 每个
+    # 其中的值为空、注释或占位符路径。就是那个
+    # 属于存储库的“.env*”文件。
     allowed = {".env.example"}
     tracked = subprocess.run(
         ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, check=True
@@ -91,6 +91,6 @@ def test_the_env_template_carries_no_real_values():
     filled = [ln for ln in lines
               if "=" in ln and not ln.lstrip().startswith("#")
               and ln.split("=", 1)[1].strip().strip("\"'")]
-    # WAKU_PROVIDER is a non-secret default and is meant to have a value.
+    # WAKU_PROVIDER 是一个非秘密默认值，意味着有一个值。
     unexpected = [ln for ln in filled if not ln.startswith("WAKU_PROVIDER=")]
     assert unexpected == [], f"values committed in .env.example: {unexpected}"

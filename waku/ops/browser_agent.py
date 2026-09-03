@@ -32,12 +32,12 @@ from datetime import UTC, datetime
 from waku.config import load_settings
 from waku.db import connect
 
-# One shared agent for the browser gateway. Built lazily (first chat), reused
-# across the threaded server's workers via a cross-thread connection + a lock
-# so chats run one at a time — correct for a single-user local tool.
+# 浏览器网关的一个共享代理。懒惰地构建（第一次聊天），重用
+# 通过跨线程连接+锁跨线程服务器的工作人员
+# 因此聊天一次运行一个——对于单用户本地工具来说是正确的。
 _agent = None
 agent_lock = threading.Lock()
-_dashboard_session = None  # this dashboard run's chat thread (dated; stable across refreshes)
+_dashboard_session = None  # 此仪表板运行的聊天线程（已过时；刷新后稳定）
 
 
 def dash_session() -> str:
@@ -62,9 +62,9 @@ def resume_or_new_session(conn) -> str:
     the visible chat 'vanished' (it was only parked under the old id). An idle
     gap still rotates — that's maybe_rotate_session's job once we're running."""
     idle_min = int(os.getenv("WAKU_SESSION_IDLE_MINUTES", "60"))
-    # Match by source, not id prefix: "+ New chat" makes 's-...' ids, so a
-    # 'dashboard-%' filter would orphan those threads on restart. Every dashboard
-    # message is tagged source='dashboard' — that's the reliable signal.
+    # 按源匹配，而不是 id 前缀：“+ New chat”生成 's-...' ids，因此
+    # “dashboard-%”过滤器将在重新启动时孤立这些线程。每个仪表板
+    # 消息被标记为 source='dashboard' — 这是可靠的信号。
     row = conn.execute(
         "SELECT session_id, MAX(created_at) AS last_at FROM chat_log "
         "WHERE source='dashboard' GROUP BY session_id "
@@ -89,9 +89,9 @@ def get_agent():
         settings.ensure_home()
         conn = connect(settings.home, check_same_thread=False)
         _agent = Waku(settings=settings, conn=conn)
-        # A dashboard run resumes its last recent thread (so a restart/refresh
-        # keeps the chat on screen), or starts fresh if that thread is idle.
-        # Same id collect() reports, so the dock restores the right conversation.
+        # 仪表板运行恢复其最近的最后一个线程（因此重新启动/刷新
+        # 将聊天保持在屏幕上），或者如果该线程空闲则重新开始。
+        # 相同的 idcollect() 报告，因此扩展坞恢复正确的对话。
         _dashboard_session = resume_or_new_session(conn)
         _agent.session.session_id = _dashboard_session
     return _agent
@@ -110,7 +110,7 @@ def maybe_rotate_session(agent) -> None:
                              (agent.session.session_id,)).fetchone()
     if not row or not row[0]:
         return
-    try:  # sqlite datetime('now') is UTC "YYYY-MM-DD HH:MM:SS"
+    try:  # sqlite datetime('now') 是 UTC "YYYY-MM-DD HH:MM:SS"
         last = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     except ValueError:
         return
@@ -144,17 +144,17 @@ def rebuild() -> str | None:
             settings.ensure_home()
             conn = connect(settings.home, check_same_thread=False)
             fresh = Waku(settings=settings, conn=conn)
-            # Carry the CONVERSATION across the swap. A settings change swaps the
-            # brain, not the thread — but a brand-new Waku starts on the eternal
-            # 'default' session, so without this line switching provider silently
-            # dumped you into a different chat and your history vanished from the
-            # dock. Same resolution get_agent() uses, so both doors agree.
+            # 在交换过程中进行对话。设置更改会交换
+            # 大脑，不是线程——而是一个全新的瓦库从永恒开始
+            # “默认”会话，因此无需此线路默默切换提供商
+            # 将您转入另一个聊天室，并且您的历史记录从
+            # 码头。 get_agent() 使用相同的分辨率，因此两扇门都同意。
             fresh.session.session_id = (
                 old.session.session_id if old is not None else resume_or_new_session(conn)
             )
             _dashboard_session = fresh.session.session_id
             _agent = fresh
-        except (Exception, SystemExit) as exc:   # get_client raises SystemExit
+        except (Exception, SystemExit) as exc:   # get_client 引发 SystemExit
             _agent = old
             return str(exc)
     if old is not None:

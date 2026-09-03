@@ -47,9 +47,9 @@ def test_the_account_is_named_not_merely_confirmed():
     path = _auth_file(home, "waku_memory", _token("seanchen9832@gmail.com"))
     line = _identity(path)
     assert "seanchen9832@gmail.com" in line
-    # Offsets in these fixtures sit well inside a band rather than on its edge:
-    # a token created exactly one hour out is 59m by the time it is read, and a
-    # test that flips on elapsed time fails for reasons that are not the code.
+    # 这些装置中的偏移量位于带内而不是边缘：
+    # 恰好一小时内创建的令牌在被读取时为 59m，并且
+    # 由于代码之外的原因，对经过时间进行翻转的测试会失败。
     assert "left" in line
 
 

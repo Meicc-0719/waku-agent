@@ -4,7 +4,7 @@
 enough, and for a long time nothing put model output inside an ATTRIBUTE, so
 the gap could not bite.
 
-The copy buttons added in #58 are the first place it happens:
+The copy buttons added in #58 是第一个发生的地方：
 
     <button class="msg-copy" data-text="${esc(t.reply)}">
 

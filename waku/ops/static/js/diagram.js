@@ -1,13 +1,13 @@
-// waku dashboard — the architecture SVG (archSVG, byte-frozen) + its live animation.
-// Split out of app.js: classic <script>, shared global scope (no build
-// step, no modules). Load order + rules: static/README.md.
+// waku 仪表板 — 架构 SVG（archSVG、byte-frozen）+ 实时动画。
+// 从 app.js 中分离出来：经典 <script>，共享全局范围（无构建
+// 步骤，无模块）。加载顺序+规则：static/README.md。
 
-// --- Architecture: a calm live SVG that mirrors the whiteboard's structure
-// (Harness wraps the ephemeral run · Loop is a cycle · memory feeds up through
-// the gate · LLM Ops is a separate loop). Deliberately few arrows + lots of
-// air — the detail lives in each tab. Every node is live and clickable.
-// DO NOT rewrite this chart. The data-node/data-edge ids each box emits drive
-// the live animation via the STAGE map below — keep the two in sync.
+// --- 架构：反映白板结构的平静的实时 SVG
+// （线束包裹着短暂的运行·循环是一个循环·内存通过
+// 门·LLM Ops 是一个单独的循环）。故意少箭头+多箭头
+// 空气——细节存在于每个选项卡中。每个节点都是活动的并且可点击。
+// 不要重写此图表。每个盒子发出驱动器的数据节点/数据边缘 ID
+// 通过下面的舞台图实时动画 - 保持两者同步。
 function archSVG(d){
   const s = d.stats;
   const box = (x,y,w,h,title,sub,view,cls="",nid="") =>
@@ -96,12 +96,12 @@ function archSVG(d){
   </svg></div>`;
 }
 
-// ---- Live harness animation: light up the diagram as a turn flows through,
-// driven by the trace stream so ANY gateway (browser, phone, CLI) triggers it.
-// The node/edge ids below MUST match the data-node="…"/data-edge="…" ids that
-// archSVG emits above — change one, change the other (that's why both live in
-// this file). test_static_assets.py won't catch a mismatch here; the animation
-// just silently stops lighting a box.
+// ---- 实时线束动画：转弯时点亮图表，
+// 由跟踪流驱动，因此任何网关（浏览器、电话、CLI）都会触发它。
+// 下面的节点/边缘 id 必须与 data-node="…"/data-edge="…" id 匹配
+// archSVG 发出上面的信息 — 改变一个，改变另一个（这就是为什么两者都生活在
+// 该文件）。 test_static_assets.py 不会在这里捕获不匹配；动画
+// 只是默默地停止点亮盒子。
 const STAGE = {
   turn_start:    {nodes:["gateway","wm"],            edges:["e-gw-wm"],                 label:"message in"},
   gate:          {nodes:["gate"],                    edges:["e-gate-wm"],               label:"retrieval gate"},
@@ -113,13 +113,13 @@ const STAGE = {
 let evCursor = null, evQueue = [], playing = false, animating = false;
 
 function hot(sel, cls, ms){
-  document.querySelectorAll(sel).forEach(el => {   // every diagram copy lights up
+  document.querySelectorAll(sel).forEach(el => {   // 每个图表副本都会亮起
     el.classList.add(cls);
     setTimeout(()=>el.classList.remove(cls), ms);
   });
 }
 function animateStage(ev){
-  if (GRAPH_KINDS.has(ev.type)) return animateGraphStage(ev);   // graph.js owns these
+  if (GRAPH_KINDS.has(ev.type)) return animateGraphStage(ev);   // graph.js 拥有这些
   const spec = STAGE[ev.type];
   if (!spec || !document.querySelector(".arch")) return;
   document.querySelectorAll(".arch-status").forEach(st => st.innerHTML = `<span class="live-dot"></span>${spec.label}`);
@@ -135,7 +135,7 @@ function playNext(){
     document.querySelectorAll(".arch-status").forEach(st => st.innerHTML=""); return; }
   playing = true; animating = true;
   animateStage(evQueue.shift());
-  setTimeout(playNext, 620);   // stagger so stages light up in sequence
+  setTimeout(playNext, 620);   // 交错排列，以便舞台按顺序亮起
 }
 async function pollEvents(){
   try{

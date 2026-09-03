@@ -51,7 +51,7 @@ def _duckduckgo(query: str, max_results: int) -> list[tuple[str, str, str]]:
     out = []
     for i, (href, title) in enumerate(links[:max_results]):
         target = href
-        m = re.search(r"uddg=([^&]+)", href)  # DDG wraps results in a redirect
+        m = re.search(r"uddg=([^&]+)", href)  # DDG 将结果包装在重定向中
         if m:
             target = urllib.parse.unquote(m.group(1))
         out.append((_strip(title), _strip(snips[i]) if i < len(snips) else "", target))
@@ -64,7 +64,7 @@ def make_tool() -> Tool:
         try:
             results = _tavily(query, key, max_results) if key else _duckduckgo(query, max_results)
         except Exception as exc:
-            results = None if key else []  # DDG blocked → fall through to the hint below
+            results = None if key else []  # DDG被屏蔽→进入下面的提示
             if key:
                 return f"Web search failed ({exc}). Answer from what you know, or ask the user."
         if not results:

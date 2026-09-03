@@ -29,16 +29,16 @@ def test_append_and_load_round_trip(tmp_path):
 def test_it_writes_to_its_own_file_not_state_db(tmp_path):
     ch.append_run(tmp_path, "hi", [_result("a:b", "b", 1, 1, 1, 0.0)])
     assert (tmp_path / "compare" / "history.jsonl").exists()
-    assert not (tmp_path / "state.db").exists()   # never touches the agent's DB
+    assert not (tmp_path / "state.db").exists()   # 从不接触代理的数据库
 
 
 def test_clear_wipes_only_the_history(tmp_path):
     ch.append_run(tmp_path, "hi", [_result("a:b", "b", 1, 1, 1, 0.0)])
-    (tmp_path / "state.db").write_text("real data")   # a sibling that must survive
+    (tmp_path / "state.db").write_text("real data")   # 必须生存的兄弟姐妹
     ch.clear(tmp_path)
     assert ch.load_runs(tmp_path) == []
     assert not (tmp_path / "compare" / "history.jsonl").exists()
-    assert (tmp_path / "state.db").read_text() == "real data"   # untouched
+    assert (tmp_path / "state.db").read_text() == "real data"   # 未受影响的
 
 
 def test_history_is_capped(tmp_path, monkeypatch):
@@ -46,7 +46,7 @@ def test_history_is_capped(tmp_path, monkeypatch):
     for i in range(5):
         ch.append_run(tmp_path, f"run {i}", [_result("a:b", "b", 1, 1, 1, 0.0)])
     runs = ch.load_runs(tmp_path)
-    assert [r["message"] for r in runs] == ["run 2", "run 3", "run 4"]   # oldest rolled off
+    assert [r["message"] for r in runs] == ["run 2", "run 3", "run 4"]   # 最旧的滚落
 
 
 def test_reply_is_truncated(tmp_path, monkeypatch):
@@ -66,9 +66,9 @@ def test_aggregate_totals_over_successful_runs_only(tmp_path):
     m = agg["k:m"]
     assert m["runs"] == 2 and m["ok"] == 2
     assert m["total_latency_ms"] == 4000 and m["total_cost_usd"] == 0.08
-    # tokens split in/out and still total; helper sends tin=tout each run (100+300)
+    # 输入/输出 Token 分别统计，也计入总数；helper 每次运行均发送 tin=tout（100+300）。
     assert m["total_tokens_in"] == 400 and m["total_tokens_out"] == 400
     assert m["total_tokens"] == 800 == m["total_tokens_in"] + m["total_tokens_out"]
     n = agg["g:n"]
-    assert n["runs"] == 1 and n["ok"] == 0          # errored run counted, adds nothing to totals
+    assert n["runs"] == 1 and n["ok"] == 0          # 错误运行计数，不会增加总数
     assert n["total_cost_usd"] == 0.0

@@ -17,7 +17,7 @@ def test_expect_tool_none_wants_no_call():
     case = {"expect_tool": None}
     assert scoring.check_case(case, []) == (True, "no tool expected")
     ok, why = scoring.check_case(case, _tc("create_event"))
-    assert not ok and "create_event" in why          # acted on a non-command
+    assert not ok and "create_event" in why          # 按非命令行事
 
 
 def test_expect_tool_must_fire():
@@ -50,5 +50,5 @@ def test_case_for_message_matches_trimmed_input():
 def test_real_dataset_loads_and_every_case_is_scoreable():
     cases = scoring.load_cases()
     assert len(cases) >= 11
-    for c in cases:                       # every seeded case must have the fields the scorer reads
+    for c in cases:                       # 每个种子案例都必须具有记分员读取的字段
         assert "id" in c and "input" in c and "expect_tool" in c

@@ -1,18 +1,18 @@
-// waku dashboard — graph workflows: the topology chart + its live animation.
-// Split out: classic <script>, shared global scope. Load order: static/README.md.
+// waku 仪表板 — 图形工作流程：拓扑图 + 实时动画。
+// 拆分出来：经典的 <script>，共享全局范围。加载顺序：static/README.md。
 //
-// The chart is DATA-DRIVEN: it renders Graph.describe() served in /api/data
-// (d.graph.workflows), so the picture is provably the topology the engine
-// runs — the anti-drift lesson learned from archSVG's byte-freeze. Never
-// hand-edit a workflow's shape here; change the workflow and this follows.
-// Ids are namespaced "g-" so they can never collide with archSVG's ids.
+// 该图表是数据驱动的：它呈现在 /api/data 中提供的 Graph.describe()
+// (d.graph.workflows)，所以该图可以证明是引擎的拓扑
+// 运行 — 从 archSVG 的字节冻结中学到的防漂移教训。绝不
+// 在这里手动编辑工作流程的形状；更改工作流程，如下所示。
+// ID 的命名空间为“g-”，因此它们永远不会与 archSVG 的 id 发生冲突。
 
-// --- layered layout: START at the left, each node one column after its
-// furthest predecessor. Small graphs only (triage is 5 nodes) — no library.
+// --- 分层布局：从左侧开始，每个节点在其后面一列
+// 最远的前身。仅小图（分类为 5 个节点）——没有库。
 function graphLayout(wf){
   const names = ["START", ...wf.nodes.map(n => n.name), "END"];
   const layer = {START: 0};
-  for (let pass = 0; pass < names.length; pass++)     // relax until stable
+  for (let pass = 0; pass < names.length; pass++)     // 放松直至稳定
     wf.edges.forEach(e => {
       const src = layer[e.src] ?? 0;
       layer[e.dst] = Math.max(layer[e.dst] ?? 0, src + 1);
@@ -36,15 +36,15 @@ function graphSVG(wf, opts = {}){
     const colH = col.length * (H + GY) - GY;
     pos[n] = {x: PAD + ci * (W + GX), y: PAD + (height - PAD * 2 - colH) / 2 + ri * (H + GY)};
   }));
-  // Ids carry the workflow name. START and END exist in EVERY workflow, so on a
-  // page showing two charts an un-namespaced `g-START` lit both of them at once
-  // — and hot() deliberately hits every match, so the bug looked like a feature.
+  // Id 带有工作流程名称。 START 和 END 存在于每个工作流程中，因此
+  // 显示两个图表的页面，未命名空间的“g-START”同时点亮了它们
+  // — 并且 hot() 故意命中每场比赛，因此该错误看起来像是一个功能。
   const nid = n => `g-${wf.name}-${n}`;
-  // Both labels used to overclaim. "local read" was true for triage's calendar
-  // peek and false for gather's scan_github (a subprocess) and scan_web (the
-  // network) — what tool nodes share is that NO MODEL RUNS. And "small model"
-  // was true of triage's classify and false of gather's synthesize, which uses
-  // the main one; the kind alone does not know which, so do not claim.
+  // 这两个标签都曾经夸大其词。 “本地阅读”对于分类日历来说是正确的
+  // 收集的 scan_github （子进程）和 scan_web （子进程）的 peek 和 false
+  // 网络）——工具节点共享的是没有模型运行。还有“小模特”
+  // 分类的分类为真，而收集的合成为假，后者使用
+  // 主要的一个；单独的种类不知道是哪一种，所以不要声称。
   const SUB = {llm: "one model call", agent: "THE loop, as a node", tool: "code, no model", fn: ""};
   const nodeBox = n => {
     const p = pos[n];
@@ -75,30 +75,30 @@ function graphSVG(wf, opts = {}){
   </svg></div>`;
 }
 
-// Which workflow is running RIGHT NOW, set by graph_start and cleared by
-// graph_end. The Overview panel used to read the last COMPLETED run, so during
-// a gather it still showed triage — and since animateGraphStage only lights a
-// chart that is on screen, nothing lit up either. One wrong chart caused both
-// bugs: you saw the old shape, and you saw it stay dark.
+// 现在正在运行哪个工作流程，由 graph_start 设置并由
+// 图结束。概述面板用于读取最后一次完成的运行，因此在
+// 聚集它仍然显示分类 - 并且由于 animateGraphStage 只点亮
+// 屏幕上的图表也没有亮起。一张错误的图表导致了这两种情况
+// bugs：你看到了旧的形状，你看到它保持黑暗。
 let GRAPH_LIVE = null;
-// The workflow to keep showing once a run ENDS. Without it the panel fell back
-// to d.graph.runs[0] the instant graph_end fired — and that payload is only
-// refreshed by the /api/data poll, so for one beat it still named the PREVIOUS
-// run. Observed as: swap to gather, flick back to triage, then back to gather
-// when the poll caught up. Remembering locally means the panel never shows a
-// workflow older than the one it just watched.
+// 运行结束后继续显示的工作流程。没有它，面板会回落
+// 到 d.graph.runs[0] 即时 graph_end 被触发 - 并且该有效负载仅
+// 由 /api/data 轮询刷新，因此它仍然命名为 PREVIOUS
+// 跑步。观察为：交换以收集，快速返回分类，然后返回收集
+// 当民意调查赶上时。记住本地意味着面板永远不会显示
+// 工作流程比刚刚观看的工作流程旧。
 let GRAPH_SHOWN = null;
 
-// --- the compact Overview panel: the harness auto-decides, this reflects it.
+// --- 紧凑的概述面板：线束自动决定，这反映了它。
 function graphPanel(d){
   const g = d.graph || {enabled: false, workflows: [], runs: [], stats: {quick: 0, full: 0}};
-  // Overview is a STATUS surface — "what just happened" — while the Graph tab
-  // is a reference one: "what shapes exist". So this shows the workflow that
-  // most recently RAN, from the trace. Pinning it to workflows[0] meant Overview
-  // showed triage forever, seconds after a gather, which is why the panel read
-  // as leftovers rather than as news.
-  // A run in flight wins over the last finished one — during a gather you want
-  // to watch the gather, not read about the triage that came before it.
+  // 概览是一个状态界面——“刚刚发生了什么”——而图表选项卡
+  // 是一个参考：“存在什么形状”。这显示了工作流程
+  // 最近的 RAN，来自跟踪。将其固定到工作流程 [0] 意味着概述
+  // 在收集后几秒钟永远显示分类，这就是面板显示的原因
+  // 作为剩菜而不是新闻。
+  // 飞行中的奔跑胜过最后完成的——在你想要的聚集期间
+  // 观看聚集，而不是阅读之前的分类。
   const showing = GRAPH_LIVE || GRAPH_SHOWN || ((g.runs || [])[0] || {}).workflow;
   const last = (g.runs || [])[0];
   const wf = (g.workflows || []).find(w => w && w.name === showing)
@@ -112,10 +112,10 @@ function graphPanel(d){
         ${seg("seg-skip", g.stats.quick, "quick", Math.round(g.stats.quick / tot * 100))}
         ${seg("seg-ret", g.stats.full, "full", 100 - Math.round(g.stats.quick / tot * 100))}
       </div><div class="meta" style="margin:6px 0 10px">${g.stats.quick} answered by the small model alone — the loop never woke</div>`;
-  // The flag gates TRIAGE — the per-message door — and nothing else. `waku
-  // gather` is a routine you start yourself and runs regardless, so the old
-  // copy ("off = every turn runs the classic loop") was quietly false the
-  // moment a second workflow existed.
+  // 标志门 TRIAGE——每条消息的门——除此之外别无其他。 `瓦库
+  // Gather` 是一个你自己启动并运行的例程，所以旧的
+  // 复制（“关闭=每回合都运行经典循环”）是悄悄地错误的
+  // 当第二个工作流程存在时。
   if (!g.enabled && !last)
     return `<div class="card"><div class="meta">The per-message graph door is <b>off</b> — every chat turn
       runs the classic loop above. Switch on <b>graph workflows</b> in
@@ -133,29 +133,29 @@ function graphPanel(d){
     <div class="meta" style="margin-top:8px">${when} · click for the full story</div></div>`;
 }
 
-// --- live animation: same machinery as the loop's STAGE map. hot() lights
-// every copy on the page, so the Overview panel and the Graph tab glow together.
+// --- 实时动画：与循环的 STAGE 地图相同的机制。热()灯
+// 页面上的每个副本，因此“概述”面板和“图表”选项卡一起发光。
 const GRAPH_KINDS = new Set(["graph_start", "node_start", "node_end", "route", "graph_end"]);
 function animateGraphStage(ev){
   if (!document.querySelector(".graphchart")) return;
   const status = t => document.querySelectorAll(".arch-status").forEach(
     st => st.innerHTML = `<span class="live-dot"></span>${t}`);
-  // Every graph event carries `workflow`, so the ids can be scoped to the chart
-  // that is actually running instead of lighting every chart on the page.
+  // 每个图形事件都带有“workflow”，因此 ids 的范围可以限定在图表中
+  // 它实际上正在运行，而不是点亮页面上的每个图表。
   const w = ev.workflow || "";
   if (ev.type === "graph_start"){
-    // Swap the Overview chart to this workflow before anything runs, so the
-    // nodes about to light up are the ones on screen.
+    // 在运行任何内容之前将概述图表交换到此工作流程，因此
+    // 即将点亮的节点是屏幕上的节点。
     graphLive(w);
     status(`${w} starts`);
     hot(`[data-node="g-${w}-START"]`, "hot", 1000);
   }
   else if (ev.type === "node_start"){
     status(`${w} · ${ev.node}`);
-    // Held, not pulsed: a node is lit for as long as it is WORKING. Pulsing on
-    // node_end only ever showed you what had already finished, which is the
-    // opposite of watching it happen — and with four nodes in one wave it is
-    // the difference between seeing a fan-out and seeing four blinks.
+    // 保持，而非脉冲：只要节点正在工作，它就会一直亮着。脉动开启
+    // node_end 只显示已经完成的内容，即
+    // 与观看它发生相反——并且一波中有四个节点
+    // 看到扇出和看到四次闪烁之间的区别。
     document.querySelectorAll(`[data-node="g-${w}-${ev.node}"]`)
       .forEach(el => el.classList.add("hot"));
   }
@@ -175,29 +175,29 @@ function animateGraphStage(ev){
   }
 }
 
-// Setting the live workflow re-renders, so the panel swaps the moment a run
-// starts rather than at the next poll.
+// 设置实时工作流程重新渲染，以便面板在运行时交换
+// 开始而不是在下一次投票时。
 function graphLive(name){
   if (GRAPH_LIVE === name) return;
-  if (name) GRAPH_SHOWN = name;   // sticky: outlives the run, so no flick-back
+  if (name) GRAPH_SHOWN = name;   // 粘性：比运行更持久，因此不会弹回
   GRAPH_LIVE = name;
   if (typeof render === "function") render();
 }
 
 // ---------------------------------------------------------------------------
-// THE RUNNER — N nodes as a row of live cards.
+// THE RUNNER — N 个节点作为一排活牌。
 //
-// The topology chart above shows the SHAPE: "these four are independent". It
-// cannot show that they actually ran together, because a picture has no time
-// axis and a viewer cannot tell four boxes lit at once from four lit very fast
-// in sequence. So the cards carry the time: they start together, tick while
-// running, and finish out of order. Watching three settle while one spins is
-// the proof the chart can only promise.
+// 上面的拓扑图显示了 SHAPE：“这四个是独立的”。它
+// 无法证明他们实际上是一起跑的，因为照片没有时间
+// 轴，观察者无法区分同时点亮的四个盒子和快速点亮的四个盒子
+// 按顺序。所以卡片承载着时间：它们一起开始，滴答作响
+// 运行，并无序完成。看着三个沉稳而一个旋转是
+// 图表只能承诺的证明。
 //
-// Same shape as the Arena, deliberately — arena.py tags every event with `spec`
-// and routes it to a card; the graph engine already tags every event with
-// `node`. Swap the key, reuse .cmp-grid/.cmp-col, and it reads as a sibling
-// because it is one.
+// 故意与竞技场形状相同 - arena.py 用“spec”标记每个事件
+// 并将其路由到卡；图形引擎已经标记了每个事件
+// `节点`。交换密钥，重用 .cmp-grid/.cmp-col，它作为同级读取
+// 因为它是一个。
 let graphRun = {running: false, workflow: "", nodes: {}, order: [], waves: [],
                 digest: "", draft: "", error: "", ticker: null};
 
@@ -213,15 +213,15 @@ function graphApplyEvent(ev){
     R.order = ev.nodes || [];
     R.order.forEach(n => R.nodes[n] = {status: "waiting"});
   } else if (k === "node_start"){
-    // A wave is "the nodes that started before any of them finished". That is
-    // exactly what the engine means by a wave, and it is what the row groups by.
+    // 波是“在任何节点完成之前开始的节点”。那是
+    // 这正是引擎所说的波浪的含义，也是行分组的依据。
     const open = R.waves[R.waves.length - 1];
     if (open && !open.closed) open.nodes.push(ev.node);
     else R.waves.push({nodes: [ev.node], closed: false});
     R.nodes[ev.node] = {status: "running", startedAt: performance.now()};
   } else if (k === "node_end"){
     const w = R.waves[R.waves.length - 1];
-    if (w) w.closed = true;   // first finish closes the wave for new members
+    if (w) w.closed = true;   // 第一次完成结束了新成员的浪潮
     R.nodes[ev.node] = {status: ev.error ? "error" : "done", ms: ev.ms,
                         keys: ev.keys || [], error: ev.error || ""};
   } else if (k === "route"){
@@ -237,8 +237,8 @@ function graphApplyEvent(ev){
 async function runGraph(workflow){
   if (graphRun.running) return;
   graphResetRun(workflow);
-  // Without a ticker the elapsed numbers freeze and the cards look identical to
-  // a sequential run — the one thing this view exists to disprove.
+  // 如果没有股票行情记录器，经过的数字会冻结，并且卡片看起来与
+  // 顺序运行——这是这个观点所要反驳的一件事。
   clearInterval(graphRun.ticker);
   graphRun.ticker = setInterval(() => { if (graphRun.running) render(); }, 100);
   render();
@@ -285,9 +285,9 @@ function graphCol(name){
   if (n.status === "error")
     return `<div class="cmp-col err"><div class="cmp-h"><b>${esc(name)}</b></div>
       <div class="meta" style="color:var(--bad)">${esc(n.error)}</div></div>`;
-  // The bar is scaled to the SLOWEST node in this node's wave, and every faster
-  // node prints what it spent waiting at the barrier. That number is the honest
-  // cost of wave execution — printing it teaches more than hiding it would.
+  // 条形图缩放至该节点波中最慢的节点，并且速度更快
+  // 节点打印它在屏障处等待所花费的时间。这个数字是诚实的
+  // 波次执行的成本——打印它比隐藏它能学到更多。
   const wave = graphRun.waves.find(w => w.nodes.includes(name));
   const peers = (wave ? wave.nodes : [name]).map(x => (graphRun.nodes[x] || {}).ms || 0);
   const slowest = Math.max(...peers, 1);

@@ -48,7 +48,7 @@ def _graph(**overrides):
     return build_gather_graph(**base)
 
 
-# --- claim 1: it is really parallel -----------------------------------------
+# --- 主张 1：确实是并行的 ------------------------------------------------------
 
 def test_the_four_scans_really_overlap():
     """The claim the whole video rests on. Each scan records when it started and
@@ -67,8 +67,8 @@ def test_the_four_scans_really_overlap():
             return out
         return fn
 
-    # All four use the same helper so every one records its start BEFORE
-    # sleeping — timing the sleep itself would just measure the sleep.
+    # 所有四个都使用相同的助手，因此每个人都在之前记录其开始
+    # 睡眠——计时睡眠本身就可以测量睡眠情况。
     g = _graph(
         github_fn=slow("gh", {"gh_text": "", "gh_open_prs": 0, "gh_open_issues": 0}),
         web_fn=lambda: slow("web", {"web_text": ""})()["web_text"],
@@ -126,7 +126,7 @@ def test_scan_nodes_write_disjoint_keys():
         seen |= set(keys)
 
 
-# --- claim 2: one dead branch must not kill the briefing ---------------------
+# --- 主张 2：一根枯枝不能毁掉简报 ----------------------
 
 def test_one_dead_branch_still_yields_a_digest():
     """A node that raises fires no edges, so synthesize's deps would never
@@ -151,7 +151,7 @@ def test_every_branch_can_die_and_the_briefing_survives():
         assert state.get("digest") == "DIGEST", f"{killed} failing killed the gather"
 
 
-# --- the router --------------------------------------------------------------
+# --- 路由器 --------------------------------------------------------------
 
 @pytest.mark.parametrize("state,expected", [
     ({"gh_open_prs": 2}, "propose"),
@@ -185,7 +185,7 @@ def test_a_busy_morning_drafts():
     assert state["draft_path"] == "/tmp/gather.md"
 
 
-# --- the propose-never-act guarantee ----------------------------------------
+# --- 提议永不行动的保证----------------------------------------------------
 
 def test_the_workflow_cannot_act():
     """THE structural guarantee, checked at the source level because there is no
@@ -210,10 +210,10 @@ def test_the_workflow_cannot_act():
                 "PROPOSES and never ACTS — it drafts into the outbox for a human. "
                 "Adding a tool-using node here silently removes that guarantee."
             )
-    # Assert on the CALL, via the AST — not on a substring, because the function
-    # docstring explains the rule and would match itself. This also states the
-    # property exactly: whatever else the call grows, it must never gain a
-    # `tools=` keyword.
+    # 通过 AST 在 CALL 上断言 — 不是在子字符串上断言，因为该函数
+    # docstring 解释了规则并且会匹配自身。这也说明了
+    # 确切地说：无论调用增长到什么程度，它都绝不能获得
+    # `tools=` 关键字。
     import ast
 
     calls = [n for n in ast.walk(ast.parse(inspect.getsource(binder._synthesize)))
@@ -245,7 +245,7 @@ def _code_lines(module) -> list[str]:
             if i not in doc and not ln.strip().startswith("#")]
 
 
-# --- the topology the dashboard draws ---------------------------------------
+# --- 仪表板绘制的拓扑 --------------------------------------
 
 def test_the_topology_matches_the_graph_that_runs():
     """The chart is rendered from describe(), so it cannot drift — as long as

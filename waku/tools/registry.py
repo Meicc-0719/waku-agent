@@ -17,12 +17,12 @@ class Tool:
     name: str
     description: str
     input_schema: dict[str, Any]
-    fn: Callable[..., str]  # tools return a string the model observes
-    # A long-running tool can opt in to STREAM progress while it works: set
-    # wants_notify=True and accept a `_notify(kind, event)` keyword. The loop's
-    # observer is passed through, so gateways/traces see inside the tool
-    # (delegate_task uses this to relay pi's live events). The underscore keeps
-    # it out of the model-facing schema — the model never supplies it.
+    fn: Callable[..., str]  # 工具返回模型观察到的字符串
+    # 长时间运行的工具可以在工作时选择加入 STREAM 进度：设置
+    # Wants_notify=True 并接受 `_notify(kind, event)` 关键字。循环的
+    # 观察者被传递，因此网关/痕迹可以看到工具内部
+    # （delegate_task 使用它来中继 pi 的实时事件）。下划线保留
+    # 它脱离了面向模型的模式——模型从不提供它。
     wants_notify: bool = False
 
     def to_api(self) -> dict[str, Any]:
@@ -54,5 +54,5 @@ class ToolRegistry:
             if tool.wants_notify:
                 return tool.fn(**args, _notify=notify or (lambda kind, ev: None))
             return tool.fn(**args)
-        except Exception as exc:  # surface, don't crash — the model can retry
+        except Exception as exc:  # 浮出水面，不要崩溃——模型可以重试
             return f"Error running {name}: {exc}"

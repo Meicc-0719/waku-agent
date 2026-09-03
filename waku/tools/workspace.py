@@ -31,8 +31,8 @@ from pathlib import Path
 
 from waku.tools._env import delegate_env as _delegate_env
 
-WORKSPACE_ENV = "WAKU_WORKSPACE"          # root dir; default ./waku_workspace
-AUTORUN_ENV = "WAKU_DELEGATE_AUTORUN"     # "0"/"false"/"no" to disable auto-run
+WORKSPACE_ENV = "WAKU_WORKSPACE"          # 根目录；默认./waku_workspace
+AUTORUN_ENV = "WAKU_DELEGATE_AUTORUN"     # “0”/“false”/“no”禁用自动运行
 RUN_TIMEOUT = int(os.getenv("WAKU_AUTORUN_TIMEOUT", "30"))
 _OURS = {"MANIFEST.md", "run.log", "pi-transcript.log"}
 _ENTRY_PREFS = ("main.py", "app.py", "run.py", "game.py")

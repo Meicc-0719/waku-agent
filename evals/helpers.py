@@ -56,32 +56,32 @@ def make_waku(home: Path, client=None, **settings_overrides):
     from waku.app import Waku
     from waku.config import Settings
 
-    # A test must describe its own world. `waku/config.py` calls load_dotenv()
-    # at import, so every Settings() default is quietly seeded from whatever is
-    # in the maintainer's .env — and a test that reads the developer's machine
-    # is not deterministic. Each entry below is a switch that changes what a
-    # turn DOES, pinned off unless a test asks for it:
-    #   apple/google_calendar  reach the real calendar (network + a Mac)
-    #   apple_tools            register four more tools and shell out to macOS
-    #   graph_workflows        route every message through the triage graph,
-    #                          which spends one extra model call — on 2026-07-31
-    #                          a stale WAKU_GRAPH_WORKFLOWS=1 ate a scripted
-    #                          response and failed 8 tests that pass in CI
-    # NOT pinned here: `experimental`. test_delegate.py drives it with
-    # monkeypatch.setenv to prove the env var really gates registration, and a
-    # hardcoded False here would make that wiring untestable. Pin a switch only
-    # when no test needs to observe the env reaching Settings.
+    # 测试必须描述它自己的世界。 `waku/config.py` 调用 load_dotenv()
+    # 在导入时，因此每个 Settings() 默认值都是从任何内容中悄悄播种的
+    # 在维护者的 .env 中 - 以及读取开发人员机器的测试
+    # 不是确定性的。下面的每个条目都是一个开关，可以更改
+    # 转 DOES，除非测试要求，否则被锁定：
+    #   apple/google_calendar 到达真实日历（网络+Mac）
+    #   apple_tools 注册另外四个工具并进入 macOS
+    #   graph_workflows 通过分类图路由每条消息，
+    #                          额外花费一次模型调用 — 2026 年 7 月 31 日
+    #                          陈旧的 WAKU_GRAPH_WORKFLOWS=1 吃了脚本
+    #                          响应并未通过 CI 中通过的 8 项测试
+    # 未固定在这里：“实验性”。 test_delegate.py 驱动它
+    # Monkeypatch.setenv 来证明环境变量确实可以进行注册，并且
+    # 此处硬编码 False 会使该接线无法测试。仅固定开关
+    # 当没有测试需要观察环境到达设置时。
     #
-    # Only switches Settings actually HAS are pinned. Passing an unknown name
-    # is a TypeError, so a hardcoded list would break the moment a flag is
-    # renamed or lives only on a feature branch — which is exactly what
-    # happened to `graph_workflows` here. Filtering keeps this list a superset
-    # that costs nothing when an entry is absent.
+    # 仅固定实际具有的开关设置。传递一个未知的名字
+    # 是一个类型错误，因此硬编码列表会在标志出现时中断
+    # 重命名或仅存在于功能分支上 - 这正是
+    # 这里发生了“graph_workflows”。过滤使该列表成为超集
+    # 当条目不存在时，这不需要任何费用。
     known = {f.name for f in dataclasses.fields(Settings)}
     for switch in ("apple_calendar", "google_calendar", "apple_tools", "graph_workflows"):
         if switch in known:
             settings_overrides.setdefault(switch, False)
     settings = Settings(home=home, **settings_overrides)
     if client is not None and not settings.api_key:
-        settings.api_key = "offline"  # never read the real key for scripted runs
+        settings.api_key = "offline"  # 永远不要读取脚本运行的真正密钥
     return Waku(settings=settings, client=client)

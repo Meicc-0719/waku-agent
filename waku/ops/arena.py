@@ -54,10 +54,10 @@ def compare_stream(message: str, specs: list, emit, judge: bool = False,
         return
 
     lock = threading.Lock()
-    collected: list = []   # per-model results, saved to the compare history at the end
-    # If this prompt is a known battery case, every column gets a deterministic
-    # Completion score (did the right tool fire, with the right args, enough
-    # times). Free-form prompts still race — they just don't get a score.
+    collected: list = []   # 每个模型的结果，最后保存到比较历史记录中
+    # 如果此提示是已知的电池情况，则每一列都会得到确定性的
+    # 完成分数（是否使用正确的工具，使用正确的参数，足够
+    # 次）。自由形式的提示仍在竞争——它们只是得不到分数。
     case = scoring.case_for_message(message)
 
     def send(kind, ev):
@@ -73,11 +73,11 @@ def compare_stream(message: str, specs: list, emit, judge: bool = False,
         home = Path(tempfile.mkdtemp(prefix=f"compare-{provider}-"))
         gate: dict = {}
 
-        # Stream the STRUCTURAL harness live (gate decision, tool calls) — these
-        # fire from the observer without stream=True. We deliberately DON'T
-        # token-stream the reply: stream=True makes some reasoning models (gemini
-        # with tools) demand a thought_signature and 400, which the plain path
-        # doesn't. So the harness plays out live and the reply lands on finish.
+        # 实时传输结构线束（门决策、工具调用）——这些
+        # 观察者在没有stream=True的情况下开火。我们故意不
+        # token-stream 回复：stream=True 建立了一些推理模型（gemini
+        # 使用工具）需要一个thought_signature和400，这是简单的路径
+        # 没有。因此，线束会实时播放，并且回复会完成。
         def obs(kind, ev):
             if kind == "gate":
                 gate.update(decision=ev.get("decision"), reason=ev.get("reason"))
@@ -85,20 +85,20 @@ def compare_stream(message: str, specs: list, emit, judge: bool = False,
             elif kind == "tool":
                 send("tool", {"spec": spec, "tool": ev.get("tool")})
             elif kind == "subagent":
-                # delegate_task relays pi's live event stream (see experimental.py)
-                # — forward it so the card can show the sub-agent working instead
-                # of a black box. Text deltas are trimmed; this is a peek, not a log.
+                # delegate_task 中继 pi 的实时事件流（参见experimental.py）
+                # — 转发它，以便卡片可以显示子代理的工作情况
+                # 的黑匣子。文本增量被修剪；这是一个窥视，而不是日志。
                 out = {"spec": spec, **ev}
                 if out.get("type") == "text" and len(out.get("delta", "")) > 200:
                     out["delta"] = out["delta"][:200]
                 send("subagent", out)
 
         try:
-            # coding mode registers delegate_task (the pi sub-agent) so the loop
-            # can hand real programming work to pi — running the FULL harness
-            # (gate, memory, tools), not a bypass. pi runs on this card's model.
-            # apple_calendar defaults OFF (isolation), opt-in per race — when on,
-            # EACH model writes its own event to the real 'Waku' calendar.
+            # 编码模式注册 delegate_task （pi 子代理），因此循环
+            # 可以将真正的编程工作交给 pi — 运行完整的工具
+            # （门、内存、工具），而不是旁路。 pi 在此卡的型号上运行。
+            # apple_calendar 默认关闭（隔离），选择加入每场比赛 - 当打开时，
+            # 每个模型都将自己的事件写入真正的“Waku”日历中。
             settings = Settings(
                 provider=provider,
                 model=model,
@@ -109,8 +109,8 @@ def compare_stream(message: str, specs: list, emit, judge: bool = False,
                 experimental=coding,
             )
             app = Waku(settings=settings)
-            # A scored case may pre-load a fact (e.g. "applies memory") so every
-            # model starts from the same state the checklist assumes.
+            # 评分案例可能会预加载一个事实（例如“应用内存”），因此每个
+            # 模型从清单假设的相同状态开始。
             if case and case.get("setup_fact"):
                 app.memory.facts.add(case["setup_fact"]["subject"], case["setup_fact"]["content"])
             t0 = time.perf_counter()
@@ -131,9 +131,9 @@ def compare_stream(message: str, specs: list, emit, judge: bool = False,
             if case:
                 passed, why = scoring.check_case(case, result.tool_calls)
                 completion = {"passed": passed, "why": why, "case": case["id"]}
-            # Quality (referee grade) is NOT done here — it runs as one controlled
-            # pass AFTER every column finishes (see below), so the referee doesn't
-            # get a burst of concurrent calls and skip some.
+            # 质量（裁判等级）不是在这里完成的——它是作为一个受控的运行的
+            # 在每一列完成后通过（见下文），因此裁判不会
+            # 获得大量并发呼叫并跳过一些。
             send("result", {"spec": spec, "provider": provider, "model": settings.model,
                             "reply": result.reply, "gate": (gate or None),
                             "iterations": result.iterations, "latency_ms": ms,
@@ -142,19 +142,19 @@ def compare_stream(message: str, specs: list, emit, judge: bool = False,
                             "cutoff": cutoff_for(settings.model),
                             "completion": completion, "quality": None})
         except (Exception, SystemExit) as exc:
-            # SystemExit (not an Exception subclass) is what get_client raises for
-            # a missing/misconfigured key. Catch it too, or a keyless provider
-            # would vanish from the race silently instead of showing WHY it failed.
+            # SystemExit （不是 Exception 子类）是 get_client 引发的
+            # 钥匙丢失/配置错误。也抓住它，或者无钥匙提供商
+            # 会默默地从比赛中消失，而不是表明失败的原因。
             send("result", {"spec": spec, "provider": provider, "model": model, "error": str(exc)[:200]})
 
     with ThreadPoolExecutor(max_workers=min(len(specs), 6)) as ex:
         list(ex.map(run, specs))
 
-    # Grade AFTER the race, as one gentle pass — so the referee gets a steady
-    # trickle of calls (max_workers=2) instead of a burst the moment every column
-    # finishes, which used to 429 and leave some models ungraded. Each grade
-    # updates its card ("grade" event) and the stored result, so history + the
-    # scoreboard end up with every model scored.
+    # 赛后评分，作为一次温和的传球——这样裁判员就能获得稳定的评分
+    # 缓慢的调用 (max_workers=2)，而不是每列瞬间的爆发
+    # 饰面，过去为 429，有些型号未分级。各年级
+    # 更新其卡片（“成绩”事件）和存储的结果，因此历史记录+
+    # 记分牌最终显示每个模型的得分。
     if judge:
         jp, _, jm = (judge_spec or "").partition(":")
         gradable = [r for r in collected if not r.get("error") and (r.get("reply") or "").strip()]
@@ -165,17 +165,17 @@ def compare_stream(message: str, specs: list, emit, judge: bool = False,
                 return
             q = judge_mod.judge_reply(message, r["reply"], jp or None, jm or None,
                                       tools=[t.get("tool") for t in (r.get("tools") or [])])
-            r["quality"] = q                       # fold into what gets persisted
+            r["quality"] = q                       # 折叠成持久化的内容
             send("grade", {"spec": r.get("spec"), "quality": q})
 
         with ThreadPoolExecutor(max_workers=2) as jex:
             list(jex.map(grade, list(collected)))
 
-    # Persist the race to the arena's own history (never the agent's real state).
+    # 将竞赛保留到竞技场自身的历史（而不是代理的真实状态）。
     try:
         compare_history.append_run(load_settings().home, message, collected)
     except Exception:
-        pass   # a history-write hiccup must never fail the race
+        pass   # 载入史册的小问题决不能让比赛失败
     emit("done", {})
 
 
@@ -218,7 +218,7 @@ def compare_regrade(payload: dict) -> dict:
         return {"runs": [], "aggregate": []}
     jp, _, jm = (payload.get("judge_model") or "").partition(":")
     only_missing = payload.get("only_missing", True)
-    spec = payload.get("spec")   # grade just ONE card (the per-card button)
+    spec = payload.get("spec")   # 仅对一张卡进行评分（每张卡按钮）
     last = runs[-1]
     for r in last.get("results", []):
         if r.get("error") or not (r.get("reply") or "").strip():
@@ -228,7 +228,7 @@ def compare_regrade(payload: dict) -> dict:
         if spec is None and only_missing and r.get("quality") is not None:
             continue
         q = judge_mod.judge_reply(last.get("message", ""), r["reply"], jp or None, jm or None,
-                                  tools=r.get("tools"))   # history stores tools as [names]
+                                  tools=r.get("tools"))   # 历史记录将工具存储为[名称]
         if q is not None:
             r["quality"] = q
     compare_history.save_runs(home, runs)

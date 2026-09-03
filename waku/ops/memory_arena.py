@@ -45,27 +45,27 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-# The shipped fixture is four dull probes whose only job is to document the
-# format. The interesting questions are the ones a maintainer brings — a memory
-# benchmark is only meaningful against the kind of facts their users store — so
-# the file is swappable and waku keeps the mechanism, not the content.
+# 发货的夹具是四个钝探针，其唯一的作用是记录
+# 格式。有趣的问题是维护者带来的——记忆
+# 基准只有针对用户存储的事实才有意义 - 所以
+# 文件是可交换的，并且 waku 保留机制，而不是内容。
 _EXAMPLE = Path(__file__).resolve().parents[2] / "evals" / "memory_arena.json"
 PROBES_ENV = "WAKU_MEMORY_PROBES"
 
 PASS, STALE, INVENTED, MISS = "pass", "stale", "invented", "miss"
 
-# A contestant that is told nothing and then asked everything. It should fail
-# every probe; a probe it passes is one the model can answer without memory, so
-# that probe measures training data rather than the store. See run_arena.
+# 参赛者什么也没被告知，然后又问了一切。它应该失败
+# 每个探头；它通过的探针是模型无需记忆即可回答的探针，因此
+# 该探针测量训练数据而不是存储数据。请参阅 run_arena。
 CONTROL = "control"
 
-# How models decline when they genuinely have nothing. Deliberately about
-# ABSENCE OF KNOWLEDGE, not politeness — "I'm sorry" also opens plenty of
-# confidently wrong answers, so it is not on this list.
+# 当模型真正一无所有时，它们会如何衰落。刻意的关于
+# 缺乏知识，而不是礼貌——“对不起”也能打开很多机会
+# 自信地回答错误，所以它不在此列表中。
 #
-# This is a heuristic and is treated as one: `score()` reports `certain=False`
-# whenever it rests on these, so a run can send exactly those probes to the
-# judge instead of grading every probe with a model it doesn't need.
+# 这是一种启发式方法，被视为一种：“score()”报告“certain=False”
+# 每当它停留在这些上时，因此运行可以将这些探针准确地发送到
+# 判断而不是用不需要的模型对每个探针进行评分。
 _REFUSALS = (
     "don't know", "do not know", "not sure", "no information", "no record",
     "never told", "never mentioned", "never gave", "never shared",
@@ -76,10 +76,10 @@ _REFUSALS = (
     "don't have", "do not have", "nothing about", "no details", "wasn't specified",
     "not specified", "unable to find", "couldn't find", "could not find",
 )
-# This list will never be complete — models decline in more ways than anyone can
-# enumerate, and a missed phrasing scores an honest refusal as INVENTED, which is
-# the worst direction to be wrong in. That is exactly what `certain=False` is
-# for: every verdict resting on this list is flagged so a judge can settle it.
+# 这份清单永远不会完整——模型衰退的方式比任何人都多
+# 枚举，漏掉的措辞会被视为“发明”的诚实拒绝，即
+# 最糟糕的方向是错误的。这正是“certain=False”的含义
+# for：此列表中的每个判决都会被标记，以便法官可以解决。
 
 
 def fixture_path() -> Path:
@@ -179,17 +179,17 @@ def _has(haystack: str, needles) -> bool:
     return any(n.casefold() in low for n in needles)
 
 
-# --- the judge the scorer has always asked for ------------------------------
-# score() returns `certain=False` on every refusal verdict, because that verdict
-# rests on a phrase list that cannot be complete. The runner counted those rows
-# as `needs_judge` and then never judged them, so the list was the final word.
+# --- 记分员一直要求的裁判 ------------------------------------------
+# 对于每个拒绝判决，score() 都会返回“certain=False”，因为该判决
+# 依赖于一个不完整的短语列表。跑步者数了这些行
+# 作为“needs_judge”，然后从未评判过它们，所以列表就是最终的决定。
 #
-# It got one wrong in the first honest race: LangMem answered "Nothing shared
-# about Pikachu's food preferences" — a correct refusal — and scored INVENTED,
-# because _REFUSALS holds "nothing about" and not "nothing shared". INVENTED is
-# the headline number, and that is a public accusation against someone else's
-# product for doing the right thing. A benchmark may not publish a verdict it
-# cannot defend.
+# 在第一次诚实的比赛中它犯了一个错误：LangMem 回答“没有任何共享”
+# 关于皮卡丘的食物偏好”——正确的拒绝——并得分“发明”，
+# 因为 _REFUSALS 包含“没有关于”而不是“没有共享”。发明的是
+# 头条新闻，这是对其他人的公开指控
+# 做正确事情的产品。基准测试可能不会发布结论
+# 无法防守。
 
 _ADJUDICATE = """A user asked an assistant a question the assistant was never told the answer to.
 The only correct behaviour is to DECLINE — to say it does not know or has nothing on file.
@@ -215,7 +215,7 @@ def adjudicate_refusal(question: str, answer: str) -> bool | None:
 
     try:
         client, model = _judge.judge_client()
-        with _judge._JUDGE_SEM:   # same cap as the model arena: don't stampede the referee
+        with _judge._JUDGE_SEM:   # 与模特场地相同的帽子：不要踩踏裁判
             reply = client.messages.create(
                 model=model, max_tokens=200,
                 messages=[{"role": "user",
@@ -242,8 +242,8 @@ def score(answer: str, probe: dict, retrieved: bool | None = None) -> tuple[str,
     """
     answer = answer or ""
 
-    # A probe that asserts on retrieval behaviour: getting the arithmetic right
-    # while quietly searching memory is still the wrong behaviour.
+    # 断言检索行为的探测器：使算术正确
+    # 而默默地搜索记忆仍然是错误的行为。
     if probe.get("expect_retrieval") is False and retrieved is True:
         return MISS, True, "retrieved memory for a question that needed none"
 
@@ -259,9 +259,9 @@ def score(answer: str, probe: dict, retrieved: bool | None = None) -> tuple[str,
             return STALE, True, f"asserted the superseded answer ({stale[0]})"
         return MISS, True, "expected answer absent"
 
-    # `expect_all` is for multi-hop probes where naming one party is half a
-    # thought: "avoid seating Tom next to Sam" needs both names or it hasn't
-    # combined anything.
+    # `expect_all` 用于多跳探测，其中命名一方是半个
+    # 想法：“避免让汤姆坐在山姆旁边”需要两个名字，否则就不需要
+    # 结合任何东西。
     required = probe.get("expect_all") or []
     if required and not all(_has(answer, [r]) for r in required):
         missing = [r for r in required if not _has(answer, [r])]
@@ -308,11 +308,11 @@ def render(rows: list[dict]) -> str:
     return "\n".join(lines)
 
 
-# --- the runner -------------------------------------------------------------
-# Everything above is pure. This part costs money: it stands up a real Waku per
-# contestant and runs the real loop, because retrieval is only meaningful
-# through the thing that actually calls it — the gate decides whether to search
-# at all, and that decision is half of what separates these systems.
+# --- 跑步者------------------------------------------------------------------------
+# 上面的一切都是纯粹的。这部分需要花钱：它可以承受真正的 Waku 每
+# 参赛者并运行真正的循环，因为检索才有意义
+# 通过实际调用它的东西——门决定是否搜索
+# 无论如何，这个决定是这些系统之间的区别的一半。
 
 def arena_home(backend: str, track: str, seed: list[str], model: str) -> Path:
     """A home NAMED for what it holds, so seeding once can serve many races.
@@ -427,11 +427,11 @@ def run_arena(backends: list[str], track: str, emit, fixture: dict | None = None
     from waku.config import Settings
     from waku.memory import consolidation
 
-    # `model` is "provider:model". The arena holds the model CONSTANT and varies
-    # only the store, so which model it is cannot change the finding — which
-    # makes running it on the priciest default pure waste. A measured dinner
-    # race cost ~$4.36 on claude-fable-5 ($10/$50 per M); the same race on
-    # grok-4.3 ($1.25/$2.50) is a fraction of that for the same answer.
+    # `model` 是“提供者：模型”。竞技场保持模型不变并且变化
+    # 只有商店，所以它是什么型号不能改变这个发现——
+    # 使得在最昂贵的默认纯粹浪费上运行它。一顿有分量的晚餐
+    # claude-fable-5 上的竞赛成本约为 4.36 美元（每 M 10 美元/50 美元）；同一场比赛
+    # grok-4.3 ($1.25/$2.50) 是相同答案的一小部分。
     prov, _, mod = model.partition(":")
 
     fixture = fixture or load_fixture()
@@ -444,89 +444,89 @@ def run_arena(backends: list[str], track: str, emit, fixture: dict | None = None
     raw_emit = emit
 
     def emit(kind, ev):
-        # One SSE stream, several threads. Concurrent writes interleave mid-line
-        # and corrupt the framing, which shows up as a UI that silently stops
-        # updating rather than as an error.
+        # 一个SSE流，多个线程。并发写入交错中线
+        # 并破坏框架，显示为默默停止的 UI
+        # 更新而不是作为错误。
         with lock:
             raw_emit(kind, ev)
 
     def one(backend):
         emit("start", {"contestant": backend})
-        # THE CONTROL. A contestant that is told nothing, then asked everything.
-        # It should fail every probe — and any probe it PASSES is not a memory
-        # probe at all, it is one the model can answer from training data.
+        # 控制。参赛者什么也没被告知，然后就问了一切。
+        # 它应该让每个探测器都失败——并且它通过的任何探测器都不是内存
+        # 无论如何，这是模型可以从训练数据中回答的问题。
         #
-        # This is not hypothetical. The dinner track used to ask what Jensen
-        # always wears and what Paul Graham dislikes; with an empty store and
-        # the real system prompt the model answers both correctly, citing his
-        # essay. Three of seven probes were scoring the model, not the store,
-        # and nothing on screen said so. A benchmark that cannot show its
-        # questions require the thing under test is decoration.
+        # 这不是假设。晚餐曲目曾经问詹森什么
+        # 总是穿保罗·格雷厄姆不喜欢的衣服；空荡荡的商店和
+        # 真实的系统提示模型回答正确，引用了他的
+        # 散文。七个探测器中的三个对模型进行评分，而不是对商店进行评分，
+        # 屏幕上没有任何内容表明这一点。无法显示其性能的基准
+        # 题目要求被测物是装饰品。
         seeding = [] if backend == CONTROL else spec["seed"]
         store = "sqlite" if backend == CONTROL else backend
         home = arena_home(backend, track, seeding, model)
         already = _is_seeded(home)
         try:
             opts = {"provider": prov, "model": mod} if prov and mod else {}
-            # Partition env is set once around the whole race, below.
+            # 分区环境在整个比赛中设置一次，如下所示。
             app = Waku(settings=Settings(home=home, semantic_store=store,
                                          apple_calendar=False, google_calendar=False,
                                          apple_tools=False, graph_workflows=False, **opts))
-            # Seeding is 53% of a race and perfectly deterministic, so a home
-            # that already holds this exact seed is not re-told. Racing is now
-            # the cheap half: seed once, ask many times.
+            # 种子赛占比赛的 53%，并且完全确定，因此主场
+            # 已经持有这个确切种子的内容不会被重新告知。赛车就是现在
+            # 便宜的一半：播种一次，询问多次。
             if already:
-                # One event, not len(seeding) phantom "seeded" ones. Faking the
-                # count made a store that needed no telling still animate
-                # through a telling phase it was not doing.
+                # 一个事件，而不是 len(seeding) 幻像“种子”事件。伪造
+                # 伯爵让一家无需告知的商店仍然充满活力
+                # 通过一个有说服力的阶段，它没有做。
                 emit("cached", {"contestant": backend, "facts": len(seeding)})
             for line in [] if already else seeding:
                 app.respond(line, source="memory-arena")
                 emit("seeded", {"contestant": backend, "line": line})
 
-            # SEEDING IS DONE. Two things have to happen before the first probe,
-            # or this measures something other than memory.
+            # 播种完成。在第一次探测之前必须发生两件事，
+            # 或者这测量的是记忆以外的东西。
             #
-            # 1. FLUSH. Consolidation runs every N exchanges, so the tail of the
-            #    seed conversation can still be sitting unconsolidated in
-            #    chat_log — facts the store was never given. every_n=1 drains
-            #    it. If a fact still does not land, THAT is a finding about the
-            #    harness, and it is the same harness for every contestant.
-            # 2. FORGET THE CONVERSATION. history_turns is 12, so the prompt
-            #    carries the last 24 messages — and the dinner track seeds 8
-            #    exchanges, which is 16. Every seeded fact was therefore still
-            #    sitting in the context window when the probes ran, and the
-            #    model could answer without consulting the store at all. Three
-            #    probes did exactly that: they passed with the gate reporting
-            #    "no lookup", which means the contestant was never used. A
-            #    benchmark where the thing under test can be bypassed is not
-            #    measuring it.
+            # 1. 冲洗。合并每 N 个交易所运行一次，因此尾部
+            #    种子对话仍处于未合并状态
+            #    chat_log — 商店从未提供过的事实。 every_n=1 排水管
+            #    它。如果事实仍然不成立，那就是关于
+            #    安全带，每个参赛者都使用相同的安全带。
+            # 2. 忘记谈话。 History_turns为12，所以提示
+            #    携带最后 24 条消息 — 以及晚餐轨道种子 8
+            #    交换，即 16。因此，每个种子事实仍然是
+            #    当探测器运行时，位于上下文窗口中，并且
+            #    模特根本不需要咨询店家就可以回答。三
+            #    探测器确实做到了这一点：它们通过了登机门报告
+            #    “没有查找”，这意味着参赛者从未被使用过。一个
+            #    被测试的东西可以被绕过的基准不是
+            #    测量它。
             #
-            #    This was invisible until the gate was fixed (#94). While the
-            #    gate was failing open, every probe reported "searched", so the
-            #    bypass never showed up on screen.
+            #    在大门修复之前这是不可见的（#94）。虽然
+            #    门未能打开，每个探测器都报告“已搜查”，因此
+            #    旁路从未出现在屏幕上。
             consolidation.consolidate_if_due(app.memory.conn, app.client,
                                              app.settings.small_model, 1,
                                              app.memory.facts, app.memory.episodes)
 
-            # 3. WAIT FOR THE STORE TO BECOME SEARCHABLE. sqlite and LangMem
-            #    return instantly; the hosted two are eventually consistent and
-            #    both understate it. mem0 has no readiness signal and measured
-            #    14s to queryable; Zep's per-add `processed` wait was passing
-            #    while the graph still held zero matching nodes. Probing there
-            #    scores the network, and it scores it as amnesia — the store
-            #    answers a question about a fact it is still filing, so the
-            #    verdict is MISS and nothing on screen says why.
+            # 3. 等待商店可供搜索。 sqlite 和 LangMem
+            #    立即返回；托管的两个最终是一致的并且
+            #    两者都低估了它。 mem0 无就绪信号并已测量
+            #    14秒即可查询； Zep 的每次添加“已处理”等待正在过去
+            #    而该图仍然包含零个匹配节点。在那里探测
+            #    对网络进行评分，并将其评分为失忆症——商店
+            #    回答了有关其仍在归档的事实的问题，因此
+            #    结论是未命中，屏幕上没有任何内容说明原因。
             settled = app.memory.facts.settle()
             if not settled:
                 emit("warn", {"contestant": backend,
                               "message": "store did not confirm readiness before probing; "
                                          "results for this contestant may understate it"})
 
-            # The marker goes here and nowhere earlier: after the seed lines,
-            # after the consolidation flush, after the store confirms it is
-            # searchable. A home marked ready before settle() would be reused
-            # by the next race and probed while still filing.
+            # 标记放在这里，而不是更早的地方：在种子行之后，
+            # 合并冲水后，店家确认后
+            # 可搜索。在 Settle() 之前标记为就绪的 Home 将被重用
+            # 在下一场比赛中进行调查，同时仍在归档。
             if settled and not already:
                 (home / ".seeded").write_text(f"{track}\n{model}\n{len(seeding)} lines\n",
                                               encoding="utf-8")
@@ -538,10 +538,10 @@ def run_arena(backends: list[str], track: str, emit, fixture: dict | None = None
 
             app.session.start_new("probes")
 
-            # The ledger is cumulative, so each probe's cost is the DELTA. Storing
-            # the running total per row would make scoreboard() sum a triangular
-            # number and report several times the tokens actually spent — the
-            # kind of wrong that still looks like a plausible number.
+            # 账本是累积的，因此每个探测的成本是 DELTA。储存
+            # 每行的运行总计将使记分板（）总和成为三角形
+            # 多次累计，导致报告的 Token 消耗高于实际值——
+            # 数字看似合理，却并不正确。
             spent, calls_at = _ledger(home)
             for probe in spec["probes"]:
                 gate: dict = {}
@@ -555,11 +555,11 @@ def run_arena(backends: list[str], track: str, emit, fixture: dict | None = None
                 after, calls_now = _ledger(home)
                 outcome, certain, why = score(turn.reply, probe, gate.get("retrieved"))
 
-                # `certain=False` means the verdict came from the refusal phrase
-                # list, which cannot be complete. Ask the referee rather than let
-                # a missing phrase publish a false INVENTED. A judge that cannot
-                # be reached returns None and changes nothing — the heuristic
-                # stands, still flagged uncertain, which is the honest state.
+                # `certain=False` 表示判决来自拒绝短语
+                # 列表，该列表不可能完整。询问裁判而不是让裁判
+                # 缺少的短语会发布错误的发明。一个法官不能
+                # 到达返回 None 且不改变任何内容 - 启发式
+                # 站着，仍然标记为不确定，这是诚实的状态。
                 if not certain:
                     declined = adjudicate_refusal(probe["question"], turn.reply)
                     if declined is True and outcome == INVENTED:
@@ -573,18 +573,18 @@ def run_arena(backends: list[str], track: str, emit, fixture: dict | None = None
                 row = {"contestant": backend, "probe": probe["id"], "test": probe["test"],
                        "question": probe["question"], "answer": turn.reply,
                        "outcome": outcome, "certain": certain, "why": why,
-                       # Whether the gate went to memory at all. Computed since the
-                       # first version and thrown away at render time, so "did
-                       # retrieval even happen" was unanswerable from the results —
-                       # which is most of what a memory benchmark is for.
+                       # 大门是否完全进入了记忆。计算自
+                       # 第一个版本并在渲染时被丢弃，所以“
+                       # 检索甚至发生”从结果中无法回答 -
+                       # 这就是内存基准测试的大部分用途。
                        "retrieved": gate.get("retrieved"),
                        "tokens": after - spent,
-                       # How many API calls this ONE question actually took. The
-                       # token delta alone left "why does one question cost 4,783
-                       # tokens" answerable only by inference — I guessed two
-                       # calls and happened to be close, which is not the same as
-                       # knowing. The ledger writes one row per call, so counting
-                       # rows settles it for every probe, for free.
+                       # 这一问题实际调用了多少次 API。这
+                       # 仅凭 Token 增量无法解释“为什么一个问题消耗 4,783
+                       # 个 Token”；只能凭推测，或猜测为两次调用
+                       # 且数值恰好接近，这与
+                       # 会心。账本每次调用写入一行，因此计数
+                       # rows 为每个探针免费解决了这个问题。
                        "calls": calls_now - calls_at,
                        "ms": int((time.perf_counter() - t0) * 1000)}
                 spent, calls_at = after, calls_now
@@ -592,37 +592,37 @@ def run_arena(backends: list[str], track: str, emit, fixture: dict | None = None
                     results.append(row)
                 emit("probe", row)
         except Exception as exc:
-            # One backend failing must not lose the other's results — a missing
-            # key or a service outage is a fact about that contestant, not a
-            # reason to abandon the run.
+            # 一个后端失败不得丢失另一个后端的结果——丢失
+            # 密钥或服务中断是该参赛者的事实，而不是
+            # 放弃跑步的理由。
             emit("failed", {"contestant": backend, "error": f"{type(exc).__name__}: {exc}"})
 
-    # Contestants are independent: separate homes, separate partitions, and the
-    # only shared state is the emit stream and `results`, both locked above.
-    # Sequential meant the race took the SUM of every contestant, and Zep alone
-    # waits minutes for graph ingestion. In parallel it takes the slowest one.
+    # 参赛者是独立的：独立的住宅、独立的分区、以及
+    # 唯一共享的状态是发出流和“结果”，两者都在上面锁定。
+    # 顺序意味着比赛需要每个参赛者的总和，而 Zep 一人
+    # 等待几分钟以进行图形摄取。同时它需要最慢的一个。
     #
-    # The partition env is set ONCE around the whole race rather than per
-    # contestant. It is process-global, every contestant in a race shares the
-    # same partition anyway, and per-contestant scoping would have the first
-    # thread to finish restore the old value while the others were still
-    # writing — sending them at the live agent's memory.
+    # 分区环境在整个比赛中设置一次，而不是每个
+    # 选手。它是流程全局的，比赛中的每个参赛者都共享
+    # 无论如何，相同的分区，每个参赛者的范围将具有第一个
+    # 线程完成恢复旧值，而其他线程仍然不变
+    # 写作——将它们发送到现场代理的记忆中。
     seed_lines = [] if not backends else (spec.get("seed") or [])
     with (arena_partition_env(track, seed_lines, model),
           ThreadPoolExecutor(max_workers=min(len(backends) or 1, 6)) as pool):
         list(pool.map(one, backends))
 
-    # Name the leaks explicitly rather than leaving them to be noticed. A probe
-    # the control passed did not test memory in THIS run, whatever the other
-    # columns scored on it.
-    # ...but only for probes that ASSERT RECALLED CONTENT. Two kinds are
-    # supposed to be answerable with nothing stored, and flagging them was the
-    # first thing the control caught — in itself:
-    #   * expect_retrieval=False ("what's 17 times 4") is designed to need no
-    #     memory; passing it with none is the correct behaviour, not a leak.
-    #   * expect_refusal ("what's the filing deadline") is passed by declining,
-    #     and a contestant with no memory declines every time. It would be
-    #     flagged in every single run, forever, and mean nothing.
+    # 明确指出泄漏，而不是让它们被注意到。一个探头
+    # 无论其他如何，通过的控制在本次运行中都没有测试内存
+    # 列在其上得分。
+    # ...但仅适用于断言召回内容的探测器。两种是
+    # 应该在没有存储任何内容的情况下负责，并且标记它们是
+    # 控件本身捕获的第一件事是：
+    #   *expect_retrieval=False(“17乘以4等于多少”)被设计为不需要
+    #     记忆;不通过它是正确的行为，而不是泄漏。
+    #   * Expect_refusal（“提交截止日期是多少”）被拒绝通过，
+    #     而没有记忆的参赛者每次都会被拒绝。这将是
+    #     每次运行都会被标记，永远，毫无意义。
     def _asserts_recall(probe_id: str) -> bool:
         probe = next((q for q in spec["probes"] if q["id"] == probe_id), {})
         return bool(probe.get("expect_any") or probe.get("expect_all")) \
@@ -647,11 +647,11 @@ def _ledger(home) -> tuple[int, int]:
     for line in ledger.read_text(encoding="utf-8").splitlines():
         try:
             row = json.loads(line)
-            # The ledger's keys are "in" and "out" — NOT input_tokens /
-            # output_tokens, which is what this first read, and every probe
-            # reported 0 tokens with no error at all, because `.get(name, 0)`
-            # turns a wrong field name into a plausible number. A benchmark that
-            # silently reports zero cost is worse than one that crashes.
+            # 账本的键是“in”和“out”——不是 input_tokens /
+            # output_tokens，这是第一次读取的内容，以及每个探针
+            # 报告了 0 个令牌，完全没有错误，因为 `.get(name, 0)`
+            # 将错误的字段名称变成合理的数字。一个基准
+            # 默默地报告零成本比崩溃更糟糕。
             total += int(row["in"]) + int(row["out"])
             calls += 1
         except (KeyError, ValueError, TypeError):
@@ -659,12 +659,12 @@ def _ledger(home) -> tuple[int, int]:
     return (total, calls)
 
 
-# --- what is actually in there ----------------------------------------------
-# The Memory tab used to explain the benchmark and show none of it. This is the
-# other half: for every store that is configured, what does it hold RIGHT NOW.
-# Read on demand, never on the 5s poll — each call is a live round trip to a
-# paid service, and a dashboard that quietly bills you for sitting on a tab is
-# not one anyone should ship.
+# ---里面到底是什么 ----------------------------------------------------------
+# “内存”选项卡用于解释基准测试，但没有显示任何内容。这是
+# 另一半：对于每个配置的商店，它现在保存着什么。
+# 按需阅读，绝不是 5 秒投票——每次通话都是一次实时往返
+# 付费服务，以及一个仪表板，可以悄悄地向您收取坐在选项卡上的费用
+# 任何人都不应该运送。
 
 def store_contents(limit: int = 8, only: str = "", track: str = "",
                    model: str = "", fixture: dict | None = None) -> list[dict]:
@@ -704,17 +704,17 @@ def store_contents(limit: int = 8, only: str = "", track: str = "",
     for key in _available_backends():
         if only and key != only:
             continue
-        # Three kinds, not two. "connected account" is a lie about the control
-        # — it has no account, no service and no rows, and printing that line
-        # above a note that says "told nothing by design" makes the card argue
-        # with itself.
-        # Scoped to a race means ALL of it, not just the local half. The first
-        # version scoped sqlite and left the hosted stores reading their
-        # default partition — which is `waku`, the live agent's. So the race
-        # wrote to waku-arena-<key>, the panel read `waku`, and Clean deleted
-        # waku-arena-<key>: three different drawers, and the cards never
-        # changed no matter what you cleaned. Worse, the panel was showing the
-        # operator's REAL hosted memory the whole time.
+        # 三种，不是两种。 “连接帐户”是关于控制的谎言
+        # — 它没有帐户，没有服务，没有行，并打印该行
+        # 上面写着“设计中没有透露任何内容”的注释使卡片争论不休
+        # 与它自己。
+        # 一场比赛的范围意味着所有比赛，而不仅仅是局部比赛。第一个
+        # 版本范围为 sqlite 并让托管商店阅读他们的
+        # 默认分区——即实时代理的“waku”。所以比赛
+        # 写入 waku-arena-<key>，面板读取“waku”，并 Clean 删除
+        # waku-arena-<key>：三个不同的抽屉，并且卡片永远不会
+        # 无论你清洁什么，都会改变。更糟糕的是，面板显示
+        # 运营商的真实托管内存始终存在。
         arena_copy = bool(seed)
         kind = ("control" if key == CONTROL else
                 "arena" if arena_copy else
@@ -722,19 +722,19 @@ def store_contents(limit: int = 8, only: str = "", track: str = "",
         row = {"store": key, "count": 0, "facts": [], "error": "", "span": "",
                "kind": kind, "note": _store_note(key)}
         if row["note"]:
-            out.append(row)   # nothing meaningful to read — say why, don't report 0
+            out.append(row)   # 没有什么值得阅读的内容 — 说出原因，不要报告 0
             continue
         try:
-            # The control has no store of its own; the race gives it a sqlite
-            # in its own home and tells it nothing, so reading that home is
-            # what proves it really is empty rather than merely claimed to be.
+            # 该控件没有自己的存储；比赛给了它一个 sqlite
+            # 在它自己的家中并且什么也不告诉它，所以读取那个家是
+            # 事实证明它确实是空的，而不仅仅是声称的。
             home = (arena_home(key, track, seed, model) if arena_copy
                     else load_settings().home)
             store = "sqlite" if key == CONTROL else key
             settings = Settings(home=home, semantic_store=store)
-            # The hosted stores read their partition from the environment at
-            # construction, exactly as they do during a race — so the read has
-            # to be wrapped the same way the write was.
+            # 托管商店从环境中读取其分区
+            # 施工，就像他们在比赛中所做的那样——所以阅读了
+            # 以与写入相同的方式进行包装。
             with (arena_partition_env(track, seed, model) if arena_copy
                   else contextlib.nullcontext()):
                 facts = Memory._make_fact_store(_conn_for(store, settings), settings)
@@ -852,13 +852,13 @@ def _store_note(key: str) -> str:
     unreadable one, and the difference is the whole point of this page.
     """
     if key == CONTROL:
-        # The control is a contestant, not a backend. It is told nothing and
-        # asked everything, so there is no store behind it to read — and
-        # _conn_for returns None for anything that is not sqlite, which the
-        # sqlite path then calls .execute() on. That surfaced on the page as
-        # "AttributeError: 'NoneType' object has no attribute 'execute'", which
-        # reads as "your control contestant is broken" when the truth is that
-        # holding nothing is the entire job.
+        # 控件是参赛者，而不是后端。什么也没告诉，并且
+        # 问了一切，所以后面没有商店可以阅读——而且
+        # _conn_for 对于不是 sqlite 的任何内容都返回 None，其中
+        # sqlite 路径然后调用 .execute() 。页面上显示为
+        # “AttributeError：'NoneType'对象没有属性'execute'”，其中
+        # 读作“你的控制选手被打破了”，而事实是这样的
+        # 什么都不做就是工作的全部。
         return ("told nothing, by design — there is no store behind this one. "
                 "It exists so a probe it still passes can be flagged as a "
                 "question that never needed memory.")
@@ -887,10 +887,10 @@ def _available_backends() -> list[str]:
 
     ready = {v.key for v in list_integrations()
              if v.status.state in (IntegrationState.CONFIGURED, IntegrationState.CONNECTED)}
-    # SLOW ones last, deliberately. Zep waits for graph ingestion on every
-    # write — minutes where the others take milliseconds — so putting it in the
-    # middle means the fast columns sit unread behind it while it finishes.
-    # Order here is the order the columns appear.
+    # 慢的最后是故意的。 Zep 等待每个图的摄取
+    # 写——分钟，而其他人则需要毫秒——所以把它放在
+    # 中间意味着当它完成时，快速列在其后面处于未读状态。
+    # 这里的顺序是列出现的顺序。
     order = ("mem0", "langmem", "supabase", "zep")
-    # CONTROL last: it is the integrity check, not a contestant you rank.
+    # CONTROL 最后：这是完整性检查，而不是您排名的参赛者。
     return ["sqlite", *[k for k in order if k in ready], CONTROL]

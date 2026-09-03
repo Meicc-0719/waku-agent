@@ -36,25 +36,25 @@ from mcp.shared.auth import (
     OAuthToken,
 )
 
-# Where a server's tokens and its dynamic registration are kept. One file per
-# server rather than one shared file: two servers' registrations have nothing
-# to do with each other, and a corrupt file should cost one connection rather
-# than all of them.
+# 服务器的令牌及其动态注册的保存位置。每一个文件
+# 服务器而不是一个共享文件：两台服务器的注册没有任何内容
+# 彼此相关，损坏的文件应该花费一个连接而不是
+# 比他们所有人。
 AUTH_DIR = "mcp-auth"
 
-# The loopback port the authorization server redirects back to. Fixed rather
-# than ephemeral because the redirect URI is registered with the authorization
-# server at DCR time and has to still be true on the next run — a random port
-# would force a re-registration every time, and some servers pin the URI.
+# 授权服务器重定向回的环回端口。固定相当
+# 不是短暂的，因为重定向 URI 已通过授权注册
+# 服务器在 DCR 时间并且在下一次运行时必须仍然为真 - 随机端口
+# 每次都会强制重新注册，并且某些服务器会固定 URI。
 CALLBACK_PORT = 41765
 CALLBACK_PATH = "/callback"
 
-# How long the callback server waits for the browser to come back. This is
-# human time — reading a consent screen, picking between two Google accounts —
-# so it is minutes, not seconds. Exported because the caller that waits on the
-# connection has to wait longer than this, and two independently-chosen
-# numbers is how the CLI came to give up at 60s while this sat patiently for
-# five minutes.
+# 回调服务器等待浏览器返回的时间。这是
+# 人类时间——阅读同意屏幕，在两个谷歌帐户之间进行选择——
+# 所以这是分钟，而不是秒。导出是因为等待的调用者
+# 连接必须等待比这更长的时间，并且两个独立选择
+# 数字是 CLI 在 60 年代放弃的方式，而这却耐心等待
+# 五分钟。
 SIGN_IN_TIMEOUT = 300.0
 
 
@@ -77,17 +77,17 @@ class FileTokenStorage(TokenStorage):
         try:
             return json.loads(self._path.read_text(encoding="utf-8"))
         except (FileNotFoundError, json.JSONDecodeError):
-            # A truncated or hand-edited file is treated as absent rather than
-            # fatal: the cost is one more sign-in, and the alternative is a
-            # harness that will not start until someone deletes a file whose
-            # name they do not know.
+            # 被截断或手工编辑的文件被视为不存在而不是
+            # fatal：代价是再登录一次，替代方案是
+            # 除非有人删除其文件，否则该工具不会启动
+            # 他们不知道名字。
             return {}
 
     def _write(self, data: dict) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        # Write-then-rename so an interrupted write cannot leave a half file
-        # where a valid one was, and chmod before the rename so the secret is
-        # never briefly world-readable.
+        # 先写后重命名，这样中断的写入就不会留下半个文件
+        # 有效的位置在哪里，并且在重命名之前 chmod 所以秘密是
+        # 永远不会被世界短暂地阅读。
         tmp = self._path.with_suffix(".tmp")
         tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
         os.chmod(tmp, 0o600)
@@ -177,9 +177,9 @@ def build_provider(server_url: str, server_name: str, home: Path) -> OAuthClient
     async def redirect_handler(authorization_url: str) -> None:
         print("\n  Opening your browser to sign in…")
         print(f"  If it does not open: {authorization_url}\n")
-        # `open_new_tab` rather than `open`: a headless or SSH session has no
-        # browser, and this returning False is the honest signal that the URL
-        # printed above is the only way through.
+        # `open_new_tab` 而不是 `open`：无头或 SSH 会话没有
+        # 浏览器，并且返回 False 是 URL 的诚实信号
+        # 上面打印的是唯一的方法。
         webbrowser.open_new_tab(authorization_url)
 
     async def callback_handler() -> AuthorizationCodeResult:
@@ -192,8 +192,8 @@ def build_provider(server_url: str, server_name: str, home: Path) -> OAuthClient
         server = HTTPServer(("127.0.0.1", CALLBACK_PORT), _CallbackHandler)
         thread = Thread(target=server.handle_request, daemon=True)
         thread.start()
-        # Poll rather than join: this runs on the bridge's event loop, and a
-        # blocking join would stop the loop the transport is about to need.
+        # 轮询而不是加入：这在桥的事件循环上运行，并且
+        # 阻塞连接会停止传输所需的循环。
         for _ in range(int(SIGN_IN_TIMEOUT / 0.5)):
             if _CallbackHandler.result:
                 break
@@ -204,8 +204,8 @@ def build_provider(server_url: str, server_name: str, home: Path) -> OAuthClient
         if not result:
             raise RuntimeError("timed out waiting for the browser sign-in to come back")
         if "error" in result:
-            # The server said no. Surface its own words: "access_denied" and
-            # "invalid_client" send you to completely different places.
+            # 服务员说没有。表面上有自己的话：“access_denied”和
+            # “invalid_client”将您带到完全不同的地方。
             raise RuntimeError(
                 f"authorization failed: {result['error']}"
                 + (f" — {result['error_description']}" if "error_description" in result else "")

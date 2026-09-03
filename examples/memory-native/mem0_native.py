@@ -7,7 +7,7 @@
     keeps a lifecycle_state and a pointer to the row that replaced it.
 
 
-    pip install mem0ai          # or, from the repo root: uv pip install -e '.[arena]'
+    pip install mem0ai          # 或者，从存储库根目录： uv pip install -e '.[arena]'
     export MEM0_API_KEY=...
     python examples/memory-native/mem0_native.py
 
@@ -39,13 +39,13 @@ import time
 from dotenv import load_dotenv
 from mem0 import MemoryClient
 
-load_dotenv()  # your .env at the repo root, same keys waku uses
+load_dotenv()  # 您的 .env 位于存储库根目录，waku 使用相同的密钥
 
-# One partition for the quickstart, so this never lands in your real memories.
+# 一个用于快速入门的分区，因此它永远不会出现在您的真实记忆中。
 USER = os.environ.get("MEM0_QUICKSTART_USER", "quickstart-mem0")
 
-# The same three sentences in all four quickstarts, so the files are
-# comparable. The third one CONTRADICTS the second -- that is the whole test.
+# 所有四个快速入门中都有相同的三个句子，因此文件是
+# 可比。第三个与第二个相矛盾——这就是整个测试。
 FACTS = [
     "I met Alex at the Lisbon AI meetup in March. He runs a robotics startup.",
     "Our product launch is scheduled for May.",
@@ -60,26 +60,26 @@ QUESTIONS = [
 
 
 def main() -> None:
-    client = MemoryClient()  # reads MEM0_API_KEY
+    client = MemoryClient()  # 读取MEM0_API_KEY
     print(f"user      : {USER}\n")
 
-    # 1. WRITE. Note there is no `infer=False` here. mem0 reads the sentence,
-    #    decides what the durable fact inside it is, and stores THAT.
+    # 1. 写。请注意，这里没有“infer=False”。 mem0 读取句子，
+    #    决定它里面的持久事实是什么，并存储它。
     print("-- telling it three things ------------------------------------")
     for fact in FACTS:
         client.add(messages=[{"role": "user", "content": fact}], user_id=USER)
         print(f"  said : {fact}")
     _settle(client)
 
-    # 2. READ BACK RAW. The money shot: compare this list against the list
-    #    above. The wording will not match, and the count usually will not
-    #    either -- mem0 merges, rewrites, and drops what it judges disposable.
+    # 2. 读回原始数据。金钱镜头：将此列表与列表进行比较
+    #    多于。措辞不匹配，计数通常也不匹配
+    #    要么 - mem0 合并、重写并删除它判断为一次性的内容。
     print("\n-- what it actually kept --------------------------------------")
     rows = _rows(client.get_all(filters={"user_id": USER}, version="v2"))
     for row in rows:
         print(f"  kept : {row.get('memory')}  [{_state(client, row)}]")
 
-    # 3. SEARCH, three ways -- and watch the scores, not just the winner.
+    # 3. 三种方式进行搜索——观察比分，而不仅仅是获胜者。
     print("\n-- asking ------------------------------------------------------")
     for label, question in QUESTIONS:
         hits = _rows(client.search(question, filters={"user_id": USER}, version="v2"))
@@ -89,16 +89,16 @@ def main() -> None:
             print(f"           {arrow} {hit.get('score'):.4f}  [{_state(client, hit):10}]"
                   f"  {hit.get('memory')}")
 
-    # 4. THE CONTRADICTION -- and the trap.
+    # 4. 矛盾——以及陷阱。
     #
-    #    mem0 DOES resolve this. The May row gets lifecycle_state="superseded"
-    #    and replaced_by=<the June row's id>. But get_all() returns NEITHER
-    #    field, so reading the list above tells you nothing is wrong. You only
-    #    see it by fetching a row on its own, which is what _state() does.
+    #    mem0 确实解决了这个问题。 5 月行获得生命周期状态=“取代”
+    #    和 Replaced_by=<六月行的 ID>。但 get_all() 不返回
+    #    字段，因此阅读上面的列表会告诉您没有任何问题。只有你
+    #    通过单独获取一行来查看它，这就是 _state() 的作用。
     #
-    #    Worse: search() returns the superseded row anyway, and on a real run
-    #    it scored HIGHER than the live one (0.3338 vs 0.3307). Which answer
-    #    you get is scoring noise. Ask twice, get two answers, same language.
+    #    更糟糕的是： search() 无论如何都会返回被取代的行，并且在实际运行中
+    #    它的得分比实时得分更高（0.3338 vs 0.3307）。哪个答案
+    #    你得到的是得分噪音。问两次，得到两个答案，语言相同。
     print("\n-- the superseded fact ----------------------------------------")
     for row in rows:
         state = _state(client, row)
@@ -109,7 +109,7 @@ def main() -> None:
     print("  a store that resolved the contradiction correctly will still hand")
     print("  you the dead fact with a straight face.")
 
-    # 5. WHERE TO LOOK.
+    # 5. 去哪里看。
     print("\n-- see it yourself --------------------------------------------")
     print(f"  https://app.mem0.ai -> Memories -> filter user = {USER}")
     print("  Compare 'said' against 'kept' there. The diff is the whole product.")

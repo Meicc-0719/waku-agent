@@ -33,8 +33,8 @@ def test_probe_apple_calendar_is_read_only_and_requires_a_writable_calendar(monk
     script = captured["cmd"][2]
     assert captured["cmd"][:2] == ["osascript", "-e"]
     assert captured["kwargs"]["timeout"] == 15
-    # AppleScript cannot cold-start an app: this line used to be here and was
-    # itself what raised -600. waku starts Calendar with a shell `open` now.
+    # AppleScript 无法冷启动应用程序：此行曾经在这里，并且是
+    # 本身什么提高了-600。 waku 现在用 shell ‘open’ 启动日历。
     assert "launch application" not in script
     assert "writable" in script
     assert "make new event" not in script
@@ -121,7 +121,7 @@ def test_apple_sync_runtime_exceptions_record_error(monkeypatch, tmp_path, failu
 
 
 def test_date_sets_day_first_to_avoid_overflow():
-    # the classic bug: set month before day, on a 31st, overflows the month
+    # 经典bug：在日之前设置月份，31号会溢出月份
     script = _applescript_date("d", "2026-02-15T09:30")
     lines = [line for line in script.splitlines() if line.startswith(("set day", "set month"))]
     assert lines[0] == "set day of d to 1", "day must be pinned to 1 before month is set"
@@ -131,18 +131,18 @@ def test_date_sets_day_first_to_avoid_overflow():
 
 
 def test_sync_escapes_quotes_and_backslashes():
-    # a title with quotes must not break out of the AppleScript string
+    # 带引号的标题不得脱离 AppleScript 字符串
     import sys
     if sys.platform != "darwin":
         assert "not macOS" in sync_to_apple_calendar('x', '2026-01-01T00:00', '2026-01-01T01:00')
         return
-    # on macOS we can't run osascript in CI, but the escaping is in the string build;
-    # covered by the pure date test above + manual verification on the dev machine.
+    # 在 macOS 上，我们无法在 CI 中运行 osascript，但转义是在字符串构建中；
+    # 由上面的纯日期测试+开发机器上的手动验证涵盖。
 
 
 def test_create_event_handles_empty_call_gracefully():
-    # Live bug: a model emitted create_event({}) mid-loop and Python raised a raw
-    # TypeError. The tool must return a helpful message instead of crashing.
+    # 实时错误：模型在循环中发出 create_event({})，Python 引发了原始事件
+    # 类型错误。该工具必须返回有用的消息而不是崩溃。
     import sqlite3
 
     from waku.tools.calendar import make_tool
@@ -155,6 +155,6 @@ def test_create_event_handles_empty_call_gracefully():
     import tempfile
     from pathlib import Path
     fn = make_tool(conn, Path(tempfile.mkdtemp())).fn
-    out = fn()  # empty call — no title, no start
+    out = fn()  # 空的电话——没有标题，没有开始
     assert "needs at least a title" in out
     assert "Error" not in out and "TypeError" not in out

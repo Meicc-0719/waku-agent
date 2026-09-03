@@ -68,7 +68,7 @@ def _calendar(settings) -> dict:
     from waku.graph.workflows.triage import todays_events
 
     text = todays_events(settings.home)
-    empty = text.startswith("(")          # "(no calendar)" / "(nothing today)"
+    empty = text.startswith("(")          # “（没有日历）”/“（今天没有）”
     return {"cal_text": text, "cal_event_count": 0 if empty else text.count(";") + 1}
 
 

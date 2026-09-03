@@ -32,7 +32,7 @@ def clean_policy(monkeypatch):
     monkeypatch.delenv(DENY, raising=False)
 
 
-# --------------------------------------------------------------- the helper
+# --------------------------------------------------------------------------- 帮手
 
 
 def test_no_policy_strips_nothing(monkeypatch):
@@ -76,10 +76,10 @@ def test_list_tolerates_spaces_and_empty_entries(monkeypatch):
 
 def test_naming_a_var_that_is_not_set_is_not_an_error(monkeypatch):
     monkeypatch.setenv(DENY, "NEVER_SET_ANYWHERE")
-    delegate_env()   # must not raise
+    delegate_env()   # 不得提高
 
 
-# ------------------------------------------------- a REAL child process
+# ------------------------------------------------- 一个真正的子进程
 
 
 def _child_that_reports(tmp_path, var):
@@ -115,11 +115,11 @@ def test_control_the_child_normally_can_read_it(tmp_path, monkeypatch):
     assert "SAW=hunter2" in result[2]
 
 
-# ------------------------------------------------------------- the wiring
+# ------------------------------------------------------------------------ 接线
 
-# Every spawn that runs pi, or runs code pi wrote. The `pi --help` probe in
-# _pi_supports_json is deliberately absent: it prints usage and exits without
-# executing anything the model chose.
+# 每个运行 pi 或运行 pi 编写的代码的生成。 “pi --help” 探针
+# _pi_supports_json 故意不存在：它打印用法并退出，但没有
+# 执行模型选择的任何内容。
 DELEGATE_SPAWNS = 7
 SPAWN_FILES = ["waku/tools/experimental.py",
                "waku/tools/workspace.py",
@@ -139,8 +139,8 @@ def _spawns(path):
 
 
 def _passes_delegate_env(call):
-    # experimental.py imports it as `delegate_env as _delegate_env`, so match on
-    # the suffix rather than pinning one spelling — the alias is not the point.
+    # Experimental.py 将其导入为 `delegate_env as _delegate_env`，因此匹配
+    # 后缀而不是固定一种拼写——别名不是重点。
     return any(kw.arg == "env"
                and isinstance(kw.value, ast.Call)
                and getattr(kw.value.func, "id", "").endswith("delegate_env")

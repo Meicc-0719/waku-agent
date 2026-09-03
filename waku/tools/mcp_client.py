@@ -66,8 +66,8 @@ def _model_safe_name(server: str, tool: str) -> str:
     safe = re.sub(r"[^a-zA-Z0-9_-]", "_", f"{server}_{tool}")
     if len(safe) <= 64:
         return safe
-    # Keep the tail: the tool's own name is what disambiguates, and the
-    # server prefix is the part a reader can afford to lose.
+    # 保留尾部：该工具自己的名称可以消除歧义，并且
+    # 服务器前缀是读者可以承受丢失的部分。
     return safe[-64:].lstrip("_")
 
 
@@ -125,7 +125,7 @@ class MCPBridge:
         self._thread.start()
         servers = json.loads(self.config_path.read_text(encoding="utf-8")).get("servers", [])
         fut = asyncio.run_coroutine_threadsafe(self._connect_all(servers), self._loop)
-        listed = fut.result(self._deadline(servers))  # {server: [tool metas]}
+        listed = fut.result(self._deadline(servers))  # {服务器：[工具元]}
         tools: list[Tool] = []
         for srv, metas in listed.items():
             for meta in metas:
@@ -133,9 +133,9 @@ class MCPBridge:
                     name=_model_safe_name(srv, meta["name"]),
                     description=f"[MCP:{srv}] {meta.get('description','') or ''}",
                     input_schema=meta.get("inputSchema") or {"type": "object", "properties": {}},
-                    # `tname` is the server's OWN name, unsanitised — the
-                    # rename above is only how the model refers to the tool,
-                    # never what goes back over the wire.
+                    # `tname` 是服务器自己的名称，未经消毒 -
+                    # 上面的重命名只是模型引用工具的方式，
+                    # 永远不会通过电线传回什么。
                     fn=(lambda srv=srv, tname=meta["name"], **kw: self.call(srv, tname, kw)),
                 ))
         return tools
@@ -169,32 +169,32 @@ class MCPBridge:
         use_oauth = bool(spec.get("oauth"))
 
         if auth_env and use_oauth:
-            # Same reasoning as command-vs-url above: two credentials named,
-            # no stated precedence, so refusing beats picking one silently.
+            # 与上面的 command-vs-url 的推理相同：两个名为的凭据，
+            # 没有明确的优先顺序，因此拒绝击败默默地选择一个。
             raise ValueError("server names both 'auth_env' and 'oauth' — pick one")
 
         if auth_env:
             token = os.environ.get(auth_env)
             if not token:
-                # Fail here rather than connecting anonymously: the server
-                # would answer 401 and the tools would simply be missing,
-                # which reads as "the server is down" instead of "you did
-                # not export the key".
+                # 此处失败而不是匿名连接：服务器
+                # 会回答 401 并且工具会丢失，
+                # 它读作“服务器已关闭”而不是“你做了
+                # 不导出密钥”。
                 raise ValueError(f"{auth_env} is not set (named by 'auth_env' in mcp.json)")
             headers["Authorization"] = f"Bearer {token}"
         elif use_oauth:
             from waku.tools.mcp_oauth import build_provider
 
-            # An httpx auth flow, not a header: the SDK drives the 401, the
-            # discovery and the refresh itself, so this is handed to the
-            # client once and never thought about again.
+            # httpx 身份验证流程，而不是标头：SDK 驱动 401，
+            # 发现和刷新本身，所以这是交给
+            # 客户曾经有过一次，再也没有想过。
             auth = build_provider(url, spec["name"], self.config_path.parent)
 
-        # create_mcp_http_client applies the SDK's own timeouts and
-        # follow_redirects; a header or an auth flow are the two supported ways
-        # to authenticate this transport. Because we build the client rather
-        # than letting the transport build one, we own its lifecycle — hence
-        # entering it on the stack ourselves.
+        # create_mcp_http_client 应用 SDK 自己的超时并
+        # 跟随_重定向；标头或身份验证流程是两种受支持的方式
+        # 来验证此传输。因为我们构建的是客户端
+        # 我们拥有它的生命周期，而不是让交通工具建造它——因此
+        # 我们自己将其输入堆栈。
         client = await self._stack.enter_async_context(
             create_mcp_http_client(headers=headers, auth=auth)
         )
@@ -224,9 +224,9 @@ class MCPBridge:
         await session.initialize()
         self._sessions[name] = session
         tools = (await session.list_tools()).tools
-        # `input_schema` in the SDK's 2.x line; it was `inputSchema` in 1.x.
-        # getattr covers both so a user on either pin gets a working connector
-        # rather than an AttributeError reported as "failed to connect".
+        # SDK 2.x 行中的“input_schema”；它是 1.x 中的“inputSchema”。
+        # getattr 涵盖​​了两者，因此任一引脚上的用户都可以获得工作连接器
+        # 而不是报告为“连接失败”的 AttributeError。
         return [
             {
                 "name": t.name,
@@ -244,18 +244,18 @@ class MCPBridge:
             had_token = self._token_exists(spec)
             try:
                 listed[name] = await self._connect_one(spec)
-            except Exception as first_exc:  # one bad server shouldn't stop the rest
-                # Bound to a name of our own: Python unbinds an `except … as`
-                # variable at the end of the block, so the retry below cannot
-                # reassign it.
+            except Exception as first_exc:  # 一台坏服务器不应该阻止其余服务器
+                # 绑定到我们自己的名称：Python 解除绑定“ except … as”
+                # 变量位于块的末尾，因此下面的重试不能
+                # 重新分配它。
                 error = first_exc
-                # A first sign-in spends human time in the browser — longer
-                # than the connection that triggered it is willing to wait. By
-                # the time the token is written the attempt has already failed,
-                # so the very run that signs you in is the one that appears not
-                # to work. Retry once, and only when a token exists now that
-                # did not before: that condition is true exactly after a
-                # sign-in, and false for every other failure.
+                # 首次登录会在浏览器中花费更长的时间
+                # 比触发它的连接愿意等待。经过
+                # 写入令牌时尝试已经失败，
+                # 所以让你登录的那次跑步似乎不是
+                # 去工作。仅当现在存在令牌时才重试一次
+                # 之前没有：该条件恰好在 a 之后为真
+                # 登录，其他所有失败则为 false。
                 if not had_token and self._token_exists(spec):
                     print(f"  signed in — reconnecting to '{name}'")
                     try:
@@ -265,9 +265,9 @@ class MCPBridge:
                         error = retry_exc
 
                 print(f"MCP server '{name}' failed to connect: {error}")
-                # ValueError is this module's own config refusal above; it
-                # already says exactly what is wrong, and adding an auth hint
-                # to it would point at the wrong thing.
+                # ValueError是上面这个模块自己的配置拒绝；它
+                # 已经准确说明出了什么问题，并添加了身份验证提示
+                # 它会指向错误的东西。
                 if spec.get("url") and not isinstance(error, ValueError):
                     print(_auth_hint(spec, self.config_path.parent / "mcp-auth"))
         return listed

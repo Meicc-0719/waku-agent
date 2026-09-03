@@ -161,7 +161,7 @@ def _build_client(runner: GatewayAgentRunner | None = None):
             allowed_channels=allowed_channels,
             require_mention=require_mention,
         ):
-            return                      # silence, not a refusal reply
+            return                      # 沉默，不是拒绝答复
         if not budget.allow():
             print(f"(discord) hourly turn budget spent — ignoring {message.author}")
             return

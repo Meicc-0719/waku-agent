@@ -22,9 +22,9 @@ import inspect
 
 from waku.ops import dashboard
 
-# Every path the POST router accepts. `/api/compare` (non-streaming) was removed
-# on 2026-07-26: nothing called it, and its implementation had drifted behind the
-# streaming one badly enough to return wrong scores.
+# POST 路由器接受的每条路径。 `/api/compare`（非流式传输）已被删除
+# 2026-07-26：没有任何东西调用它，并且它的实现已经落后于
+# 流式传输严重到返回错误分数。
 POST_ROUTES = {
     "/api/chat",
     "/api/memory",
@@ -37,7 +37,7 @@ POST_ROUTES = {
     "/api/compare/delete_run",
 }
 
-# Paths served on GET, either exactly or as a prefix.
+# GET 上提供的路径，可以是精确路径，也可以是前缀路径。
 GET_PATHS = {
     "/api/data",
     "/api/models",
@@ -47,8 +47,8 @@ GET_PATHS = {
     "/static/",
 }
 
-# Streaming endpoints. These are what the dashboard actually uses for chat and
-# racing; the browser reads them as SSE, so they are handled before the router.
+# 流端点。这些是仪表板实际用于聊天和
+# 赛车；浏览器将它们读取为 SSE，因此它们在路由器之前被处理。
 STREAM_ROUTES = {"/api/chat/stream", "/api/compare/stream", "/api/voice",
                  "/api/graph/stream"}
 

@@ -46,7 +46,7 @@ def test_delegate_task_invokes_pi_print_mode(tmp_path, monkeypatch):
     comes back in the tool result."""
     record = {}
     monkeypatch.setenv("WAKU_EXPERIMENTAL", "1")
-    monkeypatch.setenv("WAKU_WORKSPACE", str(tmp_path / "ws"))   # keep it out of the repo
+    monkeypatch.setenv("WAKU_WORKSPACE", str(tmp_path / "ws"))   # 将其保留在回购之外
     monkeypatch.setattr(experimental.shutil, "which", lambda _: "/fake/bin/pi")
     monkeypatch.setattr(experimental.subprocess, "run", fake_run(record))
 
@@ -62,10 +62,10 @@ def test_delegate_task_invokes_pi_print_mode(tmp_path, monkeypatch):
     argv = record["argv"]
     assert argv[0] == "/fake/bin/pi"
     assert "-p" in argv and "create hello.py" in argv
-    assert "-a" in argv and "--no-session" in argv          # headless, non-interactive
+    assert "-a" in argv and "--no-session" in argv          # 无头、非交互
     output = result.tool_calls[0]["output"]
     assert "Done. Created hello.py." in output and "saved to" in output.lower()
-    # the run landed in the dated workspace with a manifest + transcript
+    # 运行降落在带日期的工作区中，并带有清单+成绩单
     manifests = list((tmp_path / "ws").rglob("MANIFEST.md"))
     assert len(manifests) == 1 and "create hello.py" in manifests[0].read_text()
     assert list((tmp_path / "ws").rglob("pi-transcript.log"))
@@ -82,7 +82,7 @@ def test_delegate_runs_pi_on_the_calling_model(tmp_path, monkeypatch):
     tool = experimental.make_delegate_tool(Settings(home=tmp_path, provider="kimi", model="kimi-k3"))
     tool.fn(task="write fizzbuzz")
     argv = record["argv"]
-    assert "--provider" in argv and "moonshotai" in argv    # kimi -> pi's moonshotai
+    assert "--provider" in argv and "moonshotai" in argv    # kimi -> pi 的 Moonshotai
     assert "--model" in argv and "kimi-k3" in argv
     assert "--api-key" in argv
 
@@ -111,7 +111,7 @@ def test_delegate_rejects_missing_cwd_and_empty_task(tmp_path, monkeypatch):
     monkeypatch.setattr(experimental.shutil, "which", lambda _: "/fake/bin/pi")
     tool = experimental.make_delegate_tool(Settings(home=tmp_path))
     assert "doesn't exist" in tool.fn(task="fix tests", cwd=str(tmp_path / "nope"))
-    assert "needs a 'task'" in tool.fn()   # empty model call → recovery text, no raise
+    assert "needs a 'task'" in tool.fn()   # 空模型调用 → 恢复文本，无加注
 
 
 def test_delegate_failure_surfaces_stderr(tmp_path, monkeypatch):
@@ -182,21 +182,21 @@ def test_delegate_streams_pi_events_and_ledgers_cost(tmp_path, monkeypatch):
     seen = []
     out = tool.fn(task="create hello.py", _notify=lambda kind, ev: seen.append((kind, ev)))
 
-    # reply + honest spend note came back to the model
+    # 回复+诚实的花条回到模型
     assert "Done. Created hello.py." in out
     assert "sub-agent spend" in out
-    # the live relay: a text delta, the bash tool call, and the turn end
+    # 实时中继：文本增量、bash 工具调用和回合结束
     kinds = [(k, ev.get("type")) for k, ev in seen]
     assert ("subagent", "text") in kinds
     assert ("subagent", "tool") in kinds and any(
         ev.get("tool") == "bash" for _, ev in seen if ev.get("type") == "tool")
     assert ("subagent", "turn_end") in kinds
-    # the cost fix: pi's tokens are on the SAME ledger the arena prices from
+    # 成本修复：Pi 的 Token 与竞技场定价使用同一本账本。
     ledger = (home / "usage.jsonl").read_text().strip().splitlines()
     rec = __import__("json").loads(ledger[-1])
     assert rec["kind"] == "subagent" and rec["in"] == 250 and rec["out"] == 50
     assert rec["model"] == "kimi-k3"
-    # the raw event stream survives next to the transcript
+    # 原始事件流保留在转录本旁边
     assert list((tmp_path / "ws").rglob("pi-transcript-events.jsonl"))
 
 
@@ -225,4 +225,4 @@ def test_experimental_flag_gates_registration(tmp_path, monkeypatch):
     monkeypatch.setenv("WAKU_EXPERIMENTAL", "1")
     app_on = make_waku(tmp_path / "on", client=ScriptedClient([]))
     assert "delegate_task" in app_on.tools._tools
-    assert "run_command" in app_on.tools._tools   # skeletons still registered
+    assert "run_command" in app_on.tools._tools   # 骷髅仍在登记

@@ -31,7 +31,7 @@ def conn():
 
 @pytest.fixture
 def home(tmp_path):
-    # Mock home directory
+    # 模拟主目录
     return tmp_path
 
 
@@ -81,7 +81,7 @@ def test_list_events_graceful_failure_of_one_source(conn, home, monkeypatch):
     tool = make_list_tool(conn, home)
     result = tool.fn()
     
-    # Should not include the google failure as a section
+    # 不应将谷歌失败作为一个部分包含在内
     assert "Google Calendar unavailable" not in result 
     assert "From waku's local calendar" in result
     assert "Local Only: 2026-08-16T09:00 → 2026-08-16T10:00" in result

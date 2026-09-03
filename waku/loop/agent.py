@@ -3,12 +3,12 @@
 Every agent framework is ultimately this while-loop with more indirection:
 
     while not done:
-        response = llm(messages, tools)          # reason
+        response = llm(messages, tools)          # 原因
         if response asks for tools:
-            results = run(tool_calls)            # act
-            messages += results                  # observe
+            results = run(tool_calls)            # 行为
+            messages += results                  # 观察
         else:
-            done                                 # reply to the human
+            done                                 # 回复人类
 
 End-loop guardrails (the orange box's exit conditions):
   1. the model stops asking for tools  → natural end of turn
@@ -25,8 +25,8 @@ import anthropic
 
 from waku.tools.registry import ToolRegistry
 
-# Observers let the gateway show tool calls live and let ops/tracing record
-# them — without either being wired into the loop's logic.
+# 观察者让网关实时显示工具调用并让操作/跟踪记录
+# 它们——没有被连接到循环的逻辑中。
 LoopEvent = dict[str, Any]
 Observer = Callable[[str, LoopEvent], None]
 
@@ -63,7 +63,7 @@ def run_loop(
     for iteration in range(1, max_iterations + 1):
         result.iterations = iteration
 
-        # ---- reason: one LLM call with the current working memory
+        # ---- 原因：使用当前工作内存进行一次 LLM 调用
         response = None
         if can_stream:
             try:
@@ -75,7 +75,7 @@ def run_loop(
                         notify("text", {"delta": delta})
                     response = s.get_final_message()
             except Exception:
-                response = None  # any streaming hiccup → fall back to one call
+                response = None  # 任何流媒体中断 → 退回到一个呼叫
         if response is None:
             response = client.messages.create(
                 model=model,
@@ -87,17 +87,17 @@ def run_loop(
         notify("llm", {"iteration": iteration, "stop_reason": response.stop_reason,
                        "usage": {"in": response.usage.input_tokens, "out": response.usage.output_tokens}})
 
-        # the assistant's turn (text and/or tool requests) joins working memory
+        # 助理的轮流（文本和/或工具请求）加入工作记忆
         messages.append({"role": "assistant", "content": response.content})
 
         tool_uses = [b for b in response.content if b.type == "tool_use"]
 
-        # ---- guardrail 1: no tool calls → the model is talking to the human
+        # ---- 护栏 1：没有工具调用 → 模型正在与人类对话
         if not tool_uses:
             result.reply = "".join(b.text for b in response.content if b.type == "text")
             return result
 
-        # ---- act: execute each requested tool; observe: feed results back
+        # ---- act：执行每个请求的工具；观察：反馈结果
         tool_results = []
         for call in tool_uses:
             output = tools.execute(call.name, call.input, notify=notify)
@@ -109,6 +109,6 @@ def run_loop(
             )
         messages.append({"role": "user", "content": tool_results})
 
-    # ---- guardrail 2: ran out of iterations
+    # ---- 护栏 2：迭代次数耗尽
     result.reply = "(I hit my iteration limit before finishing — try breaking the request into smaller steps.)"
     return result

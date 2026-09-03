@@ -34,7 +34,7 @@ class GatewaySupervisor:
         return hashlib.sha256(values.encode()).hexdigest()
 
     def _configured(self, key: str) -> bool:
-        # Registry declares the token as the first gateway field.
+        # 注册表将令牌声明为第一个网关字段。
         fields = self._env_fields[key]
         return bool(fields and os.environ.get(fields[0]))
 
@@ -84,10 +84,10 @@ class GatewaySupervisor:
                 self._snapshots[key] = self._environment(key)
                 result[key] = handle.status()
             except Exception as exc:
-                # Gateway tokens cannot run concurrently, so restart is
-                # necessarily stop-then-start. If the new instance fails,
-                # temporarily restore the exact old environment and bring the
-                # old instance back before returning the error to the caller.
+                # 网关令牌不能同时运行，因此重新启动是
+                # 必然是先停再启动。如果新实例失败，
+                # 暂时恢复原来的环境并带来
+                # 在将错误返回给调用者之前返回旧实例。
                 old_snapshot = self._snapshots.get(key)
                 desired = self._environment(key)
                 self._handles.pop(key, None)

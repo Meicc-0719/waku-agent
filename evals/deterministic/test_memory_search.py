@@ -44,17 +44,17 @@ def episodes(tmp_path):
     return SqliteEpisodeStore(connect(tmp_path))
 
 
-# ---------- the bug: the query builder threw away everything but ASCII
+# ---------- bug：查询生成器丢弃了除 ASCII 之外的所有内容
 
 
 @pytest.mark.parametrize(
     "query,expected",
     [
-        # accented Latin — truncated to a fragment, so it matched nothing
+        # 带重音的拉丁语 — 被截断为片段，因此与任何内容都不匹配
         ("Müller", "müller"),
         ("Wann treffe ich Müller?", "wann OR treffe OR ich OR müller"),
-        # non-Latin scripts — reduced to "", which the episode store reads as
-        # "give me the recent ones"
+        # 非拉丁脚本 — 简化为“”，剧集商店将其读作
+        # “给我最近的”
         ("Сергей", "сергей"),
         ("Γιώργος", "γιώργος"),
         ("محمد", "محمد"),
@@ -105,7 +105,7 @@ def test_a_non_ascii_query_no_longer_returns_an_unrelated_episode(episodes):
     assert episodes.search("Сергей") == [], "silence is correct; someone else's memory is not"
 
 
-# ---------- regression guards: these pass before AND after
+# ---------- 回归守卫：这些在之前和之后通过
 
 
 def test_english_search_is_unchanged(facts):

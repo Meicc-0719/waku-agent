@@ -24,7 +24,7 @@ def test_settings_exposes_the_flag_so_the_ui_can_render_a_toggle(monkeypatch):
     monkeypatch.setenv("WAKU_EXPERIMENTAL", "1")
     info = settings_api.settings_info()
     assert info["experimental"] is True
-    # the UI needs to say "pi not installed" honestly rather than fail later
+    # UI 需要诚实地说“pi 未安装”，而不是稍后失败
     assert "pi_installed" in info
 
 
@@ -37,12 +37,12 @@ def test_turning_it_off_is_not_swallowed(monkeypatch):
     def rule(payload: dict):
         experimental = payload.get("experimental")
         if experimental is None:
-            return None                     # not sent -> leave the env alone
+            return None                     # 未发送 -> 保留环境
         return "1" if str(experimental).strip() else ""
 
     assert rule({"experimental": "1"}) == "1"      # on
-    assert rule({"experimental": ""}) == ""        # off, and NOT ignored
-    assert rule({}) is None                        # absent -> untouched
+    assert rule({"experimental": ""}) == ""        # 关闭，并且不被忽略
+    assert rule({}) is None                        # 缺席 -> 未受影响
 
 
 def test_an_explicit_setting_beats_the_global_env_switch(tmp_path, monkeypatch):
@@ -50,7 +50,7 @@ def test_an_explicit_setting_beats_the_global_env_switch(tmp_path, monkeypatch):
     WAKU_EXPERIMENTAL, then switching chat delegation on (which writes that var)
     would silently force delegate_task into every non-coding race too. The
     explicit Settings value must win — this is the isolation guarantee."""
-    monkeypatch.setenv("WAKU_EXPERIMENTAL", "1")      # global switch ON
+    monkeypatch.setenv("WAKU_EXPERIMENTAL", "1")      # 全局开关ON
     off = Settings(home=tmp_path / "off", experimental=False)
     on = Settings(home=tmp_path / "on", experimental=True)
     off.ensure_home()

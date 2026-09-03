@@ -22,7 +22,7 @@ import os
 import threading
 
 from waku.app import Waku
-from waku.gateway.cli import _observer  # mirror gate/tool activity on the laptop terminal
+from waku.gateway.cli import _observer  # 笔记本电脑终端上的镜像门/工具活动
 from waku.gateway.runner import GatewayAgentRunner, run_gateway_turn
 from waku.integrations import IntegrationState, IntegrationStatus
 
@@ -153,9 +153,9 @@ def start_in_background() -> TelegramHandle | None:
     warned = {"conflict": False}
 
     def on_poll_error(exc: Exception) -> None:
-        # Runs on every polling error. The common one is Conflict: another bot
-        # instance is already polling this token. Say it ONCE, plainly, and never
-        # dump a traceback into the dashboard terminal.
+        # 在每次轮询错误时运行。常见的是冲突：另一个机器人
+        # 实例已经在轮询此令牌。简单地说一次，永远不要
+        # 将回溯转储到仪表板终端。
         from telegram.error import Conflict
 
         if isinstance(exc, Conflict) and not warned["conflict"]:
@@ -172,12 +172,12 @@ def start_in_background() -> TelegramHandle | None:
         raise
 
     def run() -> None:
-        # keep PTB's own error logging out of the dashboard terminal; we report
-        # the one error that matters (Conflict) cleanly via on_poll_error.
+        # 将 PTB 自身的错误日志记录在仪表板终端之外；我们报告
+        # 通过 on_poll_error 清楚地发现一个重要的错误（冲突）。
         logging.getLogger("telegram").setLevel(logging.CRITICAL)
         logging.getLogger("httpx").setLevel(logging.WARNING)
-        # its own event loop on this thread; start_polling is non-blocking, then
-        # run_forever keeps it alive until the process (a daemon thread) exits.
+        # 该线程上有自己的事件循环； start_polling是非阻塞的，那么
+        # run_forever 使其保持活动状态，直到进程（守护线程）退出。
         asyncio.set_event_loop(loop)
         try:
             loop.run_until_complete(app.initialize())

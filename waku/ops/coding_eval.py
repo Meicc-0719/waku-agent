@@ -31,7 +31,7 @@ from waku.tools._env import delegate_env
 
 _CODING = Path(__file__).resolve().parents[2] / "evals" / "coding.jsonl"
 
-# Waku provider id -> pi's built-in provider id (see `pi --list-models`).
+# Waku 提供商 id -> pi 的内置提供商 id（请参阅 `pi --list-models`）。
 PI_PROVIDER = {
     "anthropic": "anthropic", "openai": "openai", "gemini": "google",
     "kimi": "moonshotai", "xai": "xai", "glm": "zai",
@@ -92,16 +92,16 @@ def run_coding_stream(provider: str, model: str, task: str, files: dict | None,
         proc = subprocess.Popen(
             [pi_bin, "--provider", pi_prov, "--model", model, "--api-key", key,
              "-p", task, "-a", "--no-session"],
-            cwd=workdir, stdin=subprocess.DEVNULL,   # no TTY under the server: pi
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,  # must not block on stdin
+            cwd=workdir, stdin=subprocess.DEVNULL,   # 服务器下没有 TTY：pi
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,  # 不得阻塞标准输入
             text=True, bufsize=1, env=delegate_env())
     except OSError as exc:
         return (False, f"couldn't launch pi: {exc}", round(time.perf_counter() - t0, 1))
 
-    killer = threading.Timer(timeout, proc.kill)   # watchdog: kill a hung pi
+    killer = threading.Timer(timeout, proc.kill)   # 看门狗：杀死一个hung pi
     killer.start()
     try:
-        for line in proc.stdout:                    # blocks per line until pi exits
+        for line in proc.stdout:                    # 每行阻塞直到 pi 退出
             on_line(line.rstrip("\n"))
         proc.wait()
     finally:
@@ -156,7 +156,7 @@ def run_coding_case(provider: str, model: str, case: dict,
 
     t0 = time.perf_counter()
     try:
-        # -a trusts project-local files; --no-session keeps the run ephemeral.
+        # -a 信任项目本地文件； --no-session 保持运行短暂。
         subprocess.run(
             [pi_bin, "--provider", pi_prov, "--model", model, "--api-key", key,
              "-p", case["input"], "-a", "--no-session"],
@@ -167,8 +167,8 @@ def run_coding_case(provider: str, model: str, case: dict,
     except OSError as exc:
         return (False, f"couldn't launch pi: {exc}", round(time.perf_counter() - t0, 1))
 
-    # We DON'T gate on pi's own exit code — a nonzero exit can still have written
-    # working code. The verify command is the only judge that matters.
+    # 我们不会对 pi 自己的退出代码进行门控——非零退出仍然可以写入
+    # 工作代码。 verify 命令是唯一重要的判断。
     verify = case.get("verify")
     if not verify:
         return (True, "no verify (ran clean)", round(time.perf_counter() - t0, 1))

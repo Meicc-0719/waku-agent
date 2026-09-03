@@ -18,7 +18,7 @@ from waku.loop.models import get_client
 class AnthropicJudge(DeepEvalBaseLLM):
     def __init__(self, model: str | None = None):
         self.settings = load_settings()
-        self.client = get_client(self.settings)  # fills provider-default model ids
+        self.client = get_client(self.settings)  # 填充提供商默认模型 ID
         self.model = model or self.settings.small_model
 
     def load_model(self):

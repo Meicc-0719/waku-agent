@@ -190,15 +190,15 @@ async function runCompare(){
         if (!line.startsWith("data:")) continue;
         let ev; try { ev = JSON.parse(line.slice(5).trim()); } catch(e){ continue; }
         const s = ev.spec;
-        // The harness plays out live: start -> gate -> tools, then the final
-        // result with receipts. (We don't token-stream the reply — see
-        // compare_stream in dashboard.py for why.)
+        // 线束实时播放：开始 -> 门 -> 工具，然后是最终的
+        // 结果与收据。 （我们不会对回复进行令牌流传输 - 请参阅
+        // 原因是在dashboard.py中compare_stream。）
         if (ev.kind === "start"){ R[s] = {spec:s, provider:ev.provider, model:ev.model, streaming:true, tools:[], gate:null}; render(); }
         else if (ev.kind === "gate" && R[s]){ R[s].gate = {decision:ev.decision, reason:ev.reason}; render(); }
         else if (ev.kind === "tool" && R[s]){ (R[s].tools = R[s].tools||[]).push({tool:ev.tool}); render(); }
-        // The sub-agent (pi) streams its own events through delegate_task —
-        // accumulate them per card so the contractor's work is watchable live
-        // instead of a black box that returns a summary.
+        // 子代理 (pi) 通过 delegate_task 流式传输自己的事件 —
+        // 将它们累积到每张卡上，以便可以实时观看承包商的工作
+        // 而不是返回摘要的黑匣子。
         else if (ev.kind === "subagent" && R[s]){
           const sub = R[s].sub = R[s].sub || {text:"", tools:[], tokens_in:0, tokens_out:0};
           if (ev.type === "text" && ev.delta) sub.text = (sub.text + ev.delta).slice(-4000);
@@ -207,25 +207,25 @@ async function runCompare(){
           render();
         }
         else if (ev.kind === "result" && s){ const sub = R[s] && R[s].sub; R[s] = ev; if (sub) R[s].sub = sub; saveCompare(); render(); }
-        else if (ev.kind === "grading"){ compareState.grading = ev; render(); }   // post-race referee pass begins
+        else if (ev.kind === "grading"){ compareState.grading = ev; render(); }   // 赛后裁判传票开始
         else if (ev.kind === "grade" && R[s]){ R[s].quality = ev.quality; if (compareState.grading) compareState.grading.done = (compareState.grading.done||0)+1; saveCompare(); render(); }
         else if (ev.kind === "done"){ compareState.grading = null; if (ev.error) compareState.raceError = ev.error; }
       }
     }
   } catch(e){ compareState.raceError = String(e); }
   compareState.running = false; saveCompare();
-  // The server just logged this race; loadCompareHistory re-renders with the
-  // fresh (race-inclusive) totals. No intermediate render(), so the live-folded
-  // rows hand off to the server totals without a flicker.
+  // 服务器刚刚记录了这场比赛； loadCompareHistory 重新呈现
+  // 新鲜（包括比赛）总计。没有中间的 render()，所以 live-folded
+  // 行数无闪烁地传递给服务器总计。
   loadCompareHistory();
 }
 
-// One contestant's column. While the model runs (res.streaming) it plays out
-// live like the chat dock — gate badge, tool chips light up, reply types in with
-// a caret. When it finishes (res.result) it flips to the full receipts card.
-// Reuses the shared formatters (renderMarkdown/secs/money).
-// Plain-English reason for the common, expected failure modes — so the arena
-// reads honestly on camera (the raw error stays below, muted).
+// 一位参赛者的专栏。当模型运行时（res.streaming）它会播放
+// 像聊天码头一样生活 — 门牌、工具芯片亮起、回复类型为
+// 插入符号。当它完成时（res.result），它会翻转到完整的收据卡。
+// 重用共享格式化程序（renderMarkdown/secs/money）。
+// 常见的、预期的故障模式的通俗易懂的原因——所以竞技场
+// 在相机上诚实地读取（原始错误保持在下面，静音）。
 function compareErrorReason(err){
   const e = (err || "").toLowerCase();
   if (e.includes("reasoning_effort") || e.includes("/v1/responses")) return "can't call tools — reasoning model, needs the /v1/responses API";
@@ -236,20 +236,20 @@ function compareErrorReason(err){
   if (e.includes("not found") || e.includes("no longer available")) return "model id not available";
   return null;
 }
-// "knows to 2026-01" next to the model name — each brain's knowledge cutoff,
-// so a confidently-wrong answer about recent events reads as stale knowledge,
-// not low capability (a model can't know about releases after its cutoff).
-// Server-supplied (MODEL_CUTOFF in dashboard.py); absent = vendor unpublished.
+// 模型名称旁边的“知道到2026-01”——每个大脑的知识截止点，
+// 因此，对最近发生的事件做出错误的回答会被视为陈旧的知识，
+// 能力不低（模型在截止后无法了解版本）。
+// 服务器提供（dashboard.py 中的 MODEL_CUTOFF）；缺席 = 供应商未发布。
 function cutoffTag(cutoff){
   return cutoff ? ` <span class="meta" style="font-size:11px;white-space:nowrap"
     title="knowledge cutoff — this model's world knowledge ends here; it cannot know releases after this date">knows to ${esc(cutoff)}</span>` : "";
 }
-// The sub-agent's receipt: pi working inside this card. Live = a small
-// terminal window (last lines, cleaned of markdown fences). Finished = one
-// quiet summary row that expands on click — the reply below already shows the
-// final code, so the pane must not repeat it. Full stream: pi-transcript-events.jsonl.
+// 子代理的收据：在该卡内工作的 pi。活=小
+// 终端窗口（最后一行，清除了降价栅栏）。完成=一
+// 点击后展开的安静摘要行 - 下面的回复已经显示了
+// 最终代码，因此窗格不得重复。完整流：pi-transcript-events.jsonl。
 function subPane(sub, live, spec){
-  const seq = [];   // collapse repeats: write, bash, bash -> write · bash ×2
+  const seq = [];   // 折叠重复：write、bash、bash -> write · bash ×2
   for (const t of sub.tools||[]){
     const last = seq[seq.length-1];
     if (last && last.t === t) last.n++; else seq.push({t, n:1});
@@ -261,18 +261,18 @@ function subPane(sub, live, spec){
   const head = `<span class="mm-prov">pi</span><span class="subterm-t">${esc(toolStr)||"…"}</span>` +
     (tok ? `<span class="meta" title="the sub-agent's tokens — billed to this card's cost">${tok}</span>` : "");
   if (live) return `<div class="subterm live"><div class="subterm-h">${head}<span class="live-dot"></span></div><pre>${tail||"spawning…"}</pre></div>`;
-  // remember open/closed across re-renders — render() rebuilds the DOM every
-  // refresh tick, which would otherwise snap an expanded pane shut mid-read
+  // 记住重新渲染时的打开/关闭 — render() 每隔一段时间就会重建 DOM
+  // 刷新勾选，否则会在读取过程中关闭展开的窗格
   return `<details class="subterm"${sub.open?" open":""} ontoggle="const r=compareState.results['${esc(spec)}']; if(r&&r.sub) r.sub.open=this.open">
     <summary class="subterm-h">${head}</summary><pre>${tail}</pre></details>`;
 }
-// Long replies are the cards' vertical hog (a coding answer pastes whole
-// programs). Clamp past a threshold with a fade + toggle; open state lives on
-// the card's state so the refresh tick doesn't snap it shut.
+// 长回复是卡片的垂直占据（编码答案粘贴整个
+// 程序）。使用淡入淡出 + 切换来钳制超过阈值；开放状态继续存在
+// 卡的状态，因此刷新勾号不会将其关闭。
 function replyBlock(res){
   const r = res.reply||"";
-  // height comes from LINES, not characters — 20 short code lines are taller
-  // than a 400-char paragraph
+  // 高度来自行，而不是字符 — 20 条短代码行更高
+  // 超过 400 个字符的段落
   const long = r.length > 400 || (r.match(/\n/g)||[]).length > 8;
   if (!long) return `<div class="r cmp-reply">${renderMarkdown(res.reply||"")}</div>`;
   return `<div class="r cmp-reply ${res.replyOpen?"":"clamped"}">${renderMarkdown(res.reply||"")}</div>
@@ -304,7 +304,7 @@ function compareCol(res){
   const completionBadge = c ? `<span class="cmp-score ${c.passed?"pass":"fail"}" title="${esc(c.why||"")}">${c.passed?"solved":"failed"}${c.passed?"":" · "+esc(c.why||"")}</span>` : "";
   const q = res.quality;
   const qualityBadge = q && q.score!=null ? `<span class="cmp-q ${q.score>=7?"hi":q.score>=4?"mid":"lo"}" title="graded ${q.score}/10 by ${esc(q.judge||"referee")} — ${esc(q.reason||"")}">${q.score}/10</span>` : "";
-  // per-card grade button — grade just this card if the referee skipped it (429)
+  // 每张卡评分按钮 - 如果裁判跳过了这张卡，则仅对该卡进行评分 (429)
   const gradeBtn = `<a class="reveal cmp-grade1" title="grade this card with the referee" onclick="gradeCard('${esc(res.spec)}')">${res._grading?"grading…":(q&&q.score!=null?"re-grade":"grade")}</a>`;
   return `<div class="cmp-col${c?(c.passed?" solved":" failed"):""}">
     <div class="cmp-h"><span class="mm-prov">${esc(res.provider)}</span> <code>${esc(res.model)}</code>${cutoffTag(res.cutoff)}${completionBadge}${qualityBadge}${gradeBtn}</div>
@@ -321,15 +321,15 @@ function compareCol(res){
   </div>`;
 }
 
-// The Arena runs two races, and they are the same machine with a different
-// dial: Models holds the harness constant and varies the brain; Memory holds
-// the harness AND the brain constant and varies where facts live. Sub-tabs
-// rather than two sidebar rows, so "Models" doesn't appear twice in the nav
-// (once as a race, once as configuration) — the same reason Memory keeps
-// semantic / episodic / skills behind tabs instead of four sidebar entries.
+// 竞技场举办两场比赛，它们是同一台机器，但配备不同
+// 表盘：模型保持安全带不变并改变大脑；记忆保留
+// 事实存在的地方，线束和大脑是恒定的和变化的。子选项卡
+// 而不是两个侧边栏行，因此“模型”不会在导航中出现两次
+// （一次作为比赛，一次作为配置）——与记忆保留的原因相同
+// 选项卡背后的语义/情景/技能而不是四个侧边栏条目。
 VIEWS.compare = function(d, sub){
-  // No sub-tab bar any more: the sidebar names both races directly, and a row
-  // of tabs repeating what the highlighted nav entry already says is furniture.
+  // 不再有子选项卡栏：侧边栏直接命名两个种族，并且一行
+  // 标签重复突出显示的导航条目已经说过的家具。
   sub = sub === "memory" ? "memory" : "models";
   return sub === "memory" ? memoryArenaView() : modelArenaView(d);
 };
@@ -343,47 +343,47 @@ function modelArenaView(d){
   }).join("") : `<div class="meta">No models pinned yet — star some in <a class="reveal" onclick="location.hash='#models'">Models</a>.</div>`;
   const n = compareState.picked ? compareState.picked.size : 0;
 
-  // One column per raced model, in order. Each shows "racing…" until its result
-  // arrives over the stream, then flips to the receipts card.
+  // 每个比赛模型一列，按顺序排列。每个显示“赛车……”直到结果
+  // 通过流到达，然后翻转到收据卡。
   let grid = "";
   const order = compareState.order || [];
   if (order.length){
     const results = compareState.results || {};
-    // "done" = finished successfully (not streaming, not errored) — only these
-    // have latency/cost for the fastest/cheapest summary.
+    // “done” = 成功完成（不流式传输，不出错）——仅限这些
+    // 具有最快/最便宜的摘要的延迟/成本。
     const done = order.map(s => results[s]).filter(Boolean).filter(r => !r.error && !r.streaming);
-    // Sort key: the finished cards rank ascending by the chosen metric (least is
-    // best — fastest / cheapest / fewest tokens), winner to the top-left.
+    // 排序键：完成的卡片按所选指标升序排列（最小的是
+    // 最优——最快、最便宜或 Token 最少）；获胜者显示在左上角。
     const metric = { latency: r => r.latency_ms || 0,
                      cost:    r => r.cost_usd || 0,
                      tokens:  r => (r.tokens_in || 0) + (r.tokens_out || 0) };
     const key = metric[compareState.sortBy] || metric.latency;
     const sorters = [["latency", "seconds"], ["tokens", "tokens"], ["cost", "money"]];
-    // Right of the sort tabs, above the cards: "re-grade run" re-runs the referee
-    // on every model in THIS run (the cards below); "clear cards" just dismisses
-    // the columns. Both act on the current run.
+    // 排序选项卡右侧，卡片上方：“重新评分运行”重新运行裁判
+    // 本次运行中的每个模型（下面的卡片）； “清晰的卡片”只是驳回
+    // 列。两者都对当前运行起作用。
     const regradeBtn = (done.length && !compareState.running)
       ? `<a class="reveal" style="margin-left:auto;font-size:12px" title="Re-run the referee on every model in this run (fills a skipped/429'd grade, or re-scores)" onclick="regradeCompare()">${compareState.regrading?"re-grading…":"re-grade run"}</a>` : "";
     const clearBtn = (order.length && !compareState.running)
       ? `<a class="reveal" style="${regradeBtn?"":"margin-left:auto;"}font-size:12px" onclick="clearCards()">clear cards</a>` : "";
-    // Prominent, tab-like sort buttons — the selected one is highlighted.
+    // 突出的、类似选项卡的排序按钮 - 所选的按钮会突出显示。
     const sortBar = (done.length || clearBtn) ? `<div class="cmp-sortbar">${done.length
       ? `sort by ${sorters.map(([k, label]) => `<button class="cmp-sortbtn ${compareState.sortBy === k ? "on" : ""}" onclick="setCompareSort('${k}')">${label}</button>`).join("")}`
       : ""}${regradeBtn}${clearBtn}</div>` : "";
-    // Only a progress line while the race is still running; once every column is
-    // in, the sort tabs + cards + scoreboard say it all (no redundant summary).
+    // 比赛仍在进行时只有进度线；一旦每一列都是
+    // 其中，排序选项卡+卡片+记分​​板说明了一切（没有多余的摘要）。
     const g = compareState.grading;
     const summary = done.length < order.length
       ? `Racing ${order.length} models — ${done.length}/${order.length} done`
       : (g ? `Referee ${esc(g.judge||"")} grading — ${g.done||0}/${g.n} scored` : "");
-    // Rank finished models first (by the chosen metric), then still-running,
-    // then errors — so as the race resolves, the best rises to the top-left.
+    // 首先对已完成的模型进行排名（根据所选指标），然后对仍在运行的模型进行排名，
+    // 然后是错误——所以当比赛结束时，最好的会出现在左上角。
     const rank = s => {
       const r = results[s];
-      if (!r) return [2, 0];                       // not started
-      if (r.error) return [3, 0];                  // failed -> end
-      if (r.streaming) return [1, 0];              // running -> middle
-      return [0, key(r)];                          // done -> front, best-of-metric first
+      if (!r) return [2, 0];                       // 未开始
+      if (r.error) return [3, 0];                  // 失败->结束
+      if (r.streaming) return [1, 0];              // 运行 -> 中间
+      return [0, key(r)];                          // 完成 -> 前面，最佳指标优先
     };
     const shown = [...order].sort((a, b) => { const ra = rank(a), rb = rank(b); return ra[0] - rb[0] || ra[1] - rb[1]; });
     const cols = shown.map(s => {
@@ -396,8 +396,8 @@ function modelArenaView(d){
       + (compareState.raceError ? `<div class="meta" style="color:var(--bad)">${esc(compareState.raceError)}</div>` : "");
   }
 
-  // Load the history once when the tab first opens (setting [] first stops the
-  // 5s refresh from re-triggering); loadCompareHistory re-renders when it lands.
+  // 选项卡首次打开时加载历史记录一次（设置 [] 首先停止
+  // 重新触发后刷新5s）； loadCompareHistory 落地时会重新渲染。
   if (compareState.history === undefined){ compareState.history = []; setTimeout(loadCompareHistory, 0); }
 
   return `<div class="card">
@@ -421,28 +421,28 @@ function modelArenaView(d){
   </div>${grid}${compareHistoryHtml()}`;
 }
 
-// --- Memory arena -----------------------------------------------------------
-// Same four tests, two tracks. Until a runner exists this tab shows the
-// FIXTURE: what every contestant is told and what it is then asked. That is
-// deliberately not a placeholder — a benchmark whose questions you cannot read
-// is a benchmark you have to take on faith, and the whole point of this one is
-// that the numbers are checkable.
-let memoryArenaFixture;   // undefined = not fetched, null = unavailable here
-let maFile = null, maTrack = null;   // chosen probe set; null = whatever loaded
-let maModel = null;                  // "provider:model"; null = cheapest offered
+// --- 内存竞技场 -----------------------------------------------------------
+// 同样的四次测试，两条赛道。在存在跑步者之前，此选项卡显示
+// 固定装置：每位参赛者被告知的内容以及随后被问到的内容。那是
+// 故意不是占位符——一个你无法阅读其问题的基准
+// 是你必须采取的信仰基准，而这个基准的全部要点是
+// 这些数字是可以检查的。
+let memoryArenaFixture;   // 未定义 = 未获取，null = 此处不可用
+let maFile = null, maTrack = null;   // 选择的探针组； null = 加载的任何内容
+let maModel = null;                  // “提供商：模型”； null = 最便宜的报价
 function pickArenaModel(spec){ maModel = spec; render(); }
 function maModels(){ return (memoryArenaFixture && memoryArenaFixture.models) || []; }
-// Cheapest FIRST from the server, so "no choice made" costs the least. The
-// arena holds the model constant and varies only the store, so the expensive
-// default was buying nothing: a measured dinner race cost ~$4.36 on fable-5
-// ($10/$50 per M) against ~$0.55 on grok-4.3 ($1.25/$2.50), same finding.
+// 最便宜的首先从服务器开始，因此“不做选择”的成本最低。这
+// arena 保持模型不变并且仅改变商店，因此昂贵
+// 默认是不买任何东西：《寓言 5》中一场精确的晚餐比赛花费约为 4.36 美元
+// （每 M 10 美元/50 美元）与 grok-4.3 上的 ~0.55 美元（1.25 美元/2.50 美元）相比，结果相同。
 function maModelSpec(){ const m = maModels(); return maModel || (m[0] && m[0].spec) || ""; }
 
 async function pickProbeFile(id){
   maFile = id;
-  maTrack = (id.split("::")[1]) || null;   // the id carries its own track
+  maTrack = (id.split("::")[1]) || null;   // id有自己的轨迹
   maPicked = null;
-  memoryArenaFixture = undefined;   // refetch so the questions match the choice
+  memoryArenaFixture = undefined;   // 重新获取以使问题与选择匹配
   maRun = {running:false, rows:[], board:null, log:"", error:null};
   editing = false; render();
 }
@@ -479,7 +479,7 @@ function probeRow(p){
     <td class="meta">${esc(p.note||"")}</td></tr>`;
 }
 
-// --- running it -------------------------------------------------------------
+// --- 运行它------------------------------------------------------------
 let maRun = {running:false, rows:[], board:null, log:"", error:null};
 
 async function seedMemoryArena(){ return runMemoryArena(true); }
@@ -488,11 +488,11 @@ async function runMemoryArena(seedOnly){
   if (maRun.running) return;
   const fx = memoryArenaFixture;
   const track = (maTrack && fx.tracks[maTrack]) ? maTrack : Object.keys(fx.tracks)[0];
-  // Record the grid UP FRONT. Seeding is five real turns per contestant, so the
-  // first result is ~40s away — and a table built only from rows that have
-  // landed renders an empty header for that whole first minute, which reads as
-  // broken rather than busy. Columns and rows are both known before we start;
-  // only the cells are pending.
+  // 记录前面的网格。每个参赛者的种子轮数为五轮，因此
+  // 第一个结果大约需要 40 秒——并且一个表仅由具有以下内容的行构建
+  // landed 在整个第一分钟呈现一个空标题，读作
+  // 破碎而不是忙碌。在我们开始之前，列和行都是已知的；
+  // 只有单元格处于待处理状态。
   maRun = {running:true, rows:[], board:null, log:"telling…", error:null,
            backends: maPicks(), probes: fx.tracks[track].probes.map(p=>p.id),
            seedTotal: (fx.tracks[track].seed || []).length,
@@ -515,8 +515,8 @@ async function runMemoryArena(seedOnly){
         const ev = JSON.parse(c.slice(6));
         if (ev.kind === "start"){ maRun.log = `${ev.contestant}: telling…`;
                                   maRun.seeded[ev.contestant] = 0; }
-        // Told in an earlier race — nothing to re-tell, so jump straight to
-        // asking rather than animating a telling phase that is not happening.
+        // 在之前的一场比赛中已经讲过——没有什么可重复的，所以直接跳到
+        // 询问而不是动画一个没有发生的有说服力的阶段。
         if (ev.kind === "cached"){ maRun.seeded[ev.contestant] = maRun.seedTotal;
                                    maRun.log = `${ev.contestant}: already told ${ev.facts}`; }
         if (ev.kind === "seed-done"){ maRun.log = `${ev.contestant}: ${
@@ -535,22 +535,22 @@ async function runMemoryArena(seedOnly){
   maRun.running = false; maRun.log = ""; editing = false; render();
 }
 
-// Which stores to race — asked of the SERVER, not decided here.
-// This used to be a hardcoded ["mem0", "supabase"] filtered against the
-// connections list, written before Zep and LangMem existed. Both were
-// configured, both were silently dropped from every race, and the button
-// cheerfully said "Race 2 stores" as though that were the whole field. A list
-// of backends maintained in two languages drifts the moment one is added;
-// waku/ops/memory_arena.py::_available_backends is now the only one.
+// 哪些商店要比赛——询问服务器，而不是在这里决定。
+// 这曾经是一个硬编码的[“mem0”，“supabase”]，根据
+// 连接列表，在 Zep 和 LangMem 存在之前编写。两人都是
+// 配置好后，两者都会从每场比赛中默默掉落，并且按钮
+// 兴高采烈地说道“Race 2 商店”，仿佛那就是整个赛场一样。一个清单
+// 添加一种语言后，用两种语言维护的后端就会发生变化；
+// waku/ops/memory_arena.py::_available_backends 现在是唯一的一个。
 function maBackends(){
   return (memoryArenaFixture && memoryArenaFixture.backends) || ["sqlite"];
 }
 
-// Which of them actually race. Zep starts UNCHECKED: it waits for graph
-// ingestion on every write, which took 16 minutes for ten operations against a
-// live account. Racing it by default turned a four-minute experiment into a
-// forty-minute one and made the whole tab feel broken. It is one click away,
-// deliberately, rather than one click away from being avoided.
+// 他们中的哪一个实际上在比赛。 Zep 开始 UNCHECKED：它等待图表
+// 每次写入时的摄取，针对一个文件执行十次操作需要 16 分钟
+// 真实账户。默认情况下，赛车将四分钟的实验变成了
+// 四十分钟的一集让整个标签感觉破碎了。只需点击一下即可，
+// 故意的，而不是一点击就可以避免。
 const MA_NOTE = {control: "Told nothing, asked everything. It should fail every probe — one it passes is a probe the model can answer without memory."};
 const MA_SLOW = {zep: "waits for graph ingestion — minutes per fact"};
 let maPicked = null;
@@ -582,21 +582,21 @@ const OUTCOME_CELL = (r) => `<span class="ma-o ma-${r.outcome}" title="${esc(r.w
 
 function maResultsHtml(){
   if (!maRun.rows.length && !maRun.running && !maRun.error) return "";
-  // The grid comes from what was ASKED, not from what has answered — so every
-  // column and row is on screen from the first second, and each cell says
-  // whether it is seeding, queued, or done. An empty table under a "running"
-  // heading is indistinguishable from a broken one.
-  // From the track being RACED, recorded when the race started. It used to read
-  // Object.values(tracks)[0] — always the first track in the file, whichever one
-  // you picked. Racing the 6-fact business track against the 8-fact dinner
-  // track's total stuck the cell at "told 6 of 8" and it never reached "asking".
+  // 网格来自所问的内容，而不是来自已回答的内容 - 所以每个
+  // 列和行从第一秒就出现在屏幕上，每个单元格都显示
+  // 无论是播种、排队还是完成。 “运行”下的空表
+  // 标题与损坏的标题没有什么区别。
+  // 从正在比赛的赛道开始，在比赛开始时记录。曾经读过
+  // Object.values(tracks)[0] — 始终是文件中的第一个轨道，无论哪个轨道
+  // 你选的。在 6 个事实的商业赛道上与 8 个事实的晚餐赛跑
+  // 轨道的总数使单元格停留在“告知 8 中的 6”，并且从未达到“询问”。
   const seedTotal = maRun.seedTotal || 0;
   const names = maRun.backends || [...new Set(maRun.rows.map(r => r.contestant))];
   const probes = maRun.probes || [...new Set(maRun.rows.map(r => r.probe))];
-  // `first` because telling is per CONTESTANT, not per question. Repeating
-  // "told 2 of 8" down every probe row made it look like all four questions
-  // were already being asked in parallel — they are not; the contestant has
-  // not been asked anything yet.
+  // “首先”，因为讲述是针对每个参赛者的，而不是针对每个问题。重复
+  // 每个探测行中的“告诉 8 中的 2”使其看起来像是所有四个问题
+  // 我们已经同时被问到了——他们不是；参赛者有
+  // 还没有被问到什么。
   const cell = (p, n, first) => {
     const r = maRun.rows.find(x => x.probe === p && x.contestant === n);
     if (r) return `<td>${OUTCOME_CELL(r)}
@@ -607,9 +607,9 @@ function maResultsHtml(){
     if (!maRun.running) return `<td class="meta">—</td>`;
     const seeded = (maRun.seeded || {})[n];
     if (seeded === undefined) return `<td class="meta">queued</td>`;
-    // "seeding 4/8" reads like a progress bar for something the viewer has not
-    // been shown. "told 4 of 8" names the actual event: this store has now been
-    // told four of the eight facts it is about to be questioned on.
+    // “播种 4/8”读起来就像是观众尚未完成的进度条
+    // 已显示。 “told 4 of 8”命名了实际事件：这家商店现已被
+    // 讲述了即将接受质询的八个事实中的四个。
     if (seeded < seedTotal) return first
       ? `<td class="meta">being told ${seeded} of ${seedTotal}<span class="caret"></span></td>`
       : `<td class="meta"></td>`;
@@ -643,9 +643,9 @@ function maResultsHtml(){
 }
 
 async function maSeeAll(store){
-  // Expand THIS store in place. Never navigate — the Memory page is sqlite's
-  // and sending mem0's "see all" there showed the wrong store's facts.
-  const cards = Array.isArray(maStores) ? maStores : null;   // "loading" is a string
+  // 就地扩展此商店。永远不要导航——内存页面是 sqlite 的
+  // 并向那里发送 mem0 的“查看全部”显示了错误的商店事实。
+  const cards = Array.isArray(maStores) ? maStores : null;   // “正在加载”是一个字符串
   const i = cards ? cards.findIndex(c => c.store === store) : -1;
   if (i < 0) return;
   cards[i] = Object.assign({}, cards[i], {loading: true}); render();
@@ -677,15 +677,15 @@ function memoryArenaView(){
       MA_SLOW[k] ? ' <span class="meta">slow</span>' : ""}${
       k === "control" ? ' <span class="meta">no memory</span>' : ""}</label>`;
   }).join("");
-  // ONE dropdown. A file is a container, not a choice — picking "which file"
-  // and then "which track inside it" made you answer one question twice, and
-  // the filename told you less than the track label already did.
+  // 一个下拉菜单。文件是一个容器，而不是一个选择——选择“哪个文件”
+  // 然后“里面的哪一首曲目”让你回答一个问题两次，并且
+  // 文件名告诉你的信息比曲目标签已经告诉你的要少。
   const sets = (memoryArenaFixture.sets || []);
   const chosen = maFile || memoryArenaFixture.chosen || (sets[0] && sets[0].id);
-  // Three rows, no prose. Every sentence that used to sit here has moved into
-  // a title= on the control it was describing: the reader who needs it hovers,
-  // and the reader who does not gets the vertical space back for store cards.
-  // On this page that space is the scarcest thing there is.
+  // 三行，无散文。曾经坐在这里的每句话都已移入
+  // 它所描述的控件上的 title= ：需要它的读者悬停，
+  // 以及无法获得存储卡垂直空间的读者。
+  // 在这一页上，空间是最稀缺的东西。
   const picker = `<div class="ma-race ma-pickers" style="margin-bottom:10px">
       <label class="fld" style="margin:0">Questions
         <select onchange="pickProbeFile(this.value)"
@@ -715,33 +715,33 @@ function memoryArenaView(){
           : `Ask ${picks.length} store${picks.length===1?"":"s"}`}</button>
       ${maRun.running ? `<span class="meta">${esc(maRun.log)}</span>` : ""}
     </div></div>`;
-  // ORDER MATTERS, and it used to be wrong: race, results, stores, asks. The
-  // questions were dead last, so you could start a race — and film one —
-  // without ever having seen what the stores get told or asked. A benchmark
-  // whose questions arrive after its verdict is asking you to take the verdict
-  // on trust, which is the one thing this page exists not to do.
+  // 订单很重要，它曾经是错误的：比赛、结果、商店、询问。这
+  // 问题是最后的，所以你可以开始一场比赛——并拍摄一场比赛——
+  // 从未见过商店被告知或询问的内容。一个基准
+  // 判决后提出的问题是要求您接受判决
+  // 关于信任，这是此页面存在不做的一件事。
   //
-  // Pick, then see what they'll be told and asked, then the verdict, then the
-  // contents. Store cards go last on purpose: they are the slowest to read and
-  // the only part that needs a button press.
+  // 选择，然后看看他们会被告知和询问什么，然后是判决，然后是
+  // 内容。商店卡故意排在最后：它们读取速度最慢，而且
+  // 唯一需要按下按钮的部分。
   return race + maAsksHtml(track) + maResultsHtml() + maStoresHtml();
 }
 
-// --- what each store is holding, right now ----------------------------------
-// This is the screen the tab should have opened with from the start: not an
-// essay about a benchmark, but the contents of every store you have connected.
-// Fetched on demand, never on the 5s poll.
-let maStores;   // undefined = not fetched, [] = fetched and empty
+// --- 现在每家商店都在卖什么 ----------------------------------
+// 这是选项卡从一开始就应该打开的屏幕：不是
+// 关于基准的文章，而是您连接的每个商店的内容。
+// 按需获取，而不是通过 5 秒投票获取。
+let maStores;   // 未定义 = 未获取，[] = 已获取且为空
 
-// Which seeding the cards should describe. Without this the server has no way
-// to know which .waku-arena home to open, and falls back to the live agent's
-// store — which is exactly the incomparable card this panel used to apologise
-// for in a paragraph above itself.
-// Same fallback chain the picker uses. maFile is empty until you CHANGE the
-// dropdown, so reading it raw sends "" for the default set — and the server,
-// given no probe set, can name neither a home nor a partition. Reads would
-// quietly fall back to the live store and Clean would refuse. The bug would
-// only appear for people who never touched the dropdown, which is most of them.
+// 卡片应该描述哪些种子。没有这个服务器就没有办法
+// 知道要打开哪个 .waku-arena 主页，并返回到现场代理的
+// store——这正是该小组用来道歉的无与伦比的卡片
+// 在其上方的段落中。
+// 选择器使用相同的后备链。 maFile 为空，直到您更改
+// 下拉列表，因此读取原始数据会发送“”作为默认设置 - 以及服务器，
+// 如果没有探针集，则既不能命名主目录也不能命名分区。读会
+// 悄悄地回到现场商店，Clean 会拒绝。该错误会
+// 只对那些从未接触过下拉菜单的人出现，这是他们中的大多数。
 function maChosenSet(){
   const fx = memoryArenaFixture || {};
   const sets = fx.sets || [];
@@ -752,11 +752,11 @@ function maStoreQuery(){
   return `probes=${encodeURIComponent(maChosenSet())}&model=${encodeURIComponent(maModelSpec())}`;
 }
 
-let maClean = "";   // what the last clean did, shown where the hint normally sits
+let maClean = "";   // 最后一次清理做了什么，显示了提示通常所在的位置
 
-// Deliberately NOT behind a confirm dialog: it can only reach this race's own
-// scratch. The dangerous version of this button was the one that existed
-// before per-race partitions, when "the stores" included the live agent's.
+// 故意不在确认对话框后面：它只能到达本场比赛自己的
+// 划痕。这个按钮的危险版本是存在的
+// 在按比赛分区之前，当“商店”包括现场代理的商店时。
 async function cleanMemoryStores(){
   maClean = "cleaning…"; editing = false; render();
   try {
@@ -767,7 +767,7 @@ async function cleanMemoryStores(){
     maClean = out.error ? `clean failed — ${out.error}`
       : `cleaned ${(out.removed||[]).length} — ${(out.removed||[]).join(", ") || "nothing to remove"}`
         + ((out.errors||[]).length ? ` &middot; ${out.errors.length} failed` : "");
-    maStores = undefined;              // the cards on screen now describe deleted data
+    maStores = undefined;              // 屏幕上的卡片现在描述已删除的数据
   } catch(e){ maClean = `clean failed — ${e}`; }
   editing = false; render();
 }
@@ -783,10 +783,10 @@ async function loadMemoryStores(){
 function maStoresHtml(){
   const btn = `<button class="save ghost" onclick="loadMemoryStores()"
     ${maStores === "loading" ? "disabled" : ""}>${maStores === "loading" ? "reading…" : "Read stores"}</button>`;
-  // The heading carries the button. This used to be a whole card wrapping one
-  // control and a paragraph — a card's worth of vertical space to say "press
-  // this". On a page where the useful content is five store cards further
-  // down, that is the most expensive furniture on screen.
+  // 标题带有按钮。这曾经是一整张卡片包装的
+  // 控件和一个段落 — 相当于一张卡片的垂直空间来表示“按
+  // 这个”。在有用内容是五张存储卡的页面上
+  // 下来，那是银幕上最贵的家具。
   const head = `<h2 class="ma-head">What each store is holding ${btn}
     <button class="save ghost" onclick="cleanMemoryStores()"
       title="Deletes only what this race wrote: its .waku-arena copies and its waku-arena partition. Your own memory and the waku partition are never named, so they cannot be reached.">Clean</button>
@@ -815,22 +815,22 @@ function maStoresHtml(){
                 : ""}`
           : `<div class="meta">empty</div>`}
     </div>`).join("");
-  // This used to carry a warning that the counts were NOT a comparison —
-  // because sqlite was the live agent, with weeks of real use, sitting beside
-  // stores that had only ever seen one benchmark run. The warning was correct
-  // and the design was wrong: a panel under a benchmark should not need a
-  // paragraph explaining why its first card does not count.
+  // 这曾经带有一个警告，即计数不是比较 -
+  // 因为 sqlite 是实时代理，实际使用了数周，坐在旁边
+  // 只运行过一项基准测试的商店。警告是正确的
+  // 并且设计是错误的：基准测试下的面板不应该需要
+  // 解释为什么第一张牌不算数的段落。
   //
-  // sqlite now reads the race's OWN copy, so every card describes the same
-  // seeding and the comparison is real. What is left to say is the one thing
-  // still worth saying — this is a live read, and it costs a round trip.
+  // sqlite 现在读取比赛自己的副本，因此每张卡都描述相同
+  // 播种和比较是真实的。剩下要说的就是一件事
+  // 仍然值得一提的是——这是现场阅读，而且需要往返。
   return head + `<div class="ma-stores">${cards}</div>`;
 }
 
-// --- what they get asked ----------------------------------------------------
-// Trimmed hard. The full note on every probe was three lines of prose each and
-// buried the thing anyone actually wants: the question, and what counts as
-// right. Hover a row for the reasoning.
+// --- 他们被问到的问题----------------------------------------------------
+// 狠狠地修剪了一下。每个探测器的完整注释各为三行散文，
+// 埋葬了任何人真正想要的东西：问题，以及什么算作
+// 正确的。将鼠标悬停一行以进行推理。
 function maAsksHtml(track){
   return `<h2 style="margin-top:22px">What they get asked
       <span class="meta" style="font-weight:400">— ${track.seed.length} facts in, ${track.probes.length} questions</span></h2>
@@ -862,22 +862,22 @@ function maAsksHtml(track){
 }
 
 
-// The cumulative view under the current race: a per-model scoreboard averaged
-// across every logged race, then the list of recent races (click to reopen).
-// Data comes from GET /api/compare/history (the arena's own JSONL, never the
-// agent's real state).
-// The scoreboard the board shows = the server's totals (finished races) PLUS,
-// while a race is still running, its already-finished columns folded in — so a
-// model's numbers land the moment ITS column finishes, instead of waiting for
-// the slowest model in the race. No double count: the running race isn't in the
-// server totals yet, and once it completes running=false so we stop folding it.
+// 当前比赛下的累积视图：每个模型的平均记分牌
+// 在每场记录的比赛中，然后是最近比赛的列表（单击以重新打开）。
+// 数据来自 GET /api/compare/history （arena 自己的 JSONL，绝不是
+// 代理的真实状态）。
+// 棋盘显示的记分牌 = 服务器的总数（已完成的比赛）加上，
+// 当比赛仍在进行时，其已经完成的柱子折叠起来——所以
+// 模型的数字在 ITS 列完成时立即着陆，而不是等待
+// 比赛中最慢的车型。不重复计算：跑步比赛不属于
+// 服务器总计尚未完成，一旦完成 running=false，我们就停止折叠它。
 function boardAggregate(){
   const map = {};
   (compareState.aggregate || []).forEach(a => { map[a.spec] = {...a}; });
   if (compareState.running){
     (compareState.order || []).forEach(spec => {
       const r = (compareState.results || {})[spec];
-      if (!r || r.streaming) return;   // column not finished yet
+      if (!r || r.streaming) return;   // 专栏尚未完成
       const a = map[spec] || (map[spec] = {spec, provider: r.provider, model: r.model,
         cutoff: r.cutoff, runs: 0, ok: 0, total_latency_ms: 0, total_tokens_in: 0, total_tokens_out: 0,
         total_tokens: 0, total_cost_usd: 0, cases_passed: 0, cases_scored: 0,
@@ -893,7 +893,7 @@ function boardAggregate(){
       }
       if (r.completion){ a.cases_scored += 1; a.cases_passed += r.completion.passed ? 1 : 0; }
       if (r.quality && r.quality.score!=null){
-        // reconstruct the running sum from the server row's avg on first fold
+        // 根据第一次折叠时服务器行的平均值重建运行总和
         if (a._qsum===undefined){ a._qsum = (a.quality_avg||0) * (a.quality_n||0); }
         a._qsum += r.quality.score; a.quality_n = (a.quality_n||0) + 1;
         a.quality_avg = Math.round(a._qsum / a.quality_n * 10) / 10;
@@ -902,8 +902,8 @@ function boardAggregate(){
   }
   return Object.values(map);
 }
-// A small styled tooltip for the scatter's hover zones (instant + reliable,
-// unlike a native SVG <title>). One element, reused; follows the cursor.
+// 散点悬停区域的小样式工具提示（即时+可靠，
+// 与原生 SVG <title> 不同）。一个元素，重复使用；跟随光标。
 function _scTip(){
   let el = document.getElementById("sc-tip");
   if (!el){ el = document.createElement("div"); el.id = "sc-tip"; el.className = "sc-tip"; document.body.appendChild(el); }
@@ -912,9 +912,9 @@ function _scTip(){
 function showScatterTip(e){ const el = _scTip(); el.textContent = e.currentTarget.getAttribute("data-tip") || ""; el.style.display = "block"; moveScatterTip(e); }
 function moveScatterTip(e){ const el = _scTip(); el.style.left = (e.clientX + 14) + "px"; el.style.top = (e.clientY + 12) + "px"; }
 function hideScatterTip(){ const el = document.getElementById("sc-tip"); if (el) el.style.display = "none"; }
-// The reveal: total cost (x) vs how good (y). Y is K3's grade when we have it,
-// else the completion pass-rate — so "cheap AND good" sits top-LEFT. This is the
-// picture the whole arena is built to draw ("is opus 20x the price 20x better?").
+// 揭示：总成本 (x) 与好坏程度 (y)。 Y 是 K3 的成绩，
+// 否则就是完成通过率——所以“便宜又好”位于左上角。这是
+// 想象整个竞技场都是为了绘画而建造的（“opus 20 倍的价格是 20 倍更好吗？”）。
 function costQualityScatter(agg){
   const useQ = agg.some(a => a.quality_avg != null);
   const pts = agg.map(a => {
@@ -936,7 +936,7 @@ function costQualityScatter(agg){
     return `<circle cx="${px(p.x).toFixed(1)}" cy="${py(p.y).toFixed(1)}" r="5" class="sc-dot ${cls}"/>
       <text x="${(px(p.x)+9).toFixed(1)}" y="${(py(p.y)+3).toFixed(1)}" class="sc-lbl">${esc(p.a.model)} · ${money(p.x)}</text>`;
   }).join("");
-  // Hover the y-axis label to read the criteria (native SVG <title> tooltip).
+  // 将鼠标悬停在 y 轴标签上以读取条件（原生 SVG <title> 工具提示）。
   const yCriteria = useQ
     ? "Referee grade — 0-10, scored by a model that isn't racing, given the tools that actually fired:\n"
       + "9-10  fully addresses the request — correct, concise, honest\n"
@@ -962,8 +962,8 @@ function compareHistoryHtml(){
   const hist = compareState.history || [];
   const raceCount = hist.length + (compareState.running ? 1 : 0);
   if (!agg.length && !hist.length) return "";
-  // Cumulative totals across all races. Click a column header to sort by it —
-  // ascending first, click again to flip (arrow shows the active column + dir).
+  // 所有比赛的累计总成绩。单击列标题可按其排序 —
+  // 先升序，再次单击可翻转（箭头显示活动列+目录）。
   const bs = compareState.boardSort || (compareState.boardSort = {key: "total_cost_usd", dir: "asc"});
   const arrow = k => bs.key === k ? (bs.dir === "asc" ? " ▲" : " ▼") : "";
   const th = (k, label) => `<th class="cmp-th ${bs.key===k?"on":""}" onclick="setBoardSort('${k}')">${label}${arrow(k)}</th>`;

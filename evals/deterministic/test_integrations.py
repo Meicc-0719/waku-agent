@@ -39,9 +39,9 @@ def test_status_masking_health_persistence_and_invalidation(monkeypatch, tmp_pat
     _isolate(monkeypatch, tmp_path)
     monkeypatch.setenv("OPENAI_API_KEY", "super-secret-1234")
     view = next(view for view in integrations.list_integrations() if view.key == "openai")
-    # A key is present and nothing required is missing, so this is CONFIGURED —
-    # not INSTALLED_BUT_UNCONFIGURED, which the dashboard renders as "needs
-    # setup". See test_configured_is_not_confused_with_needing_setup below.
+    # 存在密钥并且缺少任何必需的内容，因此已配置 —
+    # 不是 INSTALLED_BUT_UNCONFIGURED，仪表板将其呈现为“需要
+    # setup”。请参阅下面的 test_configured_is_not_confused_with_needing_setup。
     assert view.status.state is IntegrationState.CONFIGURED
     assert view.fields[0].value == ""
     assert view.fields[0].last4 == "1234"
@@ -100,7 +100,7 @@ def test_apply_rejects_unknown_and_secret_clear(monkeypatch, tmp_path):
     (tmp_path / ".env").write_text("TAVILY_API_KEY=old-secret\n")
     monkeypatch.setenv("TAVILY_API_KEY", "old-secret")
     assert not integrations.apply_integration("tavily", {"NOPE": "x"}).ok
-    # Force avoids the remote Tavily probe; clear is explicit and removes both stores.
+    # 力避开远程泰维利探头； clear 是显式的，会删除两个存储。
     result = integrations.apply_integration("tavily", {}, ("TAVILY_API_KEY",), force=True)
     assert result.ok
     assert "TAVILY_API_KEY" not in os.environ
@@ -441,8 +441,8 @@ def test_a_genuinely_missing_required_field_still_says_needs_setup(monkeypatch, 
     saying so."""
     _isolate(monkeypatch, tmp_path)
     monkeypatch.setattr(integrations, "_extra_installed", lambda name: True)
-    # Notion, not Telegram: Telegram has a single required field, so "half
-    # filled in" is not expressible there and the test would prove nothing.
+    # Notion，而不是 Telegram：Telegram 有一个必填字段，因此“一半
+    # 已填写”在那里无法表达，并且测试将证明什么也没有。
     notion = next(i for i in integrations.registry() if i.key == "notion")
     required = [f.name for f in notion.env if f.required]
     assert len(required) > 1, "this test needs an integration with 2+ required fields"

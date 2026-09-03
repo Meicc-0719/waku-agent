@@ -7,8 +7,8 @@
     whole conversation and decides three sentences are worth two memories.
 
 
-    pip install langmem langgraph   # or: uv pip install -e '.[arena]'
-    export ANTHROPIC_API_KEY=...    # the extractor is an LLM call
+    pip install langmem langgraph   # 或者： uv pip install -e '.[arena]'
+    export ANTHROPIC_API_KEY=...    # 提取器是一个 LLM 调用
     python examples/memory-native/langmem_native.py
 
 SDK: langmem 0.0.30 + langgraph 1.2.10. Verified live 2026-08-12.
@@ -35,10 +35,10 @@ import os
 from dotenv import load_dotenv
 from langgraph.store.memory import InMemoryStore
 
-load_dotenv()  # your .env at the repo root, same keys waku uses
+load_dotenv()  # 您的 .env 位于存储库根目录，waku 使用相同的密钥
 
-# The same three sentences in all four quickstarts. The third CONTRADICTS the
-# second -- that is the whole test.
+# 所有四个快速入门中都有相同的三句话。第三个矛盾
+# 第二——这就是整个测试。
 FACTS = [
     "I met Alex at the Lisbon AI meetup in March. He runs a robotics startup.",
     "Our product launch is scheduled for May.",
@@ -56,17 +56,17 @@ MODEL = os.environ.get("LANGMEM_MODEL", "anthropic:claude-sonnet-4-5")
 
 
 def main() -> None:
-    # 1. THE STORE IS YOURS TO PROVIDE. This is the fork in the road: an
-    #    InMemoryStore is a dict with a search method, and a PostgresStore is
-    #    the same interface backed by a database YOU run. LangMem itself
-    #    stores nothing.
+    # 1. 商店由您提供。这是岔路口：
+    #    InMemoryStore 是一个带有搜索方法的字典，PostgresStore 是
+    #    由您运行的数据库支持的相同界面。 LangMem 本身
+    #    不存储任何内容。
     store = InMemoryStore(index={"dims": 1536, "embed": "openai:text-embedding-3-small"})
     print("store     : InMemoryStore (in this process, gone when it exits)")
     print(f"model     : {MODEL}\n")
 
-    # 2. EXTRACT. create_memory_manager is LangMem's actual product: an LLM
-    #    that reads a conversation and decides what the durable facts are.
-    #    This is the same job waku's consolidation.py does.
+    # 2. 提取。 create_memory_manager是LangMem的实际产品：LLM
+    #    它读取对话并确定持久的事实是什么。
+    #    这与 waku 的solidity.py 所做的工作相同。
     from langmem import create_memory_manager
 
     manager = create_memory_manager(MODEL)
@@ -78,25 +78,25 @@ def main() -> None:
 
     extracted = manager.invoke({"messages": conversation})
 
-    # 3. READ BACK RAW. Compare against the three sentences above. Note the
-    #    manager gets the WHOLE conversation at once, so it can resolve the
-    #    contradiction before anything is stored -- a real advantage over
-    #    stores that ingest one sentence at a time.
+    # 3. 读回原始数据。与上面三句话进行比较。请注意
+    #    经理立即获得整个对话，因此可以解决问题
+    #    存储任何内容之前的矛盾——真正的优势
+    #    一次摄取一个句子的商店。
     print("\n-- what it actually kept --------------------------------------")
     for item in extracted:
         content = _text(item)
         print(f"  kept : {content}")
         store.put(NAMESPACE, _key(content), {"text": content})
 
-    # 4. SEARCH. This is the STORE's search, not LangMem's -- another sign of
-    #    where the library ends and your infrastructure begins.
+    # 4. 搜索。这是 STORE 的搜索，而不是 LangMem 的搜索——这是另一个迹象
+    #    图书馆的终点和基础设施的起点。
     print("\n-- asking ------------------------------------------------------")
     for label, question in QUESTIONS:
         hits = store.search(NAMESPACE, query=question, limit=3)
         top = hits[0].value.get("text") if hits else "(nothing found)"
         print(f"  {label} : {question}\n              -> {top}")
 
-    # 5. THERE IS NO CONSOLE. Prove the ephemerality instead of claiming it.
+    # 5.没有控制台。证明短暂性而不是声称它。
     print("\n-- see it yourself --------------------------------------------")
     print("  There is no dashboard. This is the entire storage layer:")
     print(f"    {len(store.search(NAMESPACE, limit=100))} item(s) in a Python dict at {hex(id(store))}")

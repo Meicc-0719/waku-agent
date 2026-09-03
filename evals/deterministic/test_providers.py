@@ -20,7 +20,7 @@ from waku.loop.models import PROVIDERS, OpenAICompatClient, get_client
 def fake_keys(monkeypatch):
     for provider in PROVIDERS.values():
         monkeypatch.setenv(provider.key_env, "fake-key-for-tests")
-    # a stray custom-endpoint override must not leak into these checks
+    # 杂散的自定义端点覆盖不得泄漏到这些检查中
     monkeypatch.delenv("WAKU_API_KEY", raising=False)
     monkeypatch.delenv("WAKU_BASE_URL", raising=False)
 
@@ -32,7 +32,7 @@ def test_get_client_builds_the_right_wire(name):
     client = get_client(settings)
     expected = anthropic.Anthropic if provider.kind == "anthropic" else OpenAICompatClient
     assert isinstance(client, expected)
-    # defaults must be filled in so the loop never sends model=""
+    # 必须填写默认值，以便循环永远不会发送 model=""
     assert settings.model == provider.model
     assert settings.small_model == provider.small_model
 
@@ -74,7 +74,7 @@ def test_model_listing_falls_back_without_a_catalog(name, monkeypatch):
     assert result["listed"] is False
     ids = [m["id"] for m in result["models"]]
     assert PROVIDERS[name].model in ids
-    # the flagship (showcase) model is offered too, not just the loop default
+    # 还提供旗舰（展示）模型，而不仅仅是循环默认模型
     if PROVIDERS[name].flagship:
         assert PROVIDERS[name].flagship in ids
 
@@ -147,14 +147,14 @@ def test_price_for_layers_model_over_provider():
     assert price_for("kimi", "some-future-model") == PRICING["kimi"]
     assert price_for("openrouter", "whatever:free") == (0.0, 0.0)
 
-    # Regression: within a provider, models diverge hugely — fable-5 is priced at
-    # $10/$50, ~2x opus's $5/$25. A provider-level fallback once made fable-5 look
-    # CHEAPER than opus on the scoreboard; each must carry its own per-model rate.
+    # 回归：在提供商内部，模型差异巨大——《寓言 5》的定价为
+    # 10 美元/50 美元，~2 倍作品的 5 美元/25 美元。提供商级别的后备方案曾一度让《寓言 5》看起来如此
+    # 比记分牌上的作品便宜；每个必须具有自己的每个型号的费率。
     assert price_for("anthropic", "claude-fable-5") == (10.0, 50.0)
     assert price_for("anthropic", "claude-opus-4-8") == (5.0, 25.0)
     fable_in, fable_out = price_for("anthropic", "claude-fable-5")
     opus_in, opus_out = price_for("anthropic", "claude-opus-4-8")
-    assert fable_in > opus_in and fable_out > opus_out   # fable is never cheaper
+    assert fable_in > opus_in and fable_out > opus_out   # 寓言从来不便宜
 
 
 def test_every_priced_model_has_a_knowledge_cutoff():
@@ -176,18 +176,18 @@ def test_every_priced_model_has_a_knowledge_cutoff():
             assert re.fullmatch(r"20\d\d-(0[1-9]|1[0-2])", cutoff), \
                 f"{model}: cutoff {cutoff!r} is not YYYY-MM"
 
-    # The motivating case, plus the unknown-model path (no guessing).
+    # 激励案例，加上未知模型路径（无需猜测）。
     assert cutoff_for("gemini-3.1-pro-preview") == "2025-01"
     assert cutoff_for("some-future-model") is None
 
 
-# --- a model name belongs to the provider it was configured for --------------
-# Found live: `.venv/bin/python examples/tiny_memory_agent.py` under
-# WAKU_PROVIDER=xai printed "gate failed open (BadRequestError)". WAKU_SMALL_MODEL
-# is global, so anthropic's gate model was sent to xAI, which 400s. The retrieval
-# gate fails open on error BY DESIGN, so this did not surface as a failure — it
-# surfaced as "retrieve", on every turn, for every non-anthropic model in the
-# arena. These pin the rule that stops it.
+# --- 模型名称属于为其配置的提供者 --------------
+# 实时发现：`.venv/bin/python Examples/tiny_memory_agent.py` 下
+# WAKU_PROVIDER=xai 打印“门打开失败（BadRequestError）”。 WAKU_SMALL_MODEL
+# 是全局的，所以anthropic的门模型被发送到xAI，这400s。检索
+# 门因设计错误而无法打开，因此这并不是一个失败 - 它
+# 对于每一个非人类模型，每一次都以“检索”的形式出现
+# 竞技场。这些固定了阻止它的规则。
 
 def test_env_model_names_do_not_leak_into_another_provider(monkeypatch):
     from waku.config import Settings

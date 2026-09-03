@@ -5,8 +5,8 @@ green. The reason is worth stating plainly, because it is a lesson about evals
 and not about AppleScript: the only existing test asserted on generated STRINGS,
 and one of its cases did nothing at all on macOS —
 
-    # on macOS we can't run osascript in CI, but the escaping is in the string
-    # build; covered by the pure date test above + manual verification
+    # 在 macOS 上，我们无法在 CI 中运行 osascript，但转义位于字符串中
+    # 建造;上面的纯日期测试+手动验证涵盖了
 
 "manual verification on the dev machine" is not a test. So waku advertised four
 Apple tools, and three of them did not work.
@@ -32,11 +32,11 @@ import pytest
 
 from waku.tools import apple
 
-# _osa short-circuits with "Apple tools are macOS-only" before it ever spawns
-# osascript, so the timeout and refusal cases can only be observed on a Mac.
-# CI runs Linux; those two cases skip there. Everything else — the `whose` rule,
-# the budgets, the date parsing — is pure source/string logic and runs anywhere,
-# which is the point: the rule that broke these tools IS checkable in CI.
+# _osa 在生成之前就与“Apple 工具仅适用于 macOS”进行了短路
+# osascript，因此只能在 Mac 上观察超时和拒绝情况。
+# CI运行Linux；这两个案例就跳过了。其他一切——“谁的”规则，
+# 预算、日期解析——是纯源/字符串逻辑并且可以在任何地方运行，
+# 重点是：破坏这些工具的规则可以在 CI 中检查。
 macos_only = pytest.mark.skipif(sys.platform != "darwin", reason="needs macOS osascript")
 
 
@@ -124,8 +124,8 @@ def test_no_script_uses_a_whose_filter():
     """THE regression. `whose` makes the app evaluate a predicate per item across
     the Apple Event bridge: ~25s for one calendar versus ~6s to pull the raw
     column and filter in Python. Reintroducing it is how these tools break."""
-    # Strip docstrings before looking: this module DISCUSSES `whose` at length on
-    # purpose, and a test that trips over its own explanation is a bad test.
+    # 在查看之前剥离文档字符串：该模块详细讨论了“whose”
+    # 目的，而超出其自身解释的测试是一个糟糕的测试。
     offenders = [ln.strip() for ln in _code_lines(apple) if "whose" in ln]
     assert offenders == [], (
         "an AppleScript `whose` filter is back — that is the 4x slowdown that "
@@ -180,7 +180,7 @@ def test_applescript_dates_parse_into_real_datetimes():
     got = apple._parse_applescript_date("Thursday, July 30, 2026 at 1:00:00 PM")
     assert got is not None
     assert (got.year, got.month, got.day, got.hour) == (2026, 7, 30, 13)
-    # a narrow no-break space before AM/PM is what macOS actually emits
+    # AM/PM 之前的狭窄不间断空间是 macOS 实际发出的内容
     assert apple._parse_applescript_date("Friday, August 1, 2026 at 9:30:00 AM") is not None
     assert apple._parse_applescript_date("not a date") is None, "must return None, never raise"
 
@@ -205,7 +205,7 @@ def test_create_note_success_and_failure_paths(monkeypatch):
     assert apple.create_note("Hello", "world") == "Note created: Hello"
     assert "Notes" in calls[-1][0]
     assert calls[-1][1] is not None
-    # force failure path
+    # 力失效路径
     def bad_osa(script: str, timeout: float | None = None, **_):
         return False, "denied"
     monkeypatch.setattr(apple, "_osa", bad_osa)
@@ -233,7 +233,7 @@ def test_read_apple_mail_uses_bounded_osa_and_formats_failure(monkeypatch):
         return False, "timeout"
 
     monkeypatch.setattr(apple, "_osa", fake_osa)
-    # bypass cache
+    # 绕过缓存
     monkeypatch.setattr(apple, "_cached", lambda key, ttl, go: go())
     out = apple.read_apple_mail(hours=12, limit=5)
     assert out.startswith("Mail unavailable:")

@@ -30,14 +30,14 @@ def build_elements() -> list[dict]:
     e: list[dict] = []
     a = lambda item: _add(e, item)
 
-    # Title and identity.
+    # 头衔和身份。
     a(S.text(60, 36, "Waku — one turn through the whole system", size=S.FS_TITLE))
     a(S.underline(64, 112, 920, color=S.PAL["orange"][1]))
     a(S.text(64, 132, "Harness  ·  Loop  ·  Memory  ·  Eval / LLM Ops",
              size=S.FS_HEADER, color=S.PAL["grey"][1]))
     a(S.socials_block(2050, 40))
 
-    # ------------------------------------------------------------------ Harness
+    #  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  马具
     a(S.boundary(40, 190, 2440, 470, "HARNESS — waku/app.py", color="red"))
 
     a(S.pill_header(80, 250, 330, "1  GATEWAYS", color="grey"))
@@ -71,7 +71,7 @@ def build_elements() -> list[dict]:
     a(S.labeled_arrow(2080, 420, 2180, 420, "natural exit"))
     a(S.annotate(2145, 500, "returns through the\noriginating gateway"))
 
-    # ------------------------------------------------------------------- Memory
+    #  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - - 记忆
     a(S.boundary(40, 710, 1490, 580, "MEMORY — waku/memory/", color="green"))
 
     a(S.labeled_box(80, 800, 330, 150,
@@ -108,7 +108,7 @@ def build_elements() -> list[dict]:
     a(S.red_note(80, 1225,
                  "Failure invariant: gate fails open; consolidation failure never marks chat as consolidated."))
 
-    # -------------------------------------------------------------- Eval / Ops
+    # -------------------------------------------------------------------------- 评估/操作
     a(S.boundary(1590, 710, 890, 580, "EVAL / LLM OPS — waku/ops/ + evals/", color="blue"))
 
     a(S.labeled_box(1640, 800, 330, 150,

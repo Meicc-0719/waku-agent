@@ -52,7 +52,7 @@ def _free_port() -> int:
         return s.getsockname()[1]
 
 
-# --- tool names the model provider will actually accept ---------------------
+# --- 模型提供者实际接受的工具名称 ---------------------
 
 
 def test_dotted_tool_names_survive_the_provider_contract():
@@ -83,13 +83,13 @@ def test_sanitising_does_not_change_what_is_sent_to_the_server():
     tools = bridge.start()
     try:
         tool = next(t for t in tools if t.name == "demo_reverse_text")
-        # Round-tripping proves the far side accepted the name we sent.
+        # 往返证明远端接受了我们发送的名称。
         assert tool.fn(text="waku").strip() == "ukaw"
     finally:
         bridge.close()
 
 
-# --- config shape: two transports, chosen by which key is present -----------
+# --- 配置形状：两种传输，由存在的密钥选择 -----------
 
 
 def test_naming_both_transports_is_refused_not_resolved(capsys):
@@ -127,7 +127,7 @@ def test_config_error_does_not_get_an_auth_hint(capsys):
     bridge.close()
 
 
-# --- real sessions, both transports -----------------------------------------
+# --- 真实会话，两种传输方式 ------------------------------------------
 
 
 def test_stdio_still_round_trips():
@@ -138,8 +138,8 @@ def test_stdio_still_round_trips():
     tools = bridge.start()
     try:
         assert "demo_reverse_text" in [t.name for t in tools]
-        # A tool with no input schema is unusable by the model even when it
-        # lists fine, which is exactly how the rename presented.
+        # 没有输入模式的工具即使在有输入模式的情况下也无法被模型使用
+        # 列表很好，这正是重命名后的呈现方式。
         schema = next(t for t in tools if t.name == "demo_reverse_text").input_schema
         assert schema.get("properties", {}).get("text")
         assert bridge.call("demo", "reverse_text", {"text": "waku"}).strip() == "ukaw"
@@ -172,7 +172,7 @@ def test_streamable_http_round_trips_with_an_auth_header():
                 urllib.request.urlopen(url, timeout=0.5)
                 break
             except urllib.error.HTTPError:
-                break  # listening; a bare GET is a 400/406 by design
+                break  # 倾听；裸 GET 的设计是 400/406
             except OSError:
                 time.sleep(0.25)
         else:
@@ -191,7 +191,7 @@ def test_streamable_http_round_trips_with_an_auth_header():
         server.wait(timeout=10)
 
 
-# --- oauth: the credential nobody has to issue ------------------------------
+# --- oauth：无人签发的凭证 ------------------------------
 
 
 def test_naming_both_credentials_is_refused_not_resolved(capsys):

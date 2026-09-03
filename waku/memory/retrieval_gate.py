@@ -1,4 +1,4 @@
-"""HERO MOMENT #1 — the gate that decides WHETHER to retrieve memory at all.
+"""HERO MOMENT #1——决定是否检索记忆的门。
 
 The top audience question across platforms: "why hit the memory store every
 turn?" Default-on retrieval is (a) slow — an extra search before every reply —
@@ -41,13 +41,13 @@ def should_retrieve(
     try:
         response = client.messages.create(
             model=small_model,
-            # generous budget: reasoning models (Kimi K3, ...) spend a thinking
-            # block BEFORE the JSON — 100 tokens was truncating the answer away
+            # 慷慨的预算：推理机型（Kimi K3，...）花一个思考
+            # 在 JSON 之前阻塞 — 100 个标记将答案截断
             max_tokens=600,
             messages=[{"role": "user", "content": GATE_PROMPT.format(message=message)}],
         )
         text = "".join(b.text for b in response.content if b.type == "text")
-        if "{" not in text:   # a reasoning-only / truncated reply, not an error
+        if "{" not in text:   # 仅推理/截断的回复，而不是错误
             return True, message, "gate returned no JSON — failing open"
         decision = json.loads(text[text.index("{") : text.rindex("}") + 1])
         return bool(decision.get("retrieve")), decision.get("query", message), decision.get("reason", "")

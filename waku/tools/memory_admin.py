@@ -35,27 +35,27 @@ def make_manage_memory_tool(memory) -> Tool:
                 if query:
                     rows = [r for r in rows if query.lower() in r["summary"].lower()]
                 return "\n".join(f"#{r['id']} ({r['happened_at']}) {r['summary']}" for r in rows[:8]) or "no episodes"
-            # No hasattr guard. It used to read
+            # 没有 hasattr 守卫。曾经读过
             #   facts.search_with_ids(...) if hasattr(...) else []
-            # which looked defensive and was the opposite: on a backend missing
-            # the method, the agent got [] and told the user "no matching
-            # facts" while the facts sat in the database. Every FactStore now
-            # has to declare this method (semantic/base.py) and prove it
-            # (test_fact_store_conformance.py), so a real absence should be a
-            # loud AttributeError, not a confident wrong answer.
+            # 看起来是防御性的，但事实恰恰相反：后端缺失
+            # 该方法中，代理得到[]并告诉用户“没有匹配的
+            # 事实”，而事实位于数据库中。现在每个 FactStore
+            # 必须声明这个方法（semantic/base.py）并证明它
+            # （test_fact_store_conformance.py），所以真正的缺席应该是
+            # 响亮的 AttributeError，不是一个自信的错误答案。
             rows = facts.search_with_ids(query, 8)
             return "\n".join(f"#{r['id']} [{r['subject']}] {r['content']}" for r in rows) or "no matching facts"
         if action == "update":
             if kind != "fact":
                 return "Only facts can be updated (episodes are historical)."
             ok = facts.update(int(id), content, subject or None)
-            return f"Updated fact #{id}." if ok else f"No fact with id {id}."
+            return f"Updated fact #{id}。” if ok else f“没有 id {id} 的事实。”
         if action == "delete":
             if kind == "episode":
-                # sqlite ids are ints; notion page ids are UUID strings — coerce by shape.
+                # sqlite id 是整数；概念页面 id 是 UUID 字符串——按形状强制。
                 rid = int(id) if str(id).isdigit() else str(id)
-                return f"Deleted episode #{id}." if episodes.delete(rid) else f"No episode with id {id}."
-            return f"Deleted fact #{id}." if facts.delete(int(id)) else f"No fact with id {id}."
+                return f"Deleted episode #{id}。" if Episodes.delete(rid) else f"没有 ID 为 {id} 的剧集。"
+            return f"Deleted fact #{id}。” iffacts.delete(int(id)) else f“没有 ID 为 {id} 的事实。”
         return "action must be one of: search, update, delete"
 
     return Tool(
@@ -90,7 +90,7 @@ def make_update_soul_tool(settings) -> Tool:
         if not rule:
             return "Nothing to add."
         path = settings.home / "SOUL.md"
-        text = load_soul(settings)  # ensures the file exists
+        text = load_soul(settings)  # 确保文件存在
         if len(text) > SOUL_MAX:
             return "SOUL.md is at its size limit — edit it in the dashboard instead."
         if "## Learned rules" not in text:
@@ -121,7 +121,7 @@ def make_create_skill_tool(settings, memory) -> Tool:
         if not _SLUG.match(name):
             return "Skill name must be a short slug like 'weekly-review' (lowercase, hyphens)."
         dest = settings.home / "skills" / name / "SKILL.md"
-        # never silently overwrite an existing skill (built-in or user)
+        # 永远不要默默地覆盖现有技能（内置或用户）
         if dest.exists() or any((d / name / "SKILL.md").exists() for d in bundled_skill_dirs()):
             return f"A skill named '{name}' already exists — pick another name."
         text = f"---\nname: {name}\ndescription: {description.strip()}\n---\n\n{body.strip()}\n"
@@ -129,7 +129,7 @@ def make_create_skill_tool(settings, memory) -> Tool:
             return "That didn't validate — description must be present and non-trivial."
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(text, encoding="utf-8")
-        memory.skills.refresh()  # live this session
+        memory.skills.refresh()  # 直播本次会议
         return f"Created skill '{name}'. It will trigger on: {description.strip()}"
 
     return Tool(

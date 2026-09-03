@@ -24,7 +24,7 @@ import subprocess
 import sys
 
 from waku.app import Waku
-from waku.gateway.cli import _observer  # show gate/tool lines in voice mode too
+from waku.gateway.cli import _observer  # 也在语音模式下显示门/工具线
 
 SAMPLE_RATE = 16000
 
@@ -71,34 +71,34 @@ def _best_say_voice() -> str:
         out = subprocess.run(["say", "-v", "?"], capture_output=True, text=True, timeout=5, check=False).stdout
     except Exception:
         return "Daniel"
-    # each line: "Name (variant)      en_US    # sample" — split name from the locale column
+    # 每行：“Name (variant) en_US # example” — 从语言环境列中分割名称
     english = []
     for ln in out.splitlines():
         m = re.match(r"^(.+?)\s{2,}([a-z]{2})_", ln)
         if m and m.group(2) == "en":
             english.append(m.group(1).strip())
-    # first: a downloaded high-quality voice (Premium > Enhanced)
+    # 第一个：下载的高质量语音（高级>增强）
     for tag in ("(Premium)", "(Enhanced)"):
         hit = next((n for n in english if tag in n), None)
         if hit:
             return hit
-    # else a reasonable compact voice, if present
+    # 否则是合理紧凑的声音（如果存在）
     for pref in ("Serena", "Kate", "Daniel", "Samantha"):
         if pref in english:
             return pref
     return english[0] if english else "Daniel"
 
 
-# Emoji and pictographs — a TTS engine reads these out loud ("rocket", "sparkles"),
-# which sounds ridiculous. Strip them (plus leftover markdown bullets) before speaking.
+# 表情符号和象形文字 — TTS 引擎会大声读出这些内容（“火箭”、“闪闪发光”），
+# 这听起来很荒谬。在说话之前剥掉它们（加上剩余的降价项目符号）。
 _EMOJI = re.compile(
-    "[\U0001f300-\U0001faff"  # symbols, pictographs, emoticons, transport, supplemental
-    "\U00002600-\U000027bf"    # misc symbols + dingbats
-    "\U0001f1e6-\U0001f1ff"    # regional-indicator flag letters
-    "\U00002190-\U000021ff"    # arrows
-    "\U00002b00-\U00002bff"    # stars, misc symbols-and-arrows
-    "\U0000fe00-\U0000fe0f"    # variation selectors
-    "\U0000200d\U000020e3\U0000fe0f]+"  # ZWJ + keycap/variation joiners
+    "[\U0001f300-\U0001faff"  # 符号、象形文字、表情符号、运输、补充
+    "\U00002600-\U000027bf"    # 杂项符号 + 装饰符号
+    "\U0001f1e6-\U0001f1ff"    # 区域指标标志字母
+    "\U00002190-\U000021ff"    # 箭头
+    "\U00002b00-\U00002bff"    # 星星、其他符号和箭头
+    "\U0000fe00-\U0000fe0f"    # 变体选择器
+    "\U0000200d\U000020e3\U0000fe0f]+"  # ZWJ + 键帽/变体连接器
 )
 
 
@@ -107,8 +107,8 @@ def _speakable(text: str) -> str:
     if not text:
         return ""
     text = _EMOJI.sub("", text)
-    text = re.sub(r"[*_`#>]", "", text)      # markdown emphasis/heading/quote/code marks
-    text = re.sub(r"[ \t]{2,}", " ", text)   # collapse gaps left by removed glyphs
+    text = re.sub(r"[*_`#>]", "", text)      # Markdown 强调/标题/引号/代码标记
+    text = re.sub(r"[ \t]{2,}", " ", text)   # 折叠已删除字形留下的间隙
     return "\n".join(ln.strip() for ln in text.splitlines()).strip()
 
 
@@ -120,9 +120,9 @@ class Mouth:
         self.engine = os.getenv("WAKU_TTS", "").strip().lower()
         self.voice = os.getenv("WAKU_VOICE", "")
         if not self.engine:
-            # Auto: use the nicer neural voice (Kokoro) if it's installed, else
-            # fall back to macOS `say`. So `pip install kokoro soundfile` alone
-            # upgrades the voice — no env var needed.
+            # 自动：如果已安装，请使用更好的神经语音 (Kokoro)，否则
+            # 回退到 macOS `say`。所以单独`pip install kokoro soundfile`
+            # 升级语音——无需环境变量。
             try:
                 import kokoro  # noqa: F401
 
@@ -132,10 +132,10 @@ class Mouth:
         if self.engine == "kokoro":
             from kokoro import KPipeline
 
-            self.pipeline = KPipeline(lang_code="b")  # b = British English
+            self.pipeline = KPipeline(lang_code="b")  # b = 英式英语
             self.voice = self.voice or "bm_george"
         elif self.engine == "say" and not self.voice:
-            self.voice = _best_say_voice()  # auto-upgrade to a Premium/Enhanced voice
+            self.voice = _best_say_voice()  # 自动升级到高级/增强语音
 
     def speak(self, text: str) -> None:
         text = _speakable(text)
@@ -198,7 +198,7 @@ def record_command(stream, max_seconds: float = 15.0, silence_after: float = 1.2
     stream per phase is how the first version froze."""
     import numpy as np
 
-    block = SAMPLE_RATE // 10  # 100ms blocks
+    block = SAMPLE_RATE // 10  # 100ms 块
     frames, quiet, spoke = [], 0, False
     for _ in range(int(max_seconds * 10)):
         data, _ = stream.read(block)
@@ -244,14 +244,14 @@ def wake_loop(waku: Waku, mouth: Mouth, wake_word: str) -> None:
     import numpy as np
     import sounddevice as sd
 
-    scout = Ears(model_size="tiny")  # cheap, always on
-    ears = Ears()                    # accurate, only after wake
+    scout = Ears(model_size="tiny")  # 便宜，永远在线
+    ears = Ears()                    # 准确，仅在唤醒后
     ack = os.getenv("WAKU_WAKE_ACK", "Yes?")
-    followup = float(os.getenv("WAKU_FOLLOWUP_SECONDS", "8"))  # stay open, Siri-style
+    followup = float(os.getenv("WAKU_FOLLOWUP_SECONDS", "8"))  # 保持开放，Siri 风格
     block = SAMPLE_RATE // 10
-    # Pin the scout's transcription language to match the wake word's script —
-    # otherwise Whisper hears "waku waku" and helpfully writes わくわく, which
-    # a latin wake word never matches. Commands after wake still auto-detect.
+    # 固定侦察员的转录语言以匹配唤醒词的脚本 -
+    # 否则 Whisper 会听到“waku waku”并帮忙写出わくわく，这
+    # 拉丁语唤醒词永远不会匹配。唤醒后的命令仍会自动检测。
     wake_lang = os.getenv("WAKU_WAKE_LANG") or ("en" if wake_word.isascii() else None)
     print(f'Listening for "{wake_word}" — Ctrl-C to quit.')
 
@@ -269,10 +269,10 @@ def wake_loop(waku: Waku, mouth: Mouth, wake_word: str) -> None:
         while True:
             data, _ = stream.read(block)
             window.append(data.copy())
-            if len(window) < 25:  # gather 2.5s
+            if len(window) < 25:  # 聚集2.5秒
                 continue
             chunk = np.concatenate(window)[:, 0]
-            window = window[-5:]  # keep a 0.5s tail so the phrase can straddle chunks
+            window = window[-5:]  # 保留 0.5 秒的尾部，以便该短语可以跨越多个块
 
             if float(np.sqrt((chunk**2).mean())) < _mic_threshold():
                 status("· listening…")
@@ -280,17 +280,17 @@ def wake_loop(waku: Waku, mouth: Mouth, wake_word: str) -> None:
             heard_scan = scout.transcribe(chunk, language=wake_lang)
             if not matches_wake(heard_scan, wake_word):
                 status(f'· heard: "{heard_scan}"' if heard_scan else "· listening…")
-                if heard_scan:  # near-misses belong in the trace (wake tuning!)
+                if heard_scan:  # 未遂事件属于跟踪（唤醒调整！）
                     waku.tracer.event("wake_scan", {"heard": heard_scan, "matched": False})
                 continue
 
             print("\n[wake word]")
             mouth.speak(ack)
-            drain()  # don't transcribe the ack playing over the mic
+            drain()  # 不要转录通过麦克风播放的 ack
 
-            # Stay in the conversation after waking: answer, then keep listening
-            # for a follow-up for `followup` seconds — no need to say "waku waku"
-            # again (like Siri). A quiet stretch drops back to wake-word mode.
+            # 醒来后继续谈话：回答，然后继续听
+            # 对于“followup”秒的后续行动 - 无需说“waku waku”
+            # 再次（如 Siri）。安静的一段时间后会回到唤醒词模式。
             while True:
                 heard = ears.transcribe(record_command(stream))
                 if heard:
@@ -300,10 +300,10 @@ def wake_loop(waku: Waku, mouth: Mouth, wake_word: str) -> None:
                     mouth.speak(result.reply)
                 else:
                     print("(didn't catch that)")
-                drain()  # ...and don't wake on the tail of the reply
+                drain()  # ...并且不要在回复的尾部醒来
                 status(f"· still here — just talk, or I'll rest in {followup:.0f}s")
                 if not wait_for_speech(stream, followup):
-                    break  # quiet → back to listening for the wake word
+                    break  # 安静 → 返回聆听唤醒词
             window = []
 
 
@@ -314,12 +314,12 @@ def main() -> None:
         raise SystemExit("Voice extra not installed: pip install -e '.[voice]'")
 
     waku = Waku()
-    waku.session.session_id = "voice"   # its own conversation thread in the inbox
+    waku.session.session_id = "voice"   # 收件箱中有自己的对话线程
     mouth = Mouth()
 
-    # Hands-free by default: always-listening for "waku waku". The default packs
-    # in the ways the tiny scanner mis-hears it (wakuwaku / waka waka / kana), so
-    # it triggers reliably. Set WAKU_WAKE_WORD="" for push-to-talk instead.
+    # 默认免提：始终收听“waku waku”。默认包
+    # 微型扫描仪会误听它的方式（wakuwaku / waka waka / kana），所以
+    # 它可靠地触发。将 WAKU_WAKE_WORD="" 设置为一键通。
     wake_word = os.getenv(
         "WAKU_WAKE_WORD", "waku waku,wakuwaku,waku,waka waka,wako wako,walk walk,わくわく"
     ).strip()
@@ -339,7 +339,7 @@ def main() -> None:
             audio = record_until_enter()
         except (EOFError, KeyboardInterrupt):
             break
-        if audio.size < SAMPLE_RATE // 4:  # under 250ms — probably a slip
+        if audio.size < SAMPLE_RATE // 4:  # 低于 250 毫秒——可能是一个失误
             print("(too short, try again)")
             continue
 

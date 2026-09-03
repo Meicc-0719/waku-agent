@@ -25,10 +25,10 @@ def test_turn_meta_is_saved_with_gate_and_iterations(tmp_path):
     ).fetchone()
     meta = json.loads(row["meta"])
     assert meta["gate"]["decision"] == "retrieve"
-    assert meta["iterations"] == 2                    # tool turn + final answer
+    assert meta["iterations"] == 2                    # 工具转动+最终答案
     assert isinstance(meta["latency_ms"], int)
     assert [t["tool"] for t in meta["tools"]] == ["save_note"]
-    # which brain answered — shown per card, survives a reopened thread
+    # 哪个大脑回答了——每张卡都显示，在重新打开的线程中仍然存在
     assert meta["model"] == app.settings.model
     assert meta["provider"] == app.settings.provider
 

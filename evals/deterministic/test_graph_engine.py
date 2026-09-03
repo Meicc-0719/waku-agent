@@ -62,8 +62,8 @@ def test_fanout_runs_in_parallel_and_fanin_waits_for_all():
     t0 = time.perf_counter()
     state = run_graph(g, {})
     elapsed = time.perf_counter() - t0
-    assert state["joined"] == "xyz"          # fan-in saw all three keys
-    assert elapsed < 0.35                    # 3 x 0.15s ran together, not in series
+    assert state["joined"] == "xyz"          # 扇入看到所有三个键
+    assert elapsed < 0.35                    # 3 x 0.15s 一起运行，而不是串联
 
 
 def routed_graph() -> Graph:
@@ -116,7 +116,7 @@ def test_parallel_key_collision_raises():
 
 
 def test_sequential_overwrite_is_allowed():
-    state = run_graph(linear_graph(), {"a": 99})  # node 'a' rewrites key 'a'
+    state = run_graph(linear_graph(), {"a": 99})  # 节点“a”重写密钥“a”
     assert state["a"] == 1
 
 
@@ -163,7 +163,7 @@ def test_node_exception_without_on_error_drains_to_end():
     g.add_edge("explode", "after")
     events, observer = collect_events()
     state = run_graph(g, {}, observer=observer)
-    assert "ran" not in state                     # downstream starved, run ended
+    assert "ran" not in state                     # 下游饥饿，运行结束
     assert dict(events)["graph_end"]["error"] is not None
 
 
@@ -202,4 +202,4 @@ def test_reserved_underscore_keys_never_merge_or_leak():
     state = run_graph(g, {}, observer=observer)
     assert "_secret" not in state and state["open"] == 2
     assert dict(events)["node_end"]["keys"] == ["open"]
-    assert "_notify" not in state                 # engine plumbing stays internal
+    assert "_notify" not in state                 # 发动机管道保持在内部

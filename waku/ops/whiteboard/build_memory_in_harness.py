@@ -34,7 +34,7 @@ def build() -> list:
                     size=S.FS_BODY))
     e += S.socials_block(2180, 44)
 
-    # ---- the harness, compressed: this board is about what is UNDER it -----
+    # ---- 线束，压缩：这块板是关于它下面的东西 -----
     e += S.boundary(60, 200, 1560, 300, "HARNESS  —  waku/app.py", color="red")
     e += S.chip(110, 285, 210, 70, "a user turn")
     e += S.labeled_box(390, 275, 300, 90, "working memory")
@@ -46,14 +46,14 @@ def build() -> list:
     e.append(S.arrow(695, 320, 815, 325))
     e.append(S.arrow(1085, 345, 1345, 325))
 
-    # the retrieval gate — the reason waku can get away with no embeddings
+    # 检索门——waku 可以在没有嵌入的情况下逃脱的原因
     e += S.diamond(400, 560, 280, 130, "retrieval\ngate?", color="green")
     e += S.labeled_arrow(540, 555, 540, 370, "facts, if it decided to look")
     e.append(S.text(700, 570, "the gate REWRITES the question into keywords first —\n"
                               "which is why 发布会 can find \"product launch\" in an\n"
                               "index that has no embeddings at all.", size=S.FS_SMALL))
 
-    # ---- THE STORE ---------------------------------------------------------
+    # ---- 商店 ---------------------------------------------------------
     e += S.boundary(60, 730, 1560, 330, "THE STORE   ·   Q1 shape   ·   Q2 retrieval",
                     color="plain")
 
@@ -69,7 +69,7 @@ def build() -> list:
     e.append(S.arrow(720, 800, 580, 700))
     e.append(S.arrow(1200, 800, 640, 700))
 
-    # ---- THE MANAGER -------------------------------------------------------
+    # ---- 经理 -------------------------------------------------------
     e += S.boundary(60, 1100, 1560, 260,
                     "THE MANAGER   ·   Q3 what happens to what is no longer true",
                     color="plain")
@@ -85,7 +85,7 @@ def build() -> list:
                 "ATTRIBUTE  has a source field, no link back to the turn\n"
                 "REFLECT    per-turn, on the critical path")
 
-    # ---- THE ONE BOX ------------------------------------------------------
+    # ---- 一盒 ------------------------------------------------------
     e += S.pill_header(1680, 200, 940, "THE BOX EVERYONE IS COMPETING OVER", color="plain")
 
     e += S.card(1680, 275, 940, "WAKU_SEMANTIC_STORE = ...",
@@ -116,7 +116,7 @@ def build() -> list:
 
     e.append(S.arrow(1670, 340, 1000, 810, dashed=True, color=S.PAL["red"][1]))
 
-    # the runnable proof, mapped to the boxes above it — this is what gets filmed
+    # 可运行的证明，映射到其上方的框 - 这就是拍摄的内容
     e += S.card(1680, 1075, 940, "and here it is, runnable — examples/memory-native/",
                 "langmem_native.py   THE MANAGER · Job 1    3 sentences in, 2 memories out\n"
                 "mem0_native.py      THE MANAGER · Jobs 1+2  add/update/del/noop, superseded\n"
@@ -129,7 +129,7 @@ def build() -> list:
                 "contestant told NOTHING as the control. Any probe the control passes\n"
                 "was never testing memory. That is the only reason any of this is fair.")
 
-    # ---- SCOPE -------------------------------------------------------------
+    #  -  -  范围  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - -
     e.append(S.text(60, 1400,
                     "SCOPE — waku: one user, one machine.   mem0: shared across agents in an org.",
                     size=S.FS_SMALL))

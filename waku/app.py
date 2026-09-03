@@ -17,14 +17,14 @@ from waku.tools import build_registry
 
 class Waku:
     def __init__(self, settings: Settings | None = None, client=None, conn=None):
-        # `client` and `conn` are injectable: evals swap in a scripted model,
-        # the dashboard injects a cross-thread connection. Same seam either way.
+        # `client` 和 `conn` 是可注入的：在脚本模型中评估交换，
+        # 仪表板注入跨线程连接。无论哪种方式都相同的接缝。
         self.settings = settings or load_settings()
         self.settings.ensure_home()
         self.conn = conn or connect(self.settings.home)
         self.client = client or get_client(self.settings)
 
-        # Memory first: the memory-management tools need it.
+        # 内存优先：内存管理工具需要它。
         from waku.memory import Memory
 
         self.memory = Memory(self.conn, self.settings, self.client)
@@ -46,8 +46,8 @@ class Waku:
         telegram / dashboard), so the unified chat can show its origin.
         `stream=True` streams the reply text token by token to the observer.
         Everything that happens is both shown (observer) and recorded (tracer)."""
-        # capture the gate + graph decisions as they flow by, so we can persist
-        # them with the turn (the reopened-thread telemetry the dashboard shows)
+        # 捕获门+图决策，这样我们就可以坚持下去
+        # 他们转弯（仪表板显示的重新打开的线程遥测）
         import time
         captured: dict = {}
 
@@ -64,10 +64,10 @@ class Waku:
         t0 = time.perf_counter()
 
         with self.tracer.turn(user_message):
-            # The graph front door is optional and can NEVER make Waku worse:
-            # flag off → this is exactly the old code path; flag on → the triage
-            # graph decides quick vs full, and any failure anywhere falls open
-            # to the plain loop below (same fail-open rule as the retrieval gate).
+            # 图形前门是可选的，并且永远不会让 Waku 变得更糟：
+            # flag off → 这正是旧的代码路径；标记 → 分类
+            # 图表决定快速还是完整，任何地方的任何故障都会失败
+            # 到下面的简单循环（与检索门相同的失败打开规则）。
             result = None
             if self.settings.graph_workflows:
                 try:
@@ -96,9 +96,9 @@ class Waku:
                 "latency_ms": int((time.perf_counter() - t0) * 1000),
                 "tools": [{"tool": c["tool"], "status": _status(c["output"])}
                           for c in result.tool_calls],
-                # which brain answered this turn — so a reopened thread (or a
-                # thread you switched models mid-way) shows it per card. A quick
-                # graph turn was answered by the small model; say so honestly.
+                # 哪个大脑回答了这个回合——所以一个重新打开的线程（或者一个
+                # 您中途切换模型的线程）显示每张卡。一个快速
+                # 小模型回答了图形转向；老实说。
                 "model": self.settings.small_model if quick else self.settings.model,
                 "provider": self.settings.provider,
             }
@@ -106,7 +106,7 @@ class Waku:
                                       source=source, meta=meta)
             if self.memory is not None:
                 self.memory.maybe_consolidate(notify=notify)
-                self.memory.export_markdown()   # keep MEMORY.md in sync
+                self.memory.export_markdown()   # 保持 MEMORY.md 同步
 
         self.tracer.end_turn(result.reply, result.iterations)
         return result
@@ -116,10 +116,10 @@ class Waku:
         verbatim so the graph's full_agent node calls the SAME code as the
         flag-off default — loop-as-a-node can never drift from loop-as-default."""
         system = self.session.build_system(user_message, notify=notify)
-        # Working memory is a bounded window: only the last N turns (2 rows
-        # each) enter the prompt, so context/cost/latency stay flat no matter
-        # how long the conversation runs. Older turns live in state.db and
-        # come back via the retrieval gate + episodic memory when relevant.
+        # 工作记忆是一个有界窗口：只有最后 N 圈（2 行
+        # 每个）输入提示，因此上下文/成本/延迟无论如何都保持平稳
+        # 对话持续多长时间。较旧的轮次存在于 state.db 中并且
+        # 当相关时通过检索门+情景记忆返回。
         window = self.settings.history_turns * 2
         messages = self.session.history[-window:] + [{"role": "user", "content": user_message}]
 
@@ -159,8 +159,8 @@ class Waku:
             classify_fn=lambda m: classify_message(self.client, self.settings.small_model, m),
             calendar_fn=lambda: todays_events(self.settings.home),
             quick_fn=quick_reply,
-            # the full path is the SAME method the flag-off default runs; the
-            # engine's tagged notifier stamps its inner events with node=
+            # 完整路径与标记关闭默认运行的方法相同；这
+            # 引擎的标记通知程序用 node= 标记其内部事件
             full_fn=lambda state: self._run_full_turn(
                 state["message"], state.get("_notify", notify), stream),
         )
@@ -169,4 +169,4 @@ class Waku:
             return state["result"]
         if state.get("reply"):
             return LoopResult(reply=state["reply"], tool_calls=[], iterations=1)
-        return None  # graph produced nothing → caller falls open to the loop
+        return None  # 图没有产生任何结果 → 调用者进入循环

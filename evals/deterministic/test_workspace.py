@@ -15,8 +15,8 @@ def test_run_folder_is_dated_and_named(tmp_path, monkeypatch):
     monkeypatch.setenv("WAKU_WORKSPACE", str(tmp_path))
     when = datetime(2026, 7, 19, 12, 48, 31)
     folder = ws.new_run_folder("kimi-k3", "build me a snake game", now=when)
-    assert folder.parent.name == "2026-07-19"          # dated dir
-    assert folder.name == "124831-kimi-k3-build-me-a-snake"  # time-model-slug
+    assert folder.parent.name == "2026-07-19"          # 注明日期的目录
+    assert folder.name == "124831-kimi-k3-build-me-a-snake"  # 时间模型-slug
     assert folder.is_dir()
 
 

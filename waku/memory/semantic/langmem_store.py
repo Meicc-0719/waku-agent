@@ -1,8 +1,8 @@
 """Semantic memory via LangGraph's store — the LangMem backend.
 
     pip install 'waku-agent[arena]'
-    WAKU_SEMANTIC_STORE=langmem   OPENAI_API_KEY=sk-...   # embeddings
-    WAKU_LANGMEM_POSTGRES=postgresql://...                # optional, see below
+    WAKU_SEMANTIC_STORE=langmem   OPENAI_API_KEY=sk-...   # 嵌入
+    WAKU_LANGMEM_POSTGRES=postgresql://...                # 可选，见下文
 
 The odd one out, in a way worth saying on camera: LangMem is not a service. It
 is LangChain's memory toolkit over LangGraph's BaseStore, so "using LangMem" is
@@ -72,8 +72,8 @@ class LangMemFactStore:
                 for r in self.search_with_ids(query, top_k)]
 
     def list(self, limit: int = 200) -> list[dict]:
-        # An empty query with a limit is BaseStore's documented way to page a
-        # namespace; there is no separate list endpoint.
+        # 带有限制的空查询是 BaseStore 记录的分页方式
+        # 命名空间；没有单独的列表端点。
         return [self._row(item) for item in self.store.search(_NAMESPACE, limit=limit)]
 
     def search_with_ids(self, query: str, top_k: int = 8) -> list[dict]:
@@ -87,8 +87,8 @@ class LangMemFactStore:
         value["content"] = content
         if subject is not None:
             value["subject"] = subject.lower().strip()
-        # put() on an existing key overwrites, and re-embeds with it — a store
-        # that kept the old vector would answer the old question and not the new.
+        # put() 对现有密钥进行覆盖，并重新嵌入它 — 一个存储
+        # 保留旧向量将回答旧问题，而不是新问题。
         self.store.put(_NAMESPACE, str(fact_id), value)
         return True
 

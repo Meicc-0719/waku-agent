@@ -29,7 +29,7 @@ DATASET = [
     if line.strip()
 ]
 
-# ---------- offline tier: our plumbing is deterministic-testable without any model
+# ---------- 离线层：我们的管道是确定性的，无需任何模型即可测试
 
 
 def test_create_event_writes_db_and_ics(tmp_path):
@@ -102,7 +102,7 @@ def test_iteration_guardrail_stops_runaway_loop(tmp_path):
     assert result.iterations == 3 and "iteration limit" in result.reply
 
 
-# ---------- live tier: the actual model eval over the dataset
+# ---------- 实时层：数据集上的实际模型评估
 
 
 @pytest.mark.skipif(not (HAS_KEY and RUN_LIVE_EVALS),
@@ -125,7 +125,7 @@ def test_dataset_case(case, tmp_path):
             assert needle.lower() in str(args.get(key, "")).lower(), (
                 f"expected '{needle}' in args[{key}], got: {args.get(key)}"
             )
-        # multi-tool cases (pokemon-team, worldcup-final): the loop must have
-        # actually looped, not satisfied one expectation and stopped
+        # 多工具案例（口袋妖怪队、世界杯决赛）：循环必须有
+        # 居然循环了，不满足某一期望就停了
         want = case.get("expect_min_tool_calls", 0)
         assert len(fired) >= want, f"only {len(fired)} tool calls, wanted >= {want}"

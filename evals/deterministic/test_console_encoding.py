@@ -17,12 +17,12 @@ def test_usage_text_survives_a_cp1252_console():
     """`waku <unknown>` prints the usage text, which contains a real arrow.
     Under a cp1252 stdout that print must degrade, not raise."""
     env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
-    # Compare bytes: the child's output IS cp1252, and decoding it with the
-    # parent's own stdio encoding would make this test depend on the host.
+    # 比较字节：子进程的输出是 cp1252，并用
+    # 父级自己的 stdio 编码将使此测试依赖于主机。
     result = subprocess.run(
         [sys.executable, "-m", "waku", "definitely-not-a-command"],
         capture_output=True, env=env, timeout=60, check=False,
     )
     assert b"UnicodeEncodeError" not in result.stderr
-    assert result.returncode == 1  # the usage path's normal exit
-    assert b"waku dashboard" in result.stdout  # usage text actually printed
+    assert result.returncode == 1  # 使用路径正常退出
+    assert b"waku dashboard" in result.stdout  # 实际打印的使用文本
