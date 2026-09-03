@@ -1,23 +1,21 @@
-// waku dashboard — Model arena: race ONE message through several models at once.
-// Split out of app.js: classic <script>, shared global scope (no build step,
-// no modules). Loads after views.js so it can hang a page onto VIEWS.
+// Waku 仪表盘——模型竞技场：让多个模型同时处理一条消息。
+// 从 app.js 拆分而来：经典 <script> 标签，共享全局作用域（无构建步骤、无模块）。
+// 在 views.js 后加载，以便将页面挂载到 VIEWS。
 //
-// Each contestant runs server-side in its own throwaway home (see
-// compare_models in dashboard.py) — this is a benchmark, not a conversation, so
-// nothing here touches your real memory or calendar.
+// 每位参赛者均在服务端独立的临时目录中运行（见 dashboard.py 的 compare_models）。
+// 这是基准测试而不是对话，因此不会触及真实记忆或日历。
 
-// State survives the 5s refresh redraw (the view rebuilds from here) AND — via
-// localStorage — tab switches and full reloads, so a finished race isn't lost.
-// Kept out of the chat log on purpose: a benchmark isn't a conversation.
+// 状态可在 5 秒刷新后的重绘中保留（视图从这里重建），也会通过 localStorage 跨越标签切换和
+// 完整重新加载，因此已完成的竞速不会丢失。它刻意不写入聊天记录：基准测试不是对话。
 let compareState = { message: "Build a Kanto team around Pikachu — search current picks, remember it, and schedule two training sessions this week.",
                      picked: null, running: false, results: null, order: null, sortBy: "latency",
-                     // grade every race by default, with a neutral (non-racing) referee
+                     // 默认对每场竞速评分，使用不参赛的中立裁判。
                      judge: true, judgeModel: "openai:gpt-5.6-sol" };
 try {
   const saved = JSON.parse(localStorage.getItem("waku_compare") || "null");
   if (saved){ compareState.message = saved.message ?? compareState.message;
               compareState.results = saved.results || null;
-              // only restore columns that actually finished (drop any stale racing… ones)
+              // 仅恢复实际完成的列（丢弃过期的“竞速中…”列）。
               compareState.order = (saved.order || []).filter(s => saved.results && saved.results[s]); }
 } catch(e){}
 function saveCompare(){
@@ -25,20 +23,18 @@ function saveCompare(){
     message: compareState.message, order: compareState.order, results: compareState.results})); } catch(e){}
 }
 
-// --- Compare history: past races + a cumulative per-model scoreboard, from the
-// server's own compare/history.jsonl (never the agent's real state). Loaded once
-// when the tab opens and refreshed after each race.
+// --- 竞技场历史：过往竞速及按模型累计的记分板，来自服务端自己的 compare/history.jsonl，
+// 从不使用代理真实状态。打开标签页时加载一次，每场竞速结束后刷新。
 async function loadCompareHistory(){
   try {
     const h = await (await fetch("/api/compare/history")).json();
     compareState.history = h.runs || [];
     compareState.aggregate = h.aggregate || [];
   } catch(e){ compareState.history = []; compareState.aggregate = []; }
-  editing = false;   // ensure the scoreboard redraw isn't skipped by the edit-guard
+  editing = false;   // 确保编辑保护不会跳过记分板重绘。
   render();
 }
-// Sort the scoreboard by a column: same column flips asc<->desc, a new column
-// starts ascending (lowest/best first for time/tokens/cost).
+// 按列对记分板排序：再次点击同列切换升/降序，新列从升序开始（耗时/Token/成本均以更低为优）。
 function setBoardSort(key){
   const b = compareState.boardSort || {key: "total_cost_usd", dir: "asc"};
   compareState.boardSort = (b.key === key) ? {key, dir: b.dir === "asc" ? "desc" : "asc"} : {key, dir: "asc"};
@@ -50,9 +46,8 @@ async function clearCompareHistory(){
   compareState.history = r.runs || []; compareState.aggregate = r.aggregate || [];
   editing = false; render();
 }
-// Re-run the referee on the most recent race for any models it skipped (429'd).
-// Updates the stored history + the visible cards. only_missing keeps already-
-// graded models untouched.
+// 让裁判重新评测最近一场竞速中被跳过的模型（429）。更新已存储历史和可见卡片；
+// only_missing 保持已评分模型不变。
 async function regradeCompare(){
   if (compareState.regrading) return;
   compareState.regrading = true; editing = false; render();
@@ -67,8 +62,8 @@ async function regradeCompare(){
   } catch(e){ compareState.raceError = "re-grade failed: " + e; }
   compareState.regrading = false; editing = false; render();
 }
-// Grade ONE card — the referee sometimes 429-skips a single model. Grades just
-// this spec in the latest run, updates its badge + the scoreboard.
+// 为单张卡片评分——裁判有时会因 429 跳过单个模型。仅评测最近一次运行中的该 spec，
+// 并更新其标签和记分板。
 async function gradeCard(spec){
   const R = compareState.results || {};
   if (!R[spec] || R[spec]._grading) return;
@@ -83,8 +78,7 @@ async function gradeCard(spec){
   if (R[spec]) R[spec]._grading = false;
   editing = false; render();
 }
-// Delete ONE race from the scoreboard (its models leave the totals), leaving
-// every other race intact — vs "clear all" which wipes the whole history.
+// 从记分板删除一场竞速（其模型退出累计统计），其他竞速保持不变；不同于会清空全部历史的“全部清除”。
 async function deleteCompareRun(ts){
   if (!ts || !confirm("Delete just this run from the scoreboard? (Other races stay.)")) return;
   try {
@@ -93,20 +87,18 @@ async function deleteCompareRun(ts){
   } catch(e){ compareState.raceError = "delete failed: " + e; }
   editing = false; render();
 }
-// Dismiss the race CARDS (the per-model columns) only — the cumulative
-// scoreboard/history is left alone. Handy for a clean slate before the next race.
+// 仅清除竞速卡片（各模型列），不影响累计记分板/历史。便于在下一场竞速前恢复清爽界面。
 function clearCards(){
-  if (compareState.running) return;   // don't yank cards mid-race
+  if (compareState.running) return;   // 不在竞速中途移除卡片。
   compareState.order = []; compareState.results = {}; compareState.raceError = null;
   saveCompare(); editing = false; render();
 }
-// A stored (slimmed) result -> the shape compareCol expects (gate object, tool
-// objects), so a past race renders identically to a live one.
+// 将存储的精简结果转换为 compareCol 所需结构（闸门对象、工具对象），使历史竞速与实时竞速一致渲染。
 function adaptHistResult(r){
   return {...r, gate: r.gate ? {decision: r.gate} : null,
           tools: (r.tools || []).map(t => ({tool: t}))};
 }
-// Reopen a past race into the columns (read-only view of that run).
+// 将一场历史竞速重新载入各列（该次运行的只读视图）。
 function openCompareRun(idx){
   const run = (compareState.history || [])[idx];
   if (!run) return;
@@ -116,8 +108,8 @@ function openCompareRun(idx){
   render();
 }
 
-// Which models are offered: your pinned shortlist (models.json). Default-pick
-// ALL of them, so a fresh Compare tab races the whole field (uncheck to narrow).
+// 可选模型来自固定的候选列表（models.json）。默认全选，因此首次打开竞技场即比较全部候选；
+// 可取消勾选以缩小范围。
 function compareModels(d){
   const pinned = ((d.settings && d.settings.pinned) || []);
   if (compareState.picked === null){
@@ -128,41 +120,37 @@ function compareModels(d){
 
 function setCompareSort(key){
   compareState.sortBy = key;
-  editing = false;   // release the textarea lock so the re-sort redraw shows
+  editing = false;   // 解除文本区域锁定，使重新排序后的重绘可见。
   render();
 }
 function toggleCompareModel(spec){
   const s = compareState.picked;
   s.has(spec) ? s.delete(spec) : s.add(spec);
-  editing = false;   // release the textarea edit-lock so this redraw isn't
-  render();          // skipped by the guard (else the count/chips go stale)
+  editing = false;   // 解除文本区域编辑锁，使保护逻辑不会跳过本次重绘。
+  render();          // 否则数量和标签会保持过期。
 }
-// Grade-with-K3 toggle: when on, each column's reply is judged 0-10 by kimi-k3
-// (an extra API call per column, so it's opt-in).
+// K3 评分开关：开启后由 kimi-k3 对每列回复评 0–10 分（每列额外一次 API 调用，因此默认按需启用）。
 function toggleJudge(){
   compareState.judge = !compareState.judge;
   editing = false;
   render();
 }
-// Coding-mode toggle: register the delegate_task tool for the race, so the loop
-// can hand real coding work to a pi sub-agent (running on each card's own model)
-// — the FULL harness runs (gate, memory, tools), delegate_task is just one tool.
+// 编程模式开关：为竞速注册 delegate_task 工具，使循环可将真实编程工作交给 pi 子代理
+// （使用各卡片自身模型运行）。完整框架仍会运行（闸门、记忆和工具），delegate_task 仅是其中一个工具。
 function toggleCoding(){
   compareState.coding = !compareState.coding;
   editing = false;
   render();
 }
-// Write to the real Apple Calendar ('Waku' calendar), opt-in. OFF by default so
-// a race doesn't spam duplicates — when ON, EVERY racing model writes its own
-// event (one per model). Use with 1-2 models to demo the real integration.
+// 按需写入真实 Apple 日历（“Waku”日历）。默认关闭，避免一场竞速写入重复事件；开启后每个
+// 参赛模型各写入一个事件。演示真实集成时应仅选择 1–2 个模型。
 function toggleApple(){
   compareState.apple = !compareState.apple;
   editing = false;
   render();
 }
-// Who grades quality. Deliberately NOT a racing model by default — a contestant
-// can't fairly judge its own round. gpt-5.6-sol is a strong text judge that
-// makes a poor tool-calling contestant, so it's the natural neutral referee.
+// 质量评分模型。默认刻意不使用参赛模型——参赛者无法公平评判自身回合。gpt-5.6-sol 擅长文本评判，
+// 却不适合作为工具调用参赛者，因此天然适合担任中立裁判。
 const JUDGES = [
   {spec:"openai:gpt-5.6-sol",            label:"GPT-5.6 Sol"},
   {spec:"anthropic:claude-opus-4-8",     label:"Claude Opus 4.8"},
@@ -171,18 +159,17 @@ const JUDGES = [
 ];
 function setJudgeModel(spec){ compareState.judgeModel = spec; editing = false; render(); }
 
-// Race over SSE so each column fills the MOMENT its model finishes — a slow or
-// broken contestant (e.g. a keyless provider) never blocks the others. Results
-// are keyed by spec into compareState.results; the grid redraws per event.
+// 通过 SSE 竞速，使模型完成的瞬间立即填充对应列；缓慢或失效的参赛者（例如无密钥供应商）
+// 不会阻塞其他参赛者。结果按 spec 写入 compareState.results，网格按事件重绘。
 async function runCompare(){
   const specs = [...compareState.picked];
   if (!compareState.message.trim() || !specs.length || compareState.running) return;
-  editing = false;   // release the typing lock so the racing/results redraws show
+  editing = false;   // 解除输入锁定，使竞速/结果重绘可见。
   compareState.running = true;
-  compareState.order = specs;      // columns to show, in picked order
-  compareState.results = {};       // spec -> result, filled as they land
+  compareState.order = specs;      // 按选中顺序显示的列。
+  compareState.results = {};       // spec -> 结果，按完成顺序填入。
   compareState.raceError = null;
-  compareState.grading = null;      // set during the post-race referee pass
+  compareState.grading = null;      // 在竞速结束后的裁判评测期间设置。
   render();
   const R = compareState.results;
   try {
